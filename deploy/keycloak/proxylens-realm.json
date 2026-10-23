@@ -1,0 +1,22 @@
+{
+  "realm": "proxylens",
+  "enabled": true,
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "sslRequired": "external",
+  "clients": [
+    {
+      "clientId": "proxylens",
+      "name": "ProxyLens",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "${PROXYLENS_CLIENT_SECRET}",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["${PROXYLENS_REDIRECT_URI}"],
+      "attributes": {"pkce.code.challenge.method": "S256"}
+    }
+  ]
+}

@@ -78,3 +78,110 @@ Resolved the architecture and domain decisions required before implementation sp
 ### Validation gates
 
 The POC must verify CPAMP read/export, request-ID correlation through CPAMP, usage projection freshness within 60 seconds under normal operation, Keycloak OIDC and role mapping, Codex OAuth/streaming/tool forwarding, redacted non-blocking Langfuse export, and restart/dependency-outage behavior.
+
+## 2026-10-24 — Issue #2: Compose and Python service foundation
+
+### Scope and base
+
+Implemented on `impl/issue-2-compose`, based on `integration/phase-1-poc` at
+`3fc4aef`. Adds one runnable Compose stack, Python 3.12 FastAPI/httpx/psycopg
+entrypoints (`python -m proxylens api|gateway|worker`), configuration tests, and
+deployment/maintenance documentation. This is the foundation ticket, not parent
+#1's completed identity/provider/usage POC.
+
+### Decisions and rationale
+
+- Digest-pin upstream Python 3.12.15, PostgreSQL 17.11, Keycloak 26.8.1,
+  CLIProxyAPI v8.0.40, and CPAMP v1.14.9. Verified official tags, build workflows,
+  configuration source, and registry manifests; record evidence in
+  `docs/dependency-pins.md`. Python dependency closures are hash-locked separately
+  for runtime and development. The local app image is tied to the deployment's
+  recorded Git commit and built image ID.
+- Separate PostgreSQL service/volume/credential for Keycloak so identity storage
+  stays owned by Keycloak; ProxyLens PostgreSQL is its future resource/projection
+  store. No local authoritative identity schema is introduced.
+- Compose secrets are mounted only to their consumers. Keycloak's wrapper reads
+  files and exports values within its process environment, because it lacks a
+  generic file-secret option. The realm import uses environment placeholders.
+  `secrets/` is ignored, directory mode 0700, files 0644 for nonroot container
+  readability through local file-backed mounts. Secret contents never enter
+  Compose interpolation or the image build context.
+- CPA needs writable configuration (including startup hashing and management
+  writes). A networkless initializer atomically seeds a persistent config volume
+  from mounted secrets only when absent. Existing config is preserved, including
+  upstream rewrites from JSON to YAML. OAuth state has its own persistent volume.
+  Rotation is explicit and coordinated, not an implicit overwrite at startup.
+- CPAMP Full Mode alone receives the management key at runtime and consumes CPA
+  usage via its `http` collector. Runtime logs confirmed v1.14.9 uses CPA's legacy
+  `/v0/management/usage-queue` compatibility route. ProxyLens has no usage-queue
+  implementation. Its worker receives a CPAMP manager key only for future durable
+  history integration; it currently runs only a private health server.
+- Publish only loopback gateway 8000, operator API 8001, and Keycloak 8080. CPA,
+  CPAMP, databases, worker, and Keycloak management health remain unbound on the
+  host. Internal backend/identity/provider networks separate paths; separate
+  edge/egress networks provide required ingress and provider/metadata connectivity.
+- Use parent #1's existing-local-Langfuse option. Configuration and mounted real
+  project-key slots are present; no fake receiver, embedded Langfuse stack, export,
+  or delivery claim. Empty endpoint/keys mean unconfigured. Later exporter work
+  must validate the real endpoint and its independently backed-up state.
+
+### Important behavior rules
+
+- `/health/live` reports process availability; `/health/ready` performs bounded,
+  parallel dependency probes and a real PostgreSQL `SELECT 1`. Failures return
+  503 with fixed dependency labels, never exception details/secrets.
+- API depends on PostgreSQL and Keycloak discovery; gateway also checks CPA;
+  worker checks PostgreSQL and CPAMP. CPAMP/Langfuse are not gateway readiness
+  dependencies. Health does not implement request authorization.
+- No business routes or forwarding are exposed; they return 404. Later tickets
+  own JWT/role/group validation, client keys, database schema, request forwarding,
+  CPAMP reads/correlation, usage freshness, and Langfuse jobs.
+- Long-form startup dependency conditions wait for health or initializer success.
+  Compose does not stop/restart a merely unhealthy dependent after startup.
+- CPA's usage queue remains volatile, with 3600-second retention configured.
+  CPAMP downtime/CPA restart may lose uncollected data; no recovery guarantee or
+  tenant usage completeness is implied. Healthchecks never pop the queue.
+- Realm/config/bootstrap secrets initialize persistent state once. Changing files
+  alone does not rotate persisted database, Keycloak, CPA, or CPAMP credentials.
+
+### Validation performed
+
+- TDD tracer slices: configuration/management isolation test failed before Compose
+  existed; repeatable secret/config bootstrap test failed before scripts existed;
+  public health contract tests failed before the application existed. Each passed
+  after its implementation. Additional config guards verify pins, state mounts,
+  bind-source existence, dependency conditions, and mounted-secret grants; negative
+  bootstrap cases verify absent/empty management keys never create an open config.
+- All 8 local Python 3.12 tests passed, along with Ruff lint/format checks, Bash
+  syntax checks, hash-locked installation, and official standalone Compose v5.6.1
+  `config --quiet` validation.
+- **Docker Engine is absent.** Supplemental runtime validation used rootless
+  Podman and the official Compose CLI through Podman's Docker-compatible socket,
+  isolated project `proxylens-issue2-smoke`, loopback ports 28000/28001/28080.
+  Built the application Dockerfile; pulled digest-pinned upstream images; initial
+  full-stack `up --wait` reached healthy state for every long-running service.
+- Verified API/gateway ready=200, real realm discovery and configured issuer,
+  worker health command, and empty host port bindings for CPA/CPAMP. CPA logs
+  showed CPAMP HTTP queue polling, establishing actual connection bootstrap.
+- Rebuilt the final app image and recreated the stack successfully; all services
+  returned healthy. CPA initializer explicitly preserved its existing config,
+  and Keycloak's persisted realm remained discoverable. Integration-tip merge
+  was already up to date at `3fc4aef`.
+- Stopped/restarted PostgreSQL, Keycloak, and CPA independently: expected readiness
+  failure and recovery occurred. Stopping CPAMP left API/gateway ready and worker
+  unavailable; restarting recovered the worker. An immediate post-restart sample
+  transiently returned gateway 503; the settled check matched the dependency table.
+
+### Limitations and follow-up discipline
+
+Docker Engine-specific networking, bind-secret behavior, restart semantics, arm64,
+fresh-host TLS ingress, and actual backup/restore/upgrade/rollback drills still
+require validation. No real provider/OAuth, identity-token acceptance, correlated
+usage record, or Langfuse delivery was exercised. CPAMP HTTP health is not proof
+of collection freshness or durable-history correlation. Keep those parent #1
+acceptance gates open.
+
+Check `compose.yaml`, `Dockerfile`, dependency locks, `deploy/`, `src/proxylens/`,
+`tests/`, and both deployment/pin documents together when changing a dependency.
+Preserve CPAMP's sole-consumer ownership and explicitly document any new secret
+grant, published listener, persistent-state migration, or health contract.

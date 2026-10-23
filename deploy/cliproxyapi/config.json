@@ -1,0 +1,18 @@
+{
+  "config-version": 8,
+  "server": {"host": "0.0.0.0", "port": 8317},
+  "management": {
+    "allow-remote": true,
+    "disable-control-panel": true,
+    "disable-auto-update-panel": true
+  },
+  "access": {},
+  "oauth": {"auth-dir": "/root/.cli-proxy-api"},
+  "observability": {
+    "logs": {"debug": false, "logging-to-file": false, "request-log": false},
+    "usage": {
+      "usage-statistics-enabled": true,
+      "redis-usage-queue-retention-seconds": 3600
+    }
+  }
+}
