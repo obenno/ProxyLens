@@ -255,6 +255,8 @@ owns app/config identity wiring, the Keycloak image/realm and dependency locks.
   dependencies and custom-image build passed. A rebuild on this high-core host
   hit Quarkus parallel ZIP file-descriptor exhaustion; bound build-only JVM
   ActiveProcessorCount=2. Rebuild succeeded without changing runtime CPU policy.
+  Application Dockerfile build also passed (`400eadae1c77`). Before completion,
+  merged integration tip `d97f7b4` (already up to date); clean working tree.
 - **Live disposable rootless Podman + Chromium**: dedicated network
   `proxylens-issue5-network`, fresh PostgreSQL 17.6 Alpine container
   `proxylens-issue5-db`, custom Keycloak image `6f7a9afcc7e1`, loopback 28185,
