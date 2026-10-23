@@ -96,3 +96,15 @@ accepts its base URL and mounted project credentials, without bundling Langfuse
 or its databases. No dummy receiver is provided. Record that deployment's actual
 version/digests and back up its PostgreSQL, ClickHouse, and object storage under
 its own runbook before enabling the later exporter ticket.
+## Identity extension pins (issue #5)
+
+The Keycloak service now builds `deploy/keycloak/Dockerfile` on the existing
+26.8.1 digest. The protocol mapper compiles against JARs copied directly from
+that image; compiler base is `eclipse-temurin:21-jdk` pinned to manifest
+`sha256:23cc5734ff46e776f51ce66eb9ee08444fd47caabec0a95b7eb6e94be2d3696d`.
+No Maven dependency download is involved. Rebuild/retest the provider with every
+Keycloak upgrade; its protocol-mapper SPI may change.
+
+Python adds `PyJWT[crypto]==2.15.1`, confirmed available via PyPI JSON and actual
+installation. Hash locks include cryptography 50.0.2 and its closure. Both runtime
+and dev locks were regenerated using the existing uv compile commands.

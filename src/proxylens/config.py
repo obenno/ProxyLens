@@ -4,6 +4,8 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from proxylens.keycloak import IdentitySettings
+
 
 def secret_file(variable: str, default: str) -> str:
     value = Path(os.environ.get(variable, default)).read_text().strip()
@@ -21,6 +23,7 @@ class Settings:
     keycloak_url: str
     cpa_url: str
     cpamp_url: str
+    identity: IdentitySettings
 
     @classmethod
     def from_environment(cls) -> "Settings":
@@ -32,4 +35,21 @@ class Settings:
             keycloak_url=os.getenv("PROXYLENS_KEYCLOAK_URL", "http://keycloak:8080").rstrip("/"),
             cpa_url=os.getenv("PROXYLENS_CPA_URL", "http://cliproxyapi:8317").rstrip("/"),
             cpamp_url=os.getenv("PROXYLENS_CPAMP_URL", "http://cpamp:18317").rstrip("/"),
+            identity=IdentitySettings(
+                issuer=os.getenv(
+                    "PROXYLENS_KEYCLOAK_ISSUER", "http://localhost:8080/realms/proxylens"
+                ),
+                internal_url=os.getenv("PROXYLENS_KEYCLOAK_URL", "http://keycloak:8080").rstrip(
+                    "/"
+                ),
+                admin_secret_file=os.getenv(
+                    "PROXYLENS_KEYCLOAK_CLIENT_SECRET_FILE", "/run/secrets/keycloak_client_secret"
+                ),
+                redirect_uri=os.getenv(
+                    "PROXYLENS_REDIRECT_URI", "http://localhost:8001/oidc/callback"
+                ),
+                jwks_ttl=int(os.getenv("PROXYLENS_JWKS_TTL", "300")),
+                refresh_interval=int(os.getenv("PROXYLENS_JWKS_REFRESH_INTERVAL", "15")),
+                clock_skew=int(os.getenv("PROXYLENS_TOKEN_CLOCK_SKEW", "5")),
+            ),
         )

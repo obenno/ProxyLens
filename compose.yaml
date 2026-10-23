@@ -59,11 +59,13 @@ services:
       test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.8.1@sha256:a78d6b79572168cb25886b80a8b5b8d4ed4390743e3eecb810538683e209dd6b
+    image: proxylens-keycloak:26.8.1-1
+    build:
+      context: ./deploy/keycloak
     mem_limit: 2g
     restart: unless-stopped
     entrypoint: [/bin/bash, /opt/proxylens/keycloak-start.sh]
-    command: [start, --import-realm]
+    command: [start, --optimized, --import-realm]
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
@@ -149,6 +151,7 @@ services:
     environment:
       <<: *app-env
       PROXYLENS_KEYCLOAK_CLIENT_SECRET_FILE: /run/secrets/keycloak_client_secret
+      PROXYLENS_REDIRECT_URI: ${PROXYLENS_REDIRECT_URI:-http://localhost:8001/oidc/callback}
     secrets: [postgres_password, keycloak_client_secret]
     networks: [backend, edge]
     ports: ["127.0.0.1:${API_PORT:-8001}:8000"]
@@ -181,10 +184,11 @@ services:
     environment:
       <<: *app-env
       PROXYLENS_CPAMP_ADMIN_KEY_FILE: /run/secrets/cpamp_admin_key
+      PROXYLENS_KEYCLOAK_CLIENT_SECRET_FILE: /run/secrets/keycloak_client_secret
       PROXYLENS_LANGFUSE_URL: ${LANGFUSE_BASE_URL:-}
       PROXYLENS_LANGFUSE_PUBLIC_KEY_FILE: /run/secrets/langfuse_public_key
       PROXYLENS_LANGFUSE_SECRET_KEY_FILE: /run/secrets/langfuse_secret_key
-    secrets: [postgres_password, cpamp_admin_key, langfuse_public_key, langfuse_secret_key]
+    secrets: [postgres_password, cpamp_admin_key, keycloak_client_secret, langfuse_public_key, langfuse_secret_key]
     networks: [backend, egress]
     extra_hosts: ["host.docker.internal:host-gateway"]
     depends_on:

@@ -185,3 +185,108 @@ Check `compose.yaml`, `Dockerfile`, dependency locks, `deploy/`, `src/proxylens/
 `tests/`, and both deployment/pin documents together when changing a dependency.
 Preserve CPAMP's sole-consumer ownership and explicitly document any new secret
 grant, published listener, persistent-state migration, or health contract.
+
+## 2026-10-24 — Issue #5: Keycloak identity and stable group scope
+
+### Scope and decisions
+
+Implemented on `impl/issue-5-keycloak`, confirmed based on integration
+`d97f7b4`. Read issue #5 through `gh --json`, the architecture ADR/glossary,
+and independently researched phase-1 contracts/acceptance matrix. This ticket
+owns app/config identity wiring, the Keycloak image/realm and dependency locks.
+
+- Separate public browser S256-PKCE, bearer-only API audience/roles, and
+  confidential read-only Admin clients. Existing `keycloak_client_secret` file
+  is now exclusively the Admin service-account credential. API and resources
+  worker receive it; browser/gateway never do. No local identity CRUD or
+  membership/cache authority.
+- Built-in group mapper emits names/paths, so a small Java protocol mapper
+  emits actual stable group UUIDs and signed flatness evidence. Compile against
+  JARs from the exact digest-pinned Keycloak 26.8.1 image, with digest-pinned
+  JDK compiler; no Maven dependency resolution. Nested children **and parents
+  containing children** produce flat=false/empty IDs and are denied. IDs are
+  independent of display names. SPI version compatibility is intentional.
+- Explicit subject mapper with minimal browser client scopes: the first live
+  login exposed that removing default client scopes also removed access-token
+  `sub`. Added `oidc-sub-mapper`; final fresh realm import/browser login passed.
+- Public interface `identity.py`: immutable verified Principal, Capability,
+  GroupAuthority/GroupEvidence, get_principal/get_group_authority dependencies,
+  and require_group. Role grants and scope are checked independently. Roles
+  from other clients never grant ProxyLens capability. Auditor alone is read-only;
+  group-admin applies to every claimed group (documented phase-1 limitation).
+- Browser auth validates single-use state/browser binding, code verifier, issuer,
+  ID/access signatures/audiences, nonce, subject binding, authorized party and
+  optional at_hash. Opaque HttpOnly session stores JWT/CSRF only; every request
+  revalidates. Unsafe cookie requests require exact Origin and CSRF. Single API
+  process, bounded in-memory sessions; restart requires login. No refresh-token
+  persistence; no membership snapshot in sessions.
+- PyJWT[crypto] 2.15.1 verified available from PyPI, installed and hash-locked.
+  RS256 fixed, typed native UUID subjects/groups, issuer/audience/azp, integer
+  exp/iat/optional nbf, typed API roles, 300-second max token lifetime. Strict exp
+  boundary; default five-second skew applies to future iat/nbf only.
+- Default/max JWKS TTL 300 seconds, serialized refresh at most every 15 seconds,
+  including unknown-kid/failure paths. Known cached signing keys plus unexpired
+  JWT permit READ while Keycloak is unavailable; no stale-key grace. New login,
+  callback and unsafe API requests require reachable group authority. Scope-specific
+  USE/MANAGE additionally require live target-group lookup.
+- Read-only Admin group existence lookup distinguishes authoritative 404 from
+  transport/auth/schema failure. `reconcile(ids, async mark_unusable(evidence))`
+  provides resource-worker integration; it never auto-reassigns or repairs IDs.
+  **Resource orphan persistence/scheduling/audit remains the resources worker's
+  responsibility**, not a new local group table. Missing/nested groups block live
+  use/write checks now. Existing orphan flags must also gate resource consumers.
+- API readiness includes live group-authority permission check. Bounded local
+  token-read availability remains independent from readiness routing.
+
+### Validation performed
+
+- TDD: signed-principal tracer failed before modules existed; malformed-claim
+  cases failed before explicit type/subject checks; Admin reconciliation test
+  failed before adapter existed; browser tests failed before routes/wiring;
+  invalid endpoint configuration tests failed before startup validation.
+- 72 Python tests pass: actual RSA verification, wrong issuer/audience/signature,
+  expiry/nbf/skew, missing/malformed claims, unsigned/HS256 rejection, bounded
+  unknown-kid refresh/rotation/cache deadline, role/scope/multigroup matrix,
+  nonce/state/issuer/subject/exchange failures, session replay/CSRF, actual API
+  dependency denial before mutation, live-authority outage and orphan-hook results.
+  External HTTP is mocked; crypto, FastAPI routing/dependencies and sessions are
+  real. No PostgreSQL identity schema exists to replace with mocked persistence.
+- Ruff lint/format, Compose v5.6.1 config validation, diff checks, hash-locked
+  dependencies and custom-image build passed. A rebuild on this high-core host
+  hit Quarkus parallel ZIP file-descriptor exhaustion; bound build-only JVM
+  ActiveProcessorCount=2. Rebuild succeeded without changing runtime CPU policy.
+- **Live disposable rootless Podman + Chromium**: dedicated network
+  `proxylens-issue5-network`, fresh PostgreSQL 17.6 Alpine container
+  `proxylens-issue5-db`, custom Keycloak image `6f7a9afcc7e1`, loopback 28185,
+  API 28186; no user/other-agent containers touched. Final image and final realm
+  were retested from a fresh disposable database after removing the first test
+  instance. Real browser code+PKCE callback and `/api/me` verified actual access
+  subject, API audience/role and both group IDs. Admin service account could read
+  group records with the seeded read-only roles.
+- Live rename preserved IDs; removing membership changed new-token claims;
+  deleting/recreating a name kept old ID missing and invoked orphan hook;
+  actual nested membership produced rejected signed flat=false token. Created
+  a second real RSA signing provider; both published keys validated real browser
+  tokens. Stopping Keycloak preserved warm-key token verification, rejected new
+  login/Admin calls and rejected verification after injected cache deadline.
+  Unknown-kid rotation timing and expiry boundary were exercised in local tests,
+  not by a five-minute wall-clock live wait.
+- Sanitized live evidence: `/data/tmp/opencode/proxylens-phase1/issue5-live/`
+  `browser-result.json`, `behavior-results.json`; harness scripts beside it.
+  They contain no bearer/Admin secrets. Disposable setup secret files are separate
+  scratch artifacts and are not committed. Session date is 2026-10-24; container
+  UTC log timestamps are 2026-10-23 (timezone boundary).
+
+### Limits and future maintenance
+
+Actual application orphan marking, audit transaction and worker schedule must
+connect the hook in #9/#6; those are not claimed tested here. No provider calls,
+CPAMP correlation, tenant usage or Langfuse behavior is claimed. Docker Engine,
+TLS ingress, multiworker sessions, automated existing-realm migration and
+per-group role assignments beyond the union model remain outside this check.
+Existing issue-2 realms require explicit backed-up client/mapping migration;
+import does not overwrite persisted realms. See `docs/identity.md`.
+
+When changing identity, inspect `identity.py`, `keycloak.py`, `oidc.py`, API
+lifespan/config, realm/mappers/build and corresponding tests together. Preserve
+strict error boundaries, live write checks and no local membership authority.
