@@ -9,7 +9,7 @@ from pathlib import Path
 from uuid import UUID
 
 import psycopg
-from psycopg.rows import dict_row
+from psycopg.rows import dict_row, tuple_row
 
 from proxylens.correlation import (
     CorrelationResult,
@@ -94,16 +94,14 @@ class LineageRepository:
                VALUES (%s, %s, %s) ON CONFLICT DO NOTHING""",
             (cpa_instance_id, trace.request_id, request_id),
         )
-        cursor = await self.connection.execute(
-            """SELECT count(*) FROM lineage_native_binding
-               WHERE cpa_instance_id = %s AND cpa_request_id = %s""",
-            (cpa_instance_id, trace.request_id),
-        )
-        return (
-            CorrelationStatus.AMBIGUOUS
-            if (await cursor.fetchone())[0] > 1
-            else CorrelationStatus.PARTIAL
-        )
+        async with self.connection.cursor(row_factory=tuple_row) as cursor:
+            await cursor.execute(
+                """SELECT count(*) FROM lineage_native_binding
+                   WHERE cpa_instance_id = %s AND cpa_request_id = %s""",
+                (cpa_instance_id, trace.request_id),
+            )
+            claims = (await cursor.fetchone())[0]
+        return CorrelationStatus.AMBIGUOUS if claims > 1 else CorrelationStatus.PARTIAL
 
     async def record_event(self, event: UsageIdentity) -> CorrelationResult:
         """Retain each CPAMP hash, idempotently. Conflicting replays poison that record."""

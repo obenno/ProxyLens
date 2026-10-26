@@ -473,13 +473,23 @@ class ResourceRepository:
             return (await self._resolve(conn, plaintext)).identity
 
     async def authorize(
-        self, plaintext: str, *, model: str, provider: str, body_bytes: int
+        self,
+        plaintext: str,
+        *,
+        model: str,
+        provider: str,
+        body_bytes: int,
+        requested_model: str | None = None,
     ) -> Authorization:
         """Validate identity and policy in one fresh database snapshot before dispatch."""
         async with self.database.transaction() as conn:
             result = await self._resolve(conn, plaintext)
             policy = result.policy
-            if model not in policy.models or provider not in policy.providers:
+            if (
+                model not in policy.models
+                or provider not in policy.providers
+                or (requested_model is not None and requested_model not in policy.models)
+            ):
                 raise ResourceError("policy_denied", 403)
             if body_bytes < 0:
                 raise ResourceError("invalid_body_size", 422)

@@ -45,12 +45,19 @@ https://github.com/seakee/CPA-Manager-Plus/tree/6d962db680085827cd19a778d2ff05a3
 from proxylens.cpamp import CPAMPAdapter, HistoryWindow
 
 async with CPAMPAdapter(
-    cpamp_origin, server_side_admin_key,
-    instance_id="deployment-stable-cpamp-id", cpamp_version="v1.14.9",
+    cpamp_origin,
+    server_side_admin_key,
+    instance_id="deployment-stable-cpamp-id",
+    cpamp_version="v1.14.9",
 ) as adapter:
-    result = await adapter.read_window(HistoryWindow(
-        from_ms, to_ms, providers=("codex",), include_failed=True,
-    ))
+    result = await adapter.read_window(
+        HistoryWindow(
+            from_ms,
+            to_ms,
+            providers=("codex",),
+            include_failed=True,
+        )
+    )
     diagnostics = await adapter.read_status()  # optional; no usage read watermark
     health = adapter.health(expected_pending_since_ms=oldest_unmatched_request_ms)
     # Stage result.records with identity-based upserts. Inspect state/reasons first.

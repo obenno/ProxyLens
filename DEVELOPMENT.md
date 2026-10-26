@@ -1,5 +1,87 @@
 # Development Notes
 
+## 2026-10-26 — Issue #7 gateway and #5/#9 application wiring
+
+### Scope and decisions
+
+Implemented on `impl/issue-7-gateway`, confirmed clean integration base `9113a97`.
+Connected existing signed Keycloak principals, group authority, resource repository,
+policy/rate enforcement and lineage instead of introducing parallel identity or
+usage models. Application startup now runs checksum-verified migrations before
+serving; API installs resource routes with actual `group_ids`/`group-member`
+capabilities and scoped audit access. Gateway receives the existing read-only
+Keycloak authority secret (`view-users`/`query-groups`) and CPA client credential;
+no CPA Management or CPAMP credential is added to that service.
+
+Routing is an explicit operator-attested registry (`deploy/gateway/routes.json`),
+empty/deny-all by default. Decision: require both alias and resolved model in the
+effective model policy and the attested provider in its provider policy. Reason:
+neither alias spelling nor a public model list proves routing. Consequence: every
+possible CPA target/failover for an enabled alias must match the registry; operator
+changes require synchronized configuration/restart. No model/provider was guessed.
+The existing resource authorization transaction now accepts optional requested
+model to check both names against the same fresh policy snapshot.
+
+### Behavior and persistence
+
+- Responses only; bounded UTF-8 JSON, duplicate fields/constants rejected, declared
+  and chunked body limits, numerical ceilings narrowed by group/application policy.
+  Policy timeout starts during upload, not after the body finishes. No model POST
+  retries, including pre-byte timeout/connection failure.
+- Live matching-issuer flat-group evidence required. Missing groups invoke existing
+  durable orphan reconciliation; nested/outage evidence denies without deletion.
+  Existing platform-admin reconciliation route is wired; periodic reconciliation
+  cadence remains with operations.
+- Generated ingress plus migration-007 transport lifecycle commit atomically before
+  CPA dispatch. Headers bind actual returned native UUID through existing lineage.
+  Fixed row-factory independence in `LineageRepository.bind_response` for the shared
+  dictionary-row database adapter; existing positional callers remain supported.
+- Successful response/SSE bytes pass through unparsed; tools/multimodal input and
+  provider protocol IDs are unchanged. HTTP errors retain 4xx/5xx status with fixed
+  redacted body. SSE protocol errors stay bytes, so transport `completed` does not
+  claim successful inference. No raw body or arbitrary metadata persistence.
+- Disconnect watcher covers header wait and streaming. Total timeout includes
+  upstream work/backpressure; idle I/O timeout covers stalled upstream. Cleanup
+  closes upstream, then attempts completion metadata for at most three seconds.
+  Partial failures terminate the connection without appending a success/event.
+- Header-binding DB failure closes upstream before downstream headers. Completion
+  DB failure leaves durable pending/unknown intent, emits only generated request ID
+  and fixed log event, and degrades readiness. No replay repairs telemetry.
+- Exporter contract: `gateway_observations` view, documented in `docs/gateway.md`;
+  ownership/observation IDs plus requested/attested routing, policy versions,
+  transport outcome/status/timestamps/latency/byte count. Machine subject remains
+  null; generated request ID is session. No usage/cost claims or outbox behavior.
+
+### Validation performed
+
+- TDD red/green demonstrated missing management routes, missing gateway, duplicate
+  JSON-model bypass, upstream HTTP error handling and slow-upload policy deadline.
+- Python 3.12.13, hash-locked dependencies; **229 tests passed, zero skips** against
+  dedicated real PostgreSQL `proxylens_gateway` on the coordinator test instance.
+  Existing lineage tests additionally isolate schemas. No other agent DB modified.
+- Actual loopback socket tests: first SSE byte before upstream release; unmodified
+  tool/multimodal payload and service-only credential; signed JWT scope/management;
+  revocation across gateway instances; shared key/application rate contention;
+  alias/target/provider deny and unverified registry; exact/over-limit and chunked
+  bodies; missing/nested/unavailable group; header-wait/midstream disconnect;
+  idle/total timeout, HTTP/SSE/transport/unknown errors; native collisions; real
+  DB connection/ingress/header/completion failures and no provider replay.
+- Ruff check and format pass; Compose configuration passes; CPAMP fenced Python
+  example's preexisting formatting failure fixed with no contract changes.
+- Test review: public HTTP and durable exporter/lineage seams, external HTTP only
+  mocked; real socket barriers rather than buffered ASGI streaming assertions.
+  Synthetic fixtures only. No real credential/OAuth material added.
+
+### Files and follow-up boundaries
+
+`gateway.py`, migration `007_gateway.sql`, `resource_identity.py`, `app.py`,
+`config.py`, shared `db.py`/`lineage.py`/`resources.py`, Compose and gateway docs.
+Projection code is owned by the parallel implementer and was not changed.
+Exporter consumes migration-007 interface; operations owns retention/reconciliation
+schedule and stale-pending finalization. Live provider, CPA routing/cancellation,
+and deterministic CPA→CPAMP correlation remain coordinator acceptance gates;
+local synthetic tests do not close them.
+
 ## 2026-10-23 — Proxy stack research
 
 ### Scope

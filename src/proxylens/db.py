@@ -13,8 +13,9 @@ class StorageUnavailable(Exception):
 
 
 class Database:
-    def __init__(self, dsn: str = "", **connect_options):
+    def __init__(self, dsn: str = "", *, password_file: str | None = None, **connect_options):
         self._dsn = dsn
+        self._password_file = password_file
         self._options = {
             "connect_timeout": 3,
             "options": "-c statement_timeout=5000 -c lock_timeout=3000",
@@ -24,8 +25,11 @@ class Database:
     @asynccontextmanager
     async def transaction(self):
         try:
+            options = dict(self._options)
+            if self._password_file is not None:
+                options["password"] = Path(self._password_file).read_text().strip()
             async with await psycopg.AsyncConnection.connect(
-                self._dsn, row_factory=dict_row, **self._options
+                self._dsn, row_factory=dict_row, **options
             ) as connection:
                 yield connection
         except (psycopg.Error, OSError, TimeoutError):
