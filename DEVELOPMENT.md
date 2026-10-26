@@ -238,3 +238,61 @@ off even if a caller supplies a durable-history proof flag. Enablement requires
 an evidence-reviewed change, both #3/#4 gates, and the real scenarios listed in
 the artifact. Distinct application credentials are only a possible coarse-owner
 fallback, not request-level proof; no irreversible fallback/ADR selected.
+
+## 2026-10-24 — Issue #4: pinned CPAMP durable HTTP adapter
+
+### Scope and decisions
+
+- Based `impl/issue-4-cpamp` on `integration/phase-1-poc` at `d97f7b4`.
+- Added async httpx read-only CPAMP v1.14.9 adapter. Analytics POST provides fixed
+  filtered windows with both keyset cursor fields; JSONL export stages a retained
+  snapshot candidate. Optional status reads diagnose collector faults. Supported
+  HTTP exists, so no SQLite fallback or queue implementation is needed.
+- `(configured stable CPAMP instance ID, event_hash)` owns deduplication identity.
+  Native request IDs can repeat across attempts. HTTP omits internal row IDs,
+  execution IDs, original queue JSON/canonical accounting, and exact row cost.
+  Preserve omissions rather than deriving IDs from cursors or inventing zero cost.
+- Source-specific raw numeric/token metadata allowlists are separate from versioned
+  exclusive Codex buckets. Unsupported/missing evidence stays unknown; negative,
+  conflicting and inconsistent accounting stays inconsistent. Never add reasoning
+  to inclusive output or duplicate raw cached/read counts.
+- Bound pages, rows, bodies, JSONL lines and whole-read time. Validate schema,
+  ordering, cursor progress, duplicates, conflicting identities and retention
+  coverage. Keep last clean analytics result on failure/degradation; expose
+  available/stale/degraded/unavailable with fixed redacted reason codes.
+- HTTP export has no completeness footer and can end as a valid prefix after a
+  server-side failure. It always remains an unverified/degraded rebuild candidate;
+  no destructive projection replacement or tenant proof follows from EOF.
+
+### Validation performed
+
+- TDD at public adapter HTTP/result seams: release-derived fixtures, pagination,
+  filters, redaction, token uncertainty, malformed/schema/auth/outage cases,
+  duplicate/conflict handling, retention and bounded export traversal.
+- Final local checks: all 75 repository tests passed (67 CPAMP cases), Ruff lint
+  and formatting passed for owned Python files, `git diff --check` passed. Fixtures
+  compared equal to captured release response JSON values. Deadline/cancellation
+  checks verify stalled streams close; source review corrected contradictory
+  `separate_from_input`/`read_included_creation_separate` cache-mode handling.
+- `scripts/cpamp-read-poc.py` exercised the actual official Linux amd64 release
+  (archive SHA-256 verified), new loopback-only CPAMP data/config, synthetic imports,
+  production adapter reads, restart persistence, outage, and real archive/verify/
+  delete retention handling. Three equal-timestamp events paginated correctly;
+  two share native request ID. Export/raw cache differences normalized to total
+  140; auth failed closed, duplicate import skipped all three. Deleted raw history
+  became `degraded/retention_gap`; export then returned zero retained rows without
+  claiming completeness. Collector stayed stopped; no CPA/provider configured.
+- Portable evidence summary: `docs/evidence/cpamp-v1.14.9.json`; full synthetic run
+  output: `/data/tmp/opencode/proxylens-phase1/http-proof/adapter-results.json`.
+  Evidence host clock is October 23 UTC; session/document date is October 24.
+
+### Contracts and follow-up
+
+`docs/cpamp-contract.md` records source SHA/coordinates, public interface, limits,
+freshness/retention/error rules, normalization provenance and reproduction. Own
+files: `src/proxylens/cpamp.py`, `tests/test_cpamp.py`, CPAMP fixtures, POC script and
+contract/evidence docs. Shared app/config untouched. Projection consumers must
+persist identity-based upserts, use overlap/reconciliation, preserve unknowns,
+sample collector health and independently enforce tenant proof gates. Live provider
+correlation, complete queue delivery and original canonical CPA usage remain
+unproven; HTTP access alone does not close parent #1's live acceptance gate.
