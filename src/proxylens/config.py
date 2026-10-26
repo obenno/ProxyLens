@@ -4,6 +4,8 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from proxylens.db import Database
+from proxylens.gateway import GatewaySettings
 from proxylens.keycloak import IdentitySettings
 
 
@@ -24,6 +26,16 @@ class Settings:
     cpa_url: str
     cpamp_url: str
     identity: IdentitySettings
+    gateway: GatewaySettings = GatewaySettings()
+
+    def database(self) -> Database:
+        return Database(
+            host=self.db_host,
+            port=self.db_port,
+            dbname=self.db_name,
+            user=self.db_user,
+            password_file=os.getenv("PROXYLENS_DB_PASSWORD_FILE", "/run/secrets/postgres_password"),
+        )
 
     @classmethod
     def from_environment(cls) -> "Settings":
@@ -35,6 +47,16 @@ class Settings:
             keycloak_url=os.getenv("PROXYLENS_KEYCLOAK_URL", "http://keycloak:8080").rstrip("/"),
             cpa_url=os.getenv("PROXYLENS_CPA_URL", "http://cliproxyapi:8317").rstrip("/"),
             cpamp_url=os.getenv("PROXYLENS_CPAMP_URL", "http://cpamp:18317").rstrip("/"),
+            gateway=GatewaySettings(
+                registry_file=os.getenv("PROXYLENS_ROUTING_REGISTRY", "deploy/gateway/routes.json"),
+                credential_file=os.getenv(
+                    "PROXYLENS_CPA_CLIENT_KEY_FILE", "/run/secrets/cpa_client_key"
+                ),
+                cpa_instance_id=os.getenv("PROXYLENS_CPA_INSTANCE_ID", "primary"),
+                max_body_bytes=int(os.getenv("PROXYLENS_MAX_BODY_BYTES", "4194304")),
+                total_timeout=float(os.getenv("PROXYLENS_TOTAL_TIMEOUT", "120")),
+                idle_timeout=float(os.getenv("PROXYLENS_IDLE_TIMEOUT", "30")),
+            ),
             identity=IdentitySettings(
                 issuer=os.getenv(
                     "PROXYLENS_KEYCLOAK_ISSUER", "http://localhost:8080/realms/proxylens"

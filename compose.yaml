@@ -167,7 +167,15 @@ services:
     environment:
       <<: *app-env
       PROXYLENS_CPA_CLIENT_KEY_FILE: /run/secrets/cpa_client_key
-    secrets: [postgres_password, cpa_client_key]
+      PROXYLENS_KEYCLOAK_CLIENT_SECRET_FILE: /run/secrets/keycloak_client_secret
+      PROXYLENS_ROUTING_REGISTRY: /app/config/gateway-routes.json
+      PROXYLENS_CPA_INSTANCE_ID: ${PROXYLENS_CPA_INSTANCE_ID:-primary}
+      PROXYLENS_MAX_BODY_BYTES: ${PROXYLENS_MAX_BODY_BYTES:-4194304}
+      PROXYLENS_TOTAL_TIMEOUT: ${PROXYLENS_TOTAL_TIMEOUT:-120}
+      PROXYLENS_IDLE_TIMEOUT: ${PROXYLENS_IDLE_TIMEOUT:-30}
+    secrets: [postgres_password, cpa_client_key, keycloak_client_secret]
+    volumes:
+      - ./deploy/gateway/routes.json:/app/config/gateway-routes.json:ro
     networks: [backend, provider, edge]
     ports: ["127.0.0.1:${GATEWAY_PORT:-8000}:8000"]
     depends_on:
