@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "issue": 3,
+  "recorded_on": "2026-10-26",
+  "status": "partial",
+  "tenant_usage_enabled": false,
+  "versions": {
+    "cliproxyapi": "v8.0.40",
+    "cpamp": "v1.14.9"
+  },
+  "deployment": "isolated loopback-only validation runtime",
+  "queue_accessed_by_proxylens": false,
+  "sole_usage_queue_consumer": "CPAMP Full Mode",
+  "scenarios": [
+    {"name": "nonstreaming_responses", "records": 1, "visibility_seconds": 3.17},
+    {"name": "streaming_responses", "records": 1, "visibility_seconds": 2.56},
+    {"name": "function_tool_call", "records": 1, "visibility_seconds": 3.28},
+    {"name": "multimodal_image_input", "records": 1, "visibility_seconds": 2.76},
+    {"name": "bounded_cancellation", "native_header_observed": true, "durable_record_observed": false},
+    {"name": "unsupported_model", "http_status": 400, "provider_dispatch": false}
+  ],
+  "observed": {
+    "native_cpa_uuid_to_cpamp_request_id_join": true,
+    "unique_event_hash_per_success": true,
+    "failed_false_for_successes": true,
+    "token_normalization_available": true,
+    "max_success_visibility_seconds": 3.28,
+    "within_60_second_target": true,
+    "cpamp_dead_letters": 0
+  },
+  "not_proven": [
+    "two_application_group_owners_sharing_one_upstream_credential",
+    "retry_or_failover_attempt_lineage",
+    "provider_auth_or_quota_failure_persistence",
+    "live_native_id_collision_handling",
+    "restart_replay_retention_and_projection_publication",
+    "full_gateway_keycloak_projection_exporter_flow"
+  ],
+  "evidence_location": "private scratch runtime; raw identifiers and metadata are intentionally not copied"
+}
