@@ -25,7 +25,7 @@ action/state fields and counts, never HTTP bodies, arbitrary upstream metadata,
 exception strings, tokens, authorization URLs, OAuth state or credentials.
 
 `RetentionPolicy.from_environment(mapping)` accepts positive whole days through
-these names. These are module inputs pending central settings/Compose wiring:
+these names. These are central settings/Compose inputs:
 
 ```text
 PROXYLENS_RETENTION_REQUEST_DAYS=90
@@ -367,8 +367,7 @@ Evidence boundaries:
   It had empty ProxyLens schema/CPAMP history/OAuth directory. It is real foundation
   recovery evidence, not final populated Phase-1 recovery.
 - This tranche exercises populated PostgreSQL resources and lineage, exact local
-  retention, audit rollback and filesystem safety. Final projection/outbox schema,
-  full final-stack recovery, provider reauthorization and remote retention remain
-  separate acceptance gates.
-- Final hook checklist is recorded in `DEVELOPMENT.md`; issue #6 remains open until
-  dependency merges and the final runtime/recovery checks complete.
+  retention, audit rollback and filesystem safety. Final full-stack recovery,
+  provider reauthorization and remote retention remain separate acceptance gates.
+- The runtime hooks are integrated and validated by the locked application suite;
+  live provider correlation/history proof and full-stack recovery remain open gates.

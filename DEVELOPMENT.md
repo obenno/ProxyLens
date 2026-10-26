@@ -54,6 +54,13 @@ model to check both names against the same fresh policy snapshot.
 
 ### Validation performed
 
+Coordinator correction validation: the isolated locked suite passed **303 tests,
+zero skips** using the Podman PostgreSQL utility-container recovery path. Focused
+application lifecycle, Compose, health, projection-route, and exporter checks also
+passed. Ruff lint/format, compilation, and diff checks passed. Docker Compose
+validation remains unavailable because Docker and a Compose provider are absent in
+the execution environment.
+
 - TDD red/green demonstrated missing management routes, missing gateway, duplicate
   JSON-model bypass, upstream HTTP error handling and slow-upload policy deadline.
 - Python 3.12.13, hash-locked dependencies; **229 tests passed, zero skips** against
@@ -619,28 +626,16 @@ helpers failed safely on local tag lookup/Podman `--mount volume-nocopy` syntax;
 digest-only image lookup and portable `-v ...:nocopy` resolved both. No user service
 or provider/OAuth credential was touched. Tests' real connection values stay scratch.
 
-### Concrete remaining integration hooks (same issue #6)
+### Historical integration hook checklist (same issue #6)
 
-1. Central settings/Compose: wire typed retention config and worker cadence; run 006
-   with production migrations. Keep cleanup disabled until all participants exist.
-2. Gateway #7: terminal request-row prune plus active/uncertain holds; shared lock
-   before lineage writes; safe post-dispatch DB-failure/unknown recovery; no replay.
-3. Projection #10: original-event-time admission on every incremental/rebuild/replay
-   path using `retention_cutoffs`; prune projection children before ingress, preserve
-   incomplete coverage/cursors and ambiguity evidence, maintain/release holds.
-4. Exporter #8: request-time admission, pending/dead-letter/uncertain holds and
-   audited explicit expiry; dedup/immutable-send state must survive all eligible
-   replay windows. Shared lock ordering prevents floor/import/export races. Finish
-   gateway/projection-to-outbox scanner and worker lifetime wiring.
-5. Health: adapt actual #10/#8 snapshots and CPAMP read/status to operator endpoint;
-   retain independent readiness/nonblocking exporter semantics, no queue probe.
-6. Audit: add redacted integration/export/reconciliation transitions with truthful
-   failure behavior. Do not manufacture durable events when PostgreSQL is down.
-7. Extend CI database variable provisioning for final gateway/projection/exporter
-   suites; rerun all tests non-skipped and frozen-code backup/restore with populated
-   final projection/outbox. Exercise final restart/outage/collision/retention races.
-8. Remote retention/lifecycle and full final-stack upgrade/rollback remain live
-   gates; documented OSS API plan is not proof that remote objects were deleted.
+The original checklist was completed by the coordinator continuation in `277e0ce`
+and its correction pass: central retention/cadence settings, production migration
+startup, projection admission and pruning floors, gateway/outbox holds, completion
+scanning, health snapshots, redacted worker audit, and worker lifecycle wiring are
+integrated. The locked suite provisions isolated databases and exercises populated
+recovery. Live provider correlation and durable-history evidence, remote retention,
+and final full-stack outage/restart drills remain acceptance gates; tenant-scoped
+usage stays disabled.
 
 ### Integration-tip validation
 

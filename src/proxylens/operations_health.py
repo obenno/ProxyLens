@@ -15,6 +15,7 @@ class ProjectionHealth:
     enabled: bool
     last_success: datetime | None = None
     source_gap: bool = False
+    degraded: bool = False
 
 
 @dataclass(frozen=True)
@@ -54,7 +55,7 @@ def operations_health(
         projection_state = "disabled"
     elif not postgres or projection_age is None:
         projection_state = "unavailable"
-    elif projection.source_gap:
+    elif projection.source_gap or projection.degraded:
         projection_state = "degraded"
     elif projection_age >= freshness_seconds or adapter_state != "available":
         projection_state = "stale"

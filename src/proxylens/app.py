@@ -96,6 +96,10 @@ async def _worker_operations_health(app, settings, *, postgres, keycloak, clipro
                 projection_snapshot.get("coverage") == "incomplete"
                 or "retention_gap" in projection_snapshot.get("reasons", [])
             ),
+            degraded=any(
+                reason not in {"refresh_lag", "refresh_failed", "expected_usage_lag"}
+                for reason in projection_snapshot.get("reasons", [])
+            ),
         )
     except Exception:
         projection = ProjectionHealth(enabled=True)
@@ -151,7 +155,9 @@ def create_app(role: str, *, identity_transport: httpx.AsyncBaseTransport | None
         return await group_lookup(app.state.identity.authority, settings.identity.issuer)(group_id)
 
     repository = ResourceRepository(database, lookup)
-    projection_repository = ProjectionRepository(database, settings.projection)
+    projection_repository = ProjectionRepository(
+        database, settings.projection, retention=settings.retention
+    )
     proof_gate = settings.proof_gate()
 
     @asynccontextmanager
@@ -237,10 +243,24 @@ def create_app(role: str, *, identity_transport: httpx.AsyncBaseTransport | None
                     rows = await (
                         await conn.execute("SELECT id FROM resource_group_refs ORDER BY id")
                     ).fetchall()
-                await app.state.identity.authority.reconcile(
-                    [row["id"] for row in rows],
-                    lambda evidence: repository.reconcile_group(evidence.group_id, actor="worker"),
-                )
+                group_ids = [row["id"] for row in rows]
+
+                async def mark_unusable(evidence):
+                    await repository.reconcile_group(evidence.group_id, actor="worker")
+
+                await app.state.identity.authority.reconcile(group_ids, mark_unusable)
+
+            async def checkpoint_status():
+                async with database.transaction() as conn:
+                    for component, state in supervisor.status.items():
+                        await conn.execute(
+                            "INSERT INTO operations_status(component, observed_at, state, details) "
+                            "VALUES (%s, clock_timestamp(), %s, %s) "
+                            "ON CONFLICT(component) DO UPDATE SET "
+                            "observed_at=EXCLUDED.observed_at, "
+                            "state=EXCLUDED.state, details=EXCLUDED.details",
+                            (component, state["state"], {}),
+                        )
 
             async with projection_worker_lifespan(projection_repository, adapter, gate=proof_gate):
                 stop = asyncio.Event()
@@ -257,13 +277,24 @@ def create_app(role: str, *, identity_transport: httpx.AsyncBaseTransport | None
                     ),
                     name="group-reconciliation",
                 )
+                status_task = asyncio.create_task(
+                    periodic_tick(
+                        stop,
+                        settings.worker_interval_seconds,
+                        checkpoint_status,
+                        name="status_checkpoint",
+                        status=supervisor.status,
+                    ),
+                    name="status-checkpoint",
+                )
+                await checkpoint_status()
                 try:
                     yield
                 finally:
                     stop.set()
-                    for task in (supervisor_task, reconcile_task):
+                    for task in (supervisor_task, reconcile_task, status_task):
                         task.cancel()
-                    for task in (supervisor_task, reconcile_task):
+                    for task in (supervisor_task, reconcile_task, status_task):
                         with suppress(asyncio.CancelledError):
                             await task
 
@@ -299,6 +330,8 @@ def create_app(role: str, *, identity_transport: httpx.AsyncBaseTransport | None
         if role == "gateway":
             probes["cliproxyapi"] = http_ready(f"{settings.cpa_url}/healthz")
         if role == "worker":
+            probes["keycloak_group_authority"] = group_authority_ready(settings)
+            probes["cliproxyapi"] = http_ready(f"{settings.cpa_url}/healthz")
             probes["cpamp"] = http_ready(f"{settings.cpamp_url}/health")
         results = await asyncio.gather(*probes.values())
         dependencies = dict(
@@ -320,8 +353,8 @@ def create_app(role: str, *, identity_transport: httpx.AsyncBaseTransport | None
                 app,
                 settings,
                 postgres=dependencies.get("postgres") == "ready",
-                keycloak=await group_authority_ready(settings),
-                cliproxyapi=await http_ready(f"{settings.cpa_url}/healthz"),
+                keycloak=dependencies.get("keycloak_group_authority") == "ready",
+                cliproxyapi=dependencies.get("cliproxyapi") == "ready",
             )
         return JSONResponse(
             status_code=200 if all(results) else 503,

@@ -258,10 +258,11 @@ class GatewayRetentionParticipant:
             "WHERE completed_at IS NULL ON CONFLICT DO NOTHING"
         )
         deleted = await conn.execute(
-            "DELETE FROM gateway_lifecycle WHERE completed_at IS NOT NULL "
-            "AND completed_at < %s AND NOT EXISTS ("
+            "DELETE FROM gateway_lifecycle g USING lineage_ingress i "
+            "WHERE g.request_id = i.request_id AND g.completed_at IS NOT NULL "
+            "AND i.accepted_at < %s AND NOT EXISTS ("
             "SELECT 1 FROM operations_retention_hold h "
-            "WHERE h.request_id=gateway_lifecycle.request_id) RETURNING request_id",
+            "WHERE h.request_id=g.request_id) RETURNING g.request_id",
             (cutoffs.request,),
         )
         await conn.execute(
@@ -318,7 +319,7 @@ class OutboxRetentionParticipant:
         )
         deleted = await conn.execute(
             "DELETE FROM exporter_outbox WHERE destination=%s AND started_at < %s "
-            "AND state='ACCEPTED' RETURNING request_id",
+            "AND state IN ('ACCEPTED','UNCERTAIN','DEAD_LETTER') RETURNING request_id",
             (self.repository.settings.destination, cutoffs.outbox),
         )
         await conn.execute(

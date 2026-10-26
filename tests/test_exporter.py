@@ -352,7 +352,8 @@ def test_waiting_enrichment_deadline_caps_and_retention_are_observable(database)
         assert (await repo.get(obs.ingress.request_id)).last_code == "attempt_limit"
         assert (await repo.stats())["counters"]["spool_capacity"] == 1
         assert await repo.prune(now=obs.ingress.accepted_at + timedelta(seconds=199)) == 0
-        assert await repo.prune(now=obs.ingress.accepted_at + timedelta(seconds=200)) == 1
+        assert await repo.prune(now=obs.ingress.accepted_at + timedelta(seconds=200)) == 0
+        assert await repo.prune(now=obs.ingress.accepted_at + timedelta(seconds=201)) == 1
         # Even after dedup tombstone removal, an expired source cannot resurrect.
         with pytest.raises(ExportError, match="export_age_limit"):
             await repo.enqueue(obs, now=obs.ingress.accepted_at + timedelta(seconds=201))

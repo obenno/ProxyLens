@@ -64,7 +64,7 @@ Files: `exporter.py` (typed snapshot/serialization), `exporter_settings.py`,
    returns job status/hash, attempts, next attempt/expiry and safe reason code; it
    never returns credentials, raw response text or payload bytes.
 8. Schedule `await repo.prune(now=None, limit=1000)` for bounded local retention.
-   Inclusive cutoff: request start **<= now − retention_seconds**; default 90 days.
+   Strict cutoff: request start **< now − retention_seconds**; default 90 days.
    Terminal dedup rows remain until this cutoff, and expired source inputs cannot
    recreate them. #6 must coordinate lineage/projection retention and remote cleanup.
 

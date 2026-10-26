@@ -400,17 +400,21 @@ class ExportRepository:
         }
 
     async def prune(self, *, now: datetime | None = None, limit: int = 1000) -> int:
-        """Bounded local retention, inclusive cutoff. Not proof of remote deletion."""
+        """Bounded local retention, strictly older cutoff. Not remote deletion proof."""
         if type(limit) is not int or not 1 <= limit <= 10000:
             raise ExportError("invalid_prune_limit")
         now = now or datetime.now(UTC)
         await self.recover(now=now)
-        cutoff = now - timedelta(seconds=self.settings.retention_seconds)
         async with self.database.transaction() as conn:
+            cutoffs = await retention_cutoffs(conn, self.retention, now=now)
+            cutoff = max(
+                now - timedelta(seconds=self.settings.retention_seconds),
+                cutoffs.outbox,
+            )
             deleted = await conn.execute(
                 "DELETE FROM exporter_outbox WHERE (destination,request_id) IN ("
                 "SELECT destination,request_id FROM exporter_outbox WHERE destination=%s "
-                "AND started_at<=%s AND state IN ('ACCEPTED','UNCERTAIN','DEAD_LETTER') "
+                "AND started_at<%s AND state IN ('ACCEPTED','UNCERTAIN','DEAD_LETTER') "
                 "ORDER BY started_at LIMIT %s FOR UPDATE SKIP LOCKED)",
                 (self.settings.destination, cutoff, limit),
             )

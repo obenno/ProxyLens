@@ -55,6 +55,7 @@ def environment(monkeypatch, tmp_path):
         "KEYCLOAK_ISSUER": ISSUER,
         "KEYCLOAK_URL": "https://identity.example",
         "KEYCLOAK_CLIENT_SECRET_FILE": str(admin),
+        "CPAMP_ADMIN_KEY_FILE": str(admin),
         "CPA_CLIENT_KEY_FILE": str(cpa),
     }.items():
         monkeypatch.setenv("PROXYLENS_" + name, value)
@@ -136,5 +137,18 @@ def test_signed_management_scope_and_flat_group_authority(environment):
             assert (
                 await client.get("/api/applications", headers=auth("group-member"))
             ).status_code == 200
+
+    asyncio.run(scenario())
+
+
+def test_worker_lifespan_constructs_and_stops_runtime_components(environment):
+    async def scenario():
+        authority = IdentityServer()
+        app = create_app("worker", identity_transport=httpx.MockTransport(authority))
+        async with app.router.lifespan_context(app):
+            assert app.state.runtime.adapter is app.state.adapter
+            assert app.state.runtime.projection is app.state.projection
+            assert app.state.runtime.scanner is app.state.scanner
+            assert app.state.runtime.supervisor is app.state.supervisor
 
     asyncio.run(scenario())

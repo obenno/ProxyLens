@@ -5,6 +5,7 @@ import time
 from collections.abc import Callable
 from contextlib import asynccontextmanager, suppress
 from dataclasses import asdict
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
@@ -16,6 +17,7 @@ from proxylens.cpamp import CPAMPAdapter, HistoryWindow, ReadResult
 from proxylens.db import Database, StorageUnavailable
 from proxylens.identity import Capability, Principal
 from proxylens.lineage import LineageRepository
+from proxylens.operations import RetentionPolicy, retention_cutoffs
 from proxylens.projection_settings import DISABLED_PROOF_GATE, ProjectionSettings, ProofGate
 
 
@@ -31,8 +33,16 @@ def _now_ms():
 
 
 class ProjectionRepository:
-    def __init__(self, database: Database, settings: ProjectionSettings, *, clock_ms=_now_ms):
+    def __init__(
+        self,
+        database: Database,
+        settings: ProjectionSettings,
+        *,
+        clock_ms=_now_ms,
+        retention: RetentionPolicy | None = None,
+    ):
         self.database, self.settings, self.clock_ms = database, settings, clock_ms
+        self.retention = retention or RetentionPolicy(projection_days=settings.retention_days)
 
     async def source_state(self):
         async with self.database.transaction() as conn:
@@ -47,6 +57,11 @@ class ProjectionRepository:
         run_id = uuid4()
         config = self.settings
         async with self.database.transaction() as conn:
+            await retention_cutoffs(
+                conn,
+                self.retention,
+                now=datetime.fromtimestamp(self.clock_ms() / 1000, UTC),
+            )
             await conn.execute(
                 "INSERT INTO projection_sources(cpamp_instance_id, cpa_instance_id, binding) "
                 "VALUES (%s, %s, %s) ON CONFLICT DO NOTHING",
@@ -74,7 +89,15 @@ class ProjectionRepository:
 
     async def stage(self, run_id, result: ReadResult):
         async with self.database.transaction() as conn:
+            cutoffs = await retention_cutoffs(
+                conn,
+                self.retention,
+                now=datetime.fromtimestamp(self.clock_ms() / 1000, UTC),
+            )
+            cutoff_ms = int(cutoffs.projection.timestamp() * 1000)
             for record in result.records:
+                if record.timestamp_ms < cutoff_ms:
+                    continue
                 if (
                     record.instance_id != self.settings.cpamp_instance_id
                     or record.cpamp_version != self.settings.binding.cpamp_version
@@ -113,8 +136,13 @@ class ProjectionRepository:
         """
         config = self.settings
         now = self.clock_ms()
-        cutoff = max(1, now - config.retention_days * 86_400_000)
         async with self.database.transaction() as conn:
+            cutoffs = await retention_cutoffs(
+                conn,
+                self.retention,
+                now=datetime.fromtimestamp(now / 1000, UTC),
+            )
+            cutoff = max(1, int(cutoffs.projection.timestamp() * 1000))
             run = await (
                 await conn.execute(
                     "SELECT * FROM projection_runs WHERE run_id = %s FOR UPDATE",
@@ -481,6 +509,7 @@ class ProjectionWorker:
         config = self.repository.settings
         if not self.gate.permits(config):
             return False
+        end = self.clock_ms()
         # Transaction-scoped lock on its own connection: one worker per source, released on crash.
         async with self.repository.database.transaction() as lock:
             acquired = await (
@@ -491,7 +520,19 @@ class ProjectionWorker:
             ).fetchone()
             if not acquired["acquired"]:
                 return False
-            end = self.clock_ms()
+            cutoff = max(
+                1,
+                int(
+                    (
+                        await retention_cutoffs(
+                            lock,
+                            self.repository.retention,
+                            now=datetime.fromtimestamp(end / 1000, UTC),
+                        )
+                    ).projection.timestamp()
+                    * 1000
+                ),
+            )
             state = await self.repository.source_state()
             reconcile = (
                 rebuild
@@ -499,7 +540,6 @@ class ProjectionWorker:
                 or state["last_reconcile_ms"] is None
                 or end - state["last_reconcile_ms"] >= config.reconcile_seconds * 1000
             )
-            cutoff = max(1, end - config.retention_days * 86_400_000)
             start = cutoff if reconcile else max(cutoff, state["window_to_ms"] - config.overlap_ms)
             if start >= end:
                 return False
