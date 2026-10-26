@@ -25,10 +25,9 @@ cross-group access; `read_groups=None` cannot bypass it. Group administration mu
 use #5's actual group-role mapping, not a global group-admin role copied from an
 unrelated group. No JWT decoder/verifier exists in this module.
 
-Until #5 lands, tests inject verified-principal stubs; they do not prove JWT or live
-Keycloak integration. Coordinator must install this router in the API lifecycle,
-run migrations, supply the Keycloak lookup adapter, and add joint identity tests.
-The current foundation `app.py` intentionally has no automatic resource wiring.
+The API lifecycle installs this router with the Keycloak-backed principal and group
+lookup adapters. Migration startup and joint identity/resource tests cover the
+integration boundary; live provider and tenant-usage proof remain separate gates.
 
 ## Gateway-facing Python boundary (#7)
 

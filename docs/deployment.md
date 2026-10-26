@@ -38,16 +38,16 @@ If ports change, update the matching public URLs in `.env` before startup.
 
 | Listener | Default host bind | Purpose |
 | --- | --- | --- |
-| Gateway | `127.0.0.1:8000` | Future model/client API; foundation health now |
-| ProxyLens API | `127.0.0.1:8001` | Future control/operator API; foundation health now |
+| Gateway | `127.0.0.1:8000` | Authorized Responses forwarding and health |
+| ProxyLens API | `127.0.0.1:8001` | OIDC, resource management, proof-gated projection reads, and health |
 | Keycloak | `127.0.0.1:8080` | Human login and administrator console |
 
 CLIProxyAPI `8317`, CPAMP `18317`, both database `5432` listeners, Keycloak
 management `9000`, and worker health `8000` have **no host port publication**.
 Backend, identity, and provider networks are internal. Edge networking supports
 the three approved host listeners; egress networking lets CPA reach providers,
-CPAMP reach its documented metadata services, and the future worker reach the
-configured Langfuse endpoint. These networks are connectivity boundaries, not
+CPAMP reach its documented metadata services, and the worker reach the configured
+Langfuse endpoint. These networks are connectivity boundaries, not
 path-level firewalls: CPA client and management APIs share one internal listener.
 Only CPA initialization and CPAMP receive the management key.
 

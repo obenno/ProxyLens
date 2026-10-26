@@ -855,3 +855,8 @@ Follow-up review correction: gateway holds now release after a pending lifecycle
 row becomes terminal, supervisor checkpoints preserve typed diagnostic state, and
 the unrequested CLIProxyAPI commercial-mode change was removed. The locked suite
 remains green at **306 tests, zero skips**.
+
+The final documentation/freshness pass updates the runtime scope and locked-suite
+prerequisites in the user-facing guides and propagates projection window staleness
+into worker operations health. The same locked suite remains green at **306 tests,
+zero skips**.

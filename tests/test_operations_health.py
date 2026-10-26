@@ -68,3 +68,9 @@ def test_freshness_boundary_and_reported_source_gaps_remain_visible():
         ]["state"]
         == "degraded"
     )
+    assert (
+        snapshot(projection=ProjectionHealth(True, NOW, stale=True))["dependencies"]["projection"][
+            "state"
+        ]
+        == "stale"
+    )

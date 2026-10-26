@@ -100,6 +100,7 @@ async def _worker_operations_health(app, settings, *, postgres, keycloak, clipro
                 reason not in {"refresh_lag", "refresh_failed", "expected_usage_lag"}
                 for reason in projection_snapshot.get("reasons", [])
             ),
+            stale=projection_snapshot.get("state") == "stale",
         )
     except Exception:
         projection = ProjectionHealth(enabled=True)
