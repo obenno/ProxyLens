@@ -605,6 +605,11 @@ Validation before integration merge: 221 tests passed, 9 lineage tests skipped
 without their opt-in DSN; all 9 then passed against isolated schemas in the exporter
 test database (230 total). Includes 42 exporter cases. Owned-file Ruff lint/format
 and `git diff --check` passed. No new runtime dependency or lock change required.
+After committing implementation `310d13a`, merged integration `92b7128` via
+`a86e862` (gateway #7 and shared wiring). Full supported-Python suite with the
+lineage database gate enabled: **271 passed**, zero skips. Owned-file Ruff lint,
+format and diff checks passed after merge. Shared app/config/Compose changes are
+inherited from integration, not exporter-owned edits.
 
 Concrete gateway/projection scan orchestration, principal-evidence persistence,
 health scheduling and retention wiring are deferred to #6 because #7/#10 lifecycle
