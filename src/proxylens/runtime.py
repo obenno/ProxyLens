@@ -2,6 +2,7 @@
 
 import asyncio
 import time
+from collections.abc import Mapping
 from contextlib import suppress
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
@@ -254,6 +255,11 @@ class GatewayRetentionParticipant:
             "SELECT 'gateway', request_id::text, request_id FROM gateway_lifecycle "
             "WHERE completed_at IS NULL ON CONFLICT DO NOTHING"
         )
+        await conn.execute(
+            "DELETE FROM operations_retention_hold h WHERE h.participant='gateway' "
+            "AND NOT EXISTS (SELECT 1 FROM gateway_lifecycle g "
+            "WHERE g.request_id=h.request_id AND g.completed_at IS NULL)"
+        )
         deleted = await conn.execute(
             "DELETE FROM gateway_lifecycle g USING lineage_ingress i "
             "WHERE g.request_id = i.request_id AND g.completed_at IS NOT NULL "
@@ -261,10 +267,6 @@ class GatewayRetentionParticipant:
             "SELECT 1 FROM operations_retention_hold h "
             "WHERE h.request_id=g.request_id) RETURNING g.request_id",
             (cutoffs.request,),
-        )
-        await conn.execute(
-            "DELETE FROM operations_retention_hold h WHERE h.participant='gateway' "
-            "AND NOT EXISTS (SELECT 1 FROM gateway_lifecycle g WHERE g.request_id=h.request_id)"
         )
         return deleted.rowcount
 
@@ -381,7 +383,15 @@ class OperationsSupervisor:
         except Exception:
             self._mark(self.status, name, "degraded")
             return None
-        self._mark(self.status, name, "available")
+        if isinstance(result, Mapping):
+            state = result.get("state")
+        else:
+            state = getattr(result, "state", None)
+        self._mark(
+            self.status,
+            name,
+            state if state in {"available", "degraded", "stale", "unavailable"} else "available",
+        )
         return result
 
     async def tick(self, *, now: datetime | None = None):

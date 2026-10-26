@@ -850,3 +850,8 @@ The real outbox retention participant now has isolated PostgreSQL coverage. The
 post-correction locked suite passed **304 tests, zero skips**; Ruff, formatting,
 compilation, and diff checks passed. Docker Compose validation remains unavailable
 in this environment because Docker and a Compose provider are absent.
+
+Follow-up review correction: gateway holds now release after a pending lifecycle
+row becomes terminal, supervisor checkpoints preserve typed diagnostic state, and
+the unrequested CLIProxyAPI commercial-mode change was removed. The locked suite
+remains green at **306 tests, zero skips**.

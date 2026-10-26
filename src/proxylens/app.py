@@ -253,13 +253,20 @@ def create_app(role: str, *, identity_transport: httpx.AsyncBaseTransport | None
             async def checkpoint_status():
                 async with database.transaction() as conn:
                     for component, state in supervisor.status.items():
+                        observed_at = state.get("observed_at")
+                        if isinstance(observed_at, datetime):
+                            observed_at = observed_at.isoformat()
                         await conn.execute(
                             "INSERT INTO operations_status(component, observed_at, state, details) "
                             "VALUES (%s, clock_timestamp(), %s, %s) "
                             "ON CONFLICT(component) DO UPDATE SET "
                             "observed_at=EXCLUDED.observed_at, "
                             "state=EXCLUDED.state, details=EXCLUDED.details",
-                            (component, state["state"], {"state": state["state"]}),
+                            (
+                                component,
+                                state["state"],
+                                {"state": state["state"], "observed_at": observed_at},
+                            ),
                         )
 
             async with projection_worker_lifespan(projection_repository, adapter, gate=proof_gate):

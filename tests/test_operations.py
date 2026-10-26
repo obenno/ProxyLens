@@ -303,3 +303,69 @@ def test_real_outbox_retention_expires_then_prunes_terminal_work(ops_database):
             assert await LineageRepository(conn).get_ingress(request.request_id) is None
 
     asyncio.run(scenario())
+
+
+def test_gateway_retention_hold_releases_after_completion(ops_database):
+    async def scenario():
+        from proxylens.exporter_repository import ExportRepository
+        from proxylens.exporter_settings import ExporterSettings
+        from proxylens.runtime import (
+            GatewayRetentionParticipant,
+            OutboxRetentionParticipant,
+            ProjectionRetentionParticipant,
+        )
+
+        request = IngressRequest.new(Ownership("issuer", "g", "app", "key"))
+        old = NOW - timedelta(days=91)
+        async with ops_database.transaction() as conn:
+            await LineageRepository(conn).record_ingress(request)
+            await conn.execute(
+                "UPDATE lineage_ingress SET accepted_at=%s WHERE request_id=%s",
+                (old, request.request_id),
+            )
+            await conn.execute(
+                "INSERT INTO gateway_lifecycle("
+                "request_id, requested_model, routing_model, routing_provider, "
+                "group_policy_version, application_policy_version, outcome"
+                ") VALUES (%s, 'alias', 'model', 'provider', 1, 1, 'pending')",
+                (request.request_id,),
+            )
+
+        repository = ExportRepository(ops_database, ExporterSettings())
+        participants = (
+            OutboxRetentionParticipant(repository),
+            ProjectionRetentionParticipant(),
+            GatewayRetentionParticipant(),
+        )
+        runner = RetentionRunner(ops_database, RetentionPolicy(), participants)
+        first = await runner.run(now=NOW)
+        assert first.lineage_deleted == 0
+        async with ops_database.transaction() as conn:
+            assert await (
+                await conn.execute(
+                    "SELECT 1 FROM operations_retention_hold WHERE request_id=%s",
+                    (request.request_id,),
+                )
+            ).fetchone()
+
+            await conn.execute(
+                "UPDATE gateway_lifecycle SET completed_at=%s, outcome='completed' "
+                "WHERE request_id=%s",
+                (old, request.request_id),
+            )
+
+        second = await runner.run(now=NOW)
+        assert second.participant_deleted["gateway"] == 1
+        assert second.lineage_deleted == 1
+        async with ops_database.transaction() as conn:
+            assert (
+                await (
+                    await conn.execute(
+                        "SELECT 1 FROM operations_retention_hold WHERE request_id=%s",
+                        (request.request_id,),
+                    )
+                ).fetchone()
+                is None
+            )
+
+    asyncio.run(scenario())

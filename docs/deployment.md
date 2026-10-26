@@ -151,9 +151,12 @@ Changing secret files does not rotate persisted credentials automatically:
 
 ## Backup: quiesced, matching recovery set
 
-The following cold backup is the simplest coherent foundation snapshot. Commands
-assume the default project name. Run in Bash from the checkout; preserve the same
-shell's `BACKUP` variable. It deliberately stops traffic and database writers.
+The following cold backup is the simplest coherent foundation snapshot. The
+controlled recovery workflow in `docs/operations.md` and `scripts/recovery.py` is
+preferred; the commands below are a legacy manual equivalent for maintenance
+windows where that workflow is unavailable. Commands assume the default project
+name. Run in Bash from the checkout; preserve the same shell's `BACKUP` variable.
+It deliberately stops traffic and database writers.
 Once forwarding exists, first close ingress, wait for in-flight requests, and allow
 CPAMP to drain while CPA is still running. CPA's in-memory queue is not backed up.
 
