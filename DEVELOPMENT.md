@@ -597,6 +597,11 @@ repository suite: 203 passed against the dedicated PostgreSQL database. Projecti
 Ruff lint/format and `git diff --check` pass. No provider/OAuth/live CPAMP correlation evidence
 was created or claimed; the production gates remain blocked.
 
+Post-commit integration merge: gateway tip `92b7128` merged as `39b1d43`; full
+merged suite **244 passed**. First run had a transient gateway concurrent-rate test
+503 versus expected 429 (243 passed); isolated rerun and subsequent full suite
+passed. No gateway code was changed for that failure. Projection tests stayed green.
+
 ### Integration and follow-up discipline
 
 `docs/projection.md` documents schema, exporter-safe current joins, API helper,
