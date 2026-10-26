@@ -1,5 +1,87 @@
 # Development Notes
 
+## 2026-10-26 — Issue #7 gateway and #5/#9 application wiring
+
+### Scope and decisions
+
+Implemented on `impl/issue-7-gateway`, confirmed clean integration base `9113a97`.
+Connected existing signed Keycloak principals, group authority, resource repository,
+policy/rate enforcement and lineage instead of introducing parallel identity or
+usage models. Application startup now runs checksum-verified migrations before
+serving; API installs resource routes with actual `group_ids`/`group-member`
+capabilities and scoped audit access. Gateway receives the existing read-only
+Keycloak authority secret (`view-users`/`query-groups`) and CPA client credential;
+no CPA Management or CPAMP credential is added to that service.
+
+Routing is an explicit operator-attested registry (`deploy/gateway/routes.json`),
+empty/deny-all by default. Decision: require both alias and resolved model in the
+effective model policy and the attested provider in its provider policy. Reason:
+neither alias spelling nor a public model list proves routing. Consequence: every
+possible CPA target/failover for an enabled alias must match the registry; operator
+changes require synchronized configuration/restart. No model/provider was guessed.
+The existing resource authorization transaction now accepts optional requested
+model to check both names against the same fresh policy snapshot.
+
+### Behavior and persistence
+
+- Responses only; bounded UTF-8 JSON, duplicate fields/constants rejected, declared
+  and chunked body limits, numerical ceilings narrowed by group/application policy.
+  Policy timeout starts during upload, not after the body finishes. No model POST
+  retries, including pre-byte timeout/connection failure.
+- Live matching-issuer flat-group evidence required. Missing groups invoke existing
+  durable orphan reconciliation; nested/outage evidence denies without deletion.
+  Existing platform-admin reconciliation route is wired; periodic reconciliation
+  cadence remains with operations.
+- Generated ingress plus migration-007 transport lifecycle commit atomically before
+  CPA dispatch. Headers bind actual returned native UUID through existing lineage.
+  Fixed row-factory independence in `LineageRepository.bind_response` for the shared
+  dictionary-row database adapter; existing positional callers remain supported.
+- Successful response/SSE bytes pass through unparsed; tools/multimodal input and
+  provider protocol IDs are unchanged. HTTP errors retain 4xx/5xx status with fixed
+  redacted body. SSE protocol errors stay bytes, so transport `completed` does not
+  claim successful inference. No raw body or arbitrary metadata persistence.
+- Disconnect watcher covers header wait and streaming. Total timeout includes
+  upstream work/backpressure; idle I/O timeout covers stalled upstream. Cleanup
+  closes upstream, then attempts completion metadata for at most three seconds.
+  Partial failures terminate the connection without appending a success/event.
+- Header-binding DB failure closes upstream before downstream headers. Completion
+  DB failure leaves durable pending/unknown intent, emits only generated request ID
+  and fixed log event, and degrades readiness. No replay repairs telemetry.
+- Exporter contract: `gateway_observations` view, documented in `docs/gateway.md`;
+  ownership/observation IDs plus requested/attested routing, policy versions,
+  transport outcome/status/timestamps/latency/byte count. Machine subject remains
+  null; generated request ID is session. No usage/cost claims or outbox behavior.
+
+### Validation performed
+
+- TDD red/green demonstrated missing management routes, missing gateway, duplicate
+  JSON-model bypass, upstream HTTP error handling and slow-upload policy deadline.
+- Python 3.12.13, hash-locked dependencies; **229 tests passed, zero skips** against
+  dedicated real PostgreSQL `proxylens_gateway` on the coordinator test instance.
+  Existing lineage tests additionally isolate schemas. No other agent DB modified.
+- Actual loopback socket tests: first SSE byte before upstream release; unmodified
+  tool/multimodal payload and service-only credential; signed JWT scope/management;
+  revocation across gateway instances; shared key/application rate contention;
+  alias/target/provider deny and unverified registry; exact/over-limit and chunked
+  bodies; missing/nested/unavailable group; header-wait/midstream disconnect;
+  idle/total timeout, HTTP/SSE/transport/unknown errors; native collisions; real
+  DB connection/ingress/header/completion failures and no provider replay.
+- Ruff check and format pass; Compose configuration passes; CPAMP fenced Python
+  example's preexisting formatting failure fixed with no contract changes.
+- Test review: public HTTP and durable exporter/lineage seams, external HTTP only
+  mocked; real socket barriers rather than buffered ASGI streaming assertions.
+  Synthetic fixtures only. No real credential/OAuth material added.
+
+### Files and follow-up boundaries
+
+`gateway.py`, migration `007_gateway.sql`, `resource_identity.py`, `app.py`,
+`config.py`, shared `db.py`/`lineage.py`/`resources.py`, Compose and gateway docs.
+Projection code is owned by the parallel implementer and was not changed.
+Exporter consumes migration-007 interface; operations owns retention/reconciliation
+schedule and stale-pending finalization. Live provider, CPA routing/cancellation,
+and deterministic CPA→CPAMP correlation remain coordinator acceptance gates;
+local synthetic tests do not close them.
+
 ## 2026-10-23 — Proxy stack research
 
 ### Scope
@@ -559,3 +641,66 @@ or provider/OAuth credential was touched. Tests' real connection values stay scr
    final projection/outbox. Exercise final restart/outage/collision/retention races.
 8. Remote retention/lifecycle and full final-stack upgrade/rollback remain live
    gates; documented OSS API plan is not proof that remote objects were deleted.
+
+## 2026-10-26 — Issue #10: CPAMP-derived usage projection
+
+### Scope and decisions
+
+Implemented on `impl/issue-10-projection`, integration base `9113a97`. Owns
+`projection.py`, `projection_settings.py`, `projection_routes.py`, migration
+`010_projection.sql`, projection tests and `docs/projection.md`. Coordinator owns
+application/configuration/Compose startup wiring.
+
+- Rebuildable PostgreSQL facts derive only from the pinned CPAMP adapter. Distinct
+  event hashes survive even when native IDs coincide. Raw HTTP-surfaced tokens,
+  versioned exclusive normalization, requested/resolved models, null cost and
+  available safe native identifiers stay distinct; no raw content or secrets.
+- Fixed overlapping windows (30-second target/5-minute overlap) plus hourly
+  retained-history reconciliation discover late imports. All windows stage before
+  one atomic records/lineage/checkpoint commit. Advisory locking excludes concurrent
+  workers. Failed windows or promotion retain last valid data; restart replays safely.
+- Analytics/JSONL EOF cannot prove a complete snapshot. Reconciliation upserts;
+  it never infers source deletion. Missing retained records degrade explicitly.
+  Unverified export cannot replace anything. Local 90-day retention alone deletes
+  expired projection rows, strictly before the UTC millisecond cutoff.
+- Every tenant/export join resolves current lineage, invalidating prior attribution
+  after late collisions. Group/application state is read live from resource tables;
+  orphan repair never reassigns historical ownership. No group guessing.
+- Tenant routes require the real identity dependency, READ capability plus scope,
+  matching persisted deployment binding and both reviewed live evidence artifacts.
+  Evidence digests/pins/instances/scenarios must match. Defaults are disabled;
+  synthetic proof is temporary test input only, never a deployment enable flag.
+- Missing records, unknown normalization/cost and unknown completeness remain null
+  or explicitly observed-only. Health distinguishes unavailable/stale/degraded/
+  available; successful polling cannot hide old window ends, unmatched native-bound
+  requests or historical retention gaps. Tenant health omits global source counts.
+
+### Validation performed
+
+TDD red/green slices exercised production migrations on disposable real PostgreSQL
+17.6 (`proxylens_projection`, localhost:55432), per-test isolated schemas. External
+CPAMP/JWKS HTTP only is mocked; real JWT signature checks, repository transactions,
+concurrent-worker locking, cancellation, restart/reconnection, trigger-injected
+commit rollback, replay/keyset pagination, late imports, source corrections,
+rebuild equivalence/failure, stale boundaries, gaps, collision poisoning, scope,
+orphan repair and fail-closed proof checks are covered.
+
+Python 3.12.13 with locked requirements: 15 projection/route tests passed; full
+repository suite: 203 passed against the dedicated PostgreSQL database. Projection
+Ruff lint/format and `git diff --check` pass. No provider/OAuth/live CPAMP correlation evidence
+was created or claimed; the production gates remain blocked.
+
+Post-commit integration merge: gateway tip `92b7128` merged as `39b1d43`; full
+merged suite **244 passed**. First run had a transient gateway concurrent-rate test
+503 versus expected 429 (243 passed); isolated rerun and subsequent full suite
+passed. No gateway code was changed for that failure. Projection tests stayed green.
+
+### Integration and follow-up discipline
+
+`docs/projection.md` documents schema, exporter-safe current joins, API helper,
+worker lifecycle, migration helper, proof review and exact completeness limits.
+API startup must install `install_projection_routes`; worker startup must own
+`projection_worker_lifespan`; run migrations before both. #8 must re-resolve lineage
+before one finalized generation and respect proof/unknown fields. #6 must coordinate
+lineage/exporter retention, outage cleanup and health wrapping. Keep staging private
+and collision evidence for at least the entire dependent projected-history lifetime.

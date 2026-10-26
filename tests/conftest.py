@@ -1,0 +1,1 @@
+from test_application_wiring import environment as environment
