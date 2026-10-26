@@ -2,16 +2,22 @@
 
 import json
 import math
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from uuid import UUID, uuid4
+
+from psycopg.types.json import Jsonb
 
 from proxylens.correlation import CorrelationStatus
 from proxylens.db import Database
 from proxylens.exporter import ExportError, Observation, serialize_observation
 from proxylens.exporter_settings import ExporterSettings
 from proxylens.exporter_transport import DeliveryResult
+from proxylens.operations import RetentionPolicy, retention_cutoffs
+
+DEFAULT_RETENTION_POLICY = RetentionPolicy()
 
 
 @dataclass(frozen=True)
@@ -42,9 +48,18 @@ def _job(row) -> ExportJob:
 
 
 class ExportRepository:
-    def __init__(self, database: Database, settings: ExporterSettings):
+    def __init__(self, database: Database, settings: ExporterSettings, *, retention=None):
         self.database = database
         self.settings = settings
+        self.retention = DEFAULT_RETENTION_POLICY if retention is None else retention
+
+    @asynccontextmanager
+    async def transaction(self, connection=None):
+        if connection is not None:
+            yield connection
+        else:
+            async with self.database.transaction() as conn:
+                yield conn
 
     async def _count(self, conn, code):
         await conn.execute(
@@ -53,7 +68,9 @@ class ExportRepository:
             (self.settings.destination, code),
         )
 
-    async def enqueue(self, observation: Observation, *, now: datetime | None = None) -> ExportJob:
+    async def enqueue(
+        self, observation: Observation, *, now: datetime | None = None, connection=None
+    ) -> ExportJob:
         """Idempotent restart scan entry. Disabled proofs finalize gateway-only immediately."""
         proven = observation.usage_gate.enabled and not observation.usage_gate.blockers
         complete = (
@@ -65,7 +82,9 @@ class ExportRepository:
             and observation.correlation.event.cpa_request_id is not None
         )
         reason = "usage_complete" if complete else "usage_timeout" if proven else "proof_disabled"
-        return await self._put(observation, reason, waiting=proven and not complete, now=now)
+        return await self._put(
+            observation, reason, waiting=proven and not complete, now=now, connection=connection
+        )
 
     async def finalize(
         self, observation: Observation, *, reason: str, now: datetime | None = None
@@ -73,7 +92,7 @@ class ExportRepository:
         """Replace an unattempted draft, or flag late changes without changing frozen bytes."""
         return await self._put(observation, reason, waiting=False, now=now)
 
-    async def _put(self, observation, reason, *, waiting, now):
+    async def _put(self, observation, reason, *, waiting, now, connection=None):
         if not self.settings.enabled:
             raise ExportError("exporter_disabled")
         now = now or datetime.now(UTC)
@@ -102,7 +121,10 @@ class ExportRepository:
         expires = ingress.accepted_at + timedelta(seconds=self.settings.max_age_seconds)
         error = None
         job = None
-        async with self.database.transaction() as conn:
+        async with self.transaction(connection) as conn:
+            cutoffs = await retention_cutoffs(conn, self.retention, now=now)
+            if ingress.accepted_at < max(cutoffs.request, cutoffs.outbox):
+                raise ExportError("retention_expired")
             # Capacity check and insert/update must serialize across all destinations/workers.
             await conn.execute("SELECT pg_advisory_xact_lock(706769008)")
             row = await (
@@ -190,6 +212,12 @@ class ExportRepository:
                             )
                         ).fetchone()
                     job = _job(row)
+                    await conn.execute(
+                        "INSERT INTO operations_retention_hold(participant,reference,request_id) "
+                        "SELECT 'outbox', %s, request_id FROM lineage_ingress WHERE request_id=%s "
+                        "ON CONFLICT DO NOTHING",
+                        (self.settings.destination, ingress.request_id),
+                    )
             if error:
                 await self._count(conn, error)
         if error:
@@ -314,6 +342,16 @@ class ExportRepository:
                     now,
                 ),
             )
+            if changed.rowcount == 1:
+                await conn.execute(
+                    "INSERT INTO resource_audit(id, actor, action, outcome, details) "
+                    "VALUES (%s, 'system:worker', 'runtime.export.delivery', %s, %s)",
+                    (
+                        uuid4(),
+                        "success" if state == "ACCEPTED" else "denied",
+                        Jsonb({"state": state, "code": code}),
+                    ),
+                )
             return changed.rowcount == 1
 
     async def lease_active(self, lease: ExportLease, *, now: datetime | None = None) -> bool:
@@ -372,7 +410,7 @@ class ExportRepository:
             deleted = await conn.execute(
                 "DELETE FROM exporter_outbox WHERE (destination,request_id) IN ("
                 "SELECT destination,request_id FROM exporter_outbox WHERE destination=%s "
-                "AND started_at<=%s AND state IN ('ACCEPTED','UNCERTAIN','DEAD_LETTER') "
+                "AND started_at<%s AND state='ACCEPTED' "
                 "ORDER BY started_at LIMIT %s FOR UPDATE SKIP LOCKED)",
                 (self.settings.destination, cutoff, limit),
             )
