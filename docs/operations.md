@@ -1,9 +1,11 @@
 # Operations and recovery
 
-Issue #6 independent tranche, based on integration `9113a97`. Modules and scripts
-below are implemented; scheduled retention, final health routing and the
-gateway/projection/exporter hooks require the remaining integration tranche.
-Do not enable destructive retention using empty participant implementations.
+The worker owns the scheduled projection, completion scan, Langfuse outbox
+delivery/recovery, retention participants, and Keycloak group reconciliation.
+The API installs the proof-gated usage routes against the same PostgreSQL
+projection. All of these are diagnostic or rebuildable paths; CPAMP remains the
+sole CLIProxyAPI usage-queue consumer and the authoritative durable history.
+Do not enable tenant usage without both independently reviewed live proof files.
 
 ## Ownership and data lifetimes
 
@@ -59,7 +61,8 @@ Its shared advisory lock lasts through commit. Import rejects original event tim
 older than `cutoffs.projection`; exporters reject request starts older than the
 request/outbox floors. Missing/invalid source time is quarantined, not replaced by
 the current time. This prevents source reimport or restored cursors from recreating
-expired local records. The helper is available; final workers must wire it.
+expired local records. The integrated projection and exporter writers use this
+helper before their row-lock work.
 
 Each participant maintains `operations_retention_hold(participant, reference,
 request_id)` transactionally with dependent work. Holds have no automatic timeout:
@@ -84,9 +87,11 @@ atomic floor/hold/collision contract and additional concurrency validation.
 
 `operations_health(...)` consumes existing probes, `CPAMPAdapter.health()` /
 `read_status()`, and typed projection/export snapshots. It performs no HTTP itself.
+The worker's `/health/ready` endpoint combines bounded PostgreSQL, CPAMP,
+Keycloak-authority and CLIProxyAPI probes with this redacted operations snapshot.
 It reports six distinct components: PostgreSQL, Keycloak, CLIProxyAPI, CPAMP,
 projection, Langfuse. Internal URLs, reason strings and arbitrary error text are
-discarded. Hook it into operator health after the three runtime tickets land.
+discarded. Langfuse health does not gate gateway forwarding.
 
 | Failure | Required response / recovery |
 | --- | --- |

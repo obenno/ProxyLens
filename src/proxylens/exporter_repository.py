@@ -410,7 +410,7 @@ class ExportRepository:
             deleted = await conn.execute(
                 "DELETE FROM exporter_outbox WHERE (destination,request_id) IN ("
                 "SELECT destination,request_id FROM exporter_outbox WHERE destination=%s "
-                "AND started_at<%s AND state='ACCEPTED' "
+                "AND started_at<=%s AND state IN ('ACCEPTED','UNCERTAIN','DEAD_LETTER') "
                 "ORDER BY started_at LIMIT %s FOR UPDATE SKIP LOCKED)",
                 (self.settings.destination, cutoff, limit),
             )

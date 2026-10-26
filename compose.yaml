@@ -25,6 +25,11 @@ x-app: &app
     PROXYLENS_KEYCLOAK_ISSUER: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8080}/realms/proxylens
     PROXYLENS_CPA_URL: http://cliproxyapi:8317
     PROXYLENS_CPAMP_URL: http://cpamp:18317
+    PROXYLENS_CPA_INSTANCE_ID: ${PROXYLENS_CPA_INSTANCE_ID:-primary}
+    PROXYLENS_CPAMP_INSTANCE_ID: ${PROXYLENS_CPAMP_INSTANCE_ID:-primary}
+    PROXYLENS_WORKER_INTERVAL_SECONDS: ${PROXYLENS_WORKER_INTERVAL_SECONDS:-5}
+    PROXYLENS_RETENTION_INTERVAL_SECONDS: ${PROXYLENS_RETENTION_INTERVAL_SECONDS:-3600}
+    PROXYLENS_GROUP_RECONCILE_INTERVAL_SECONDS: ${PROXYLENS_GROUP_RECONCILE_INTERVAL_SECONDS:-3600}
   healthcheck:
     <<: *health
     test: [CMD, python, -m, proxylens, healthcheck]
@@ -197,7 +202,7 @@ services:
       PROXYLENS_LANGFUSE_PUBLIC_KEY_FILE: /run/secrets/langfuse_public_key
       PROXYLENS_LANGFUSE_SECRET_KEY_FILE: /run/secrets/langfuse_secret_key
     secrets: [postgres_password, cpamp_admin_key, keycloak_client_secret, langfuse_public_key, langfuse_secret_key]
-    networks: [backend, egress]
+    networks: [backend, provider, egress]
     extra_hosts: ["host.docker.internal:host-gateway"]
     depends_on:
       postgres:

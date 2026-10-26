@@ -828,16 +828,18 @@ Implementation findings are deferred to the coordinator's single correction pass
   `/data/tmp/opencode/proxylens-phase1/merger-20261026-c1eff389099f/` and
   `/data/tmp/opencode/proxylens-phase1/merger-retry-20261026-13f7b392af84/`.
 
-### Remaining #6 wiring
+### Issue #6 coordinator continuation
 
-`app.py`/`config.py` must install projection routes and own the CPAMP adapter/poll
-lifespan, independent projection/exporter settings, deployment binding and reviewed
-proof gate. The worker still needs completion/overlap scans from
-`gateway_observations`, current proof-gated `projection_resolved` joins, explicit
-transport-outcome mapping, and retained verified-principal evidence or omitted user
-attribution. Preserve source eligibility across outbox capacity/storage failures.
-Schedule exporter recovery/drain/prune outside forwarding, operator health and
-diagnostics, group reconciliation and coordinated lineage/projection/outbox
-retention. Wire the required Compose configuration/mounts and validate restart,
-outage and response isolation. Existing migrations are discovered at startup;
-tenant usage remains disabled pending the reviewed live correlation/history proofs.
+The coordinator continuation wires `app.py`/`config.py` settings into the API and
+worker lifecycles. The API installs proof-gated projection routes. The worker owns
+one CPAMP adapter/projection task and one operations supervisor for completion
+scans, exporter recovery/drain, retention participants, CPAMP status, and periodic
+Keycloak group reconciliation. The worker health response combines bounded
+dependency probes with redacted projection/export diagnostics; exporter health does
+not gate provider forwarding. Compose gives the worker the CPAMP manager key and
+provider-network reachability without granting it CPA management credentials.
+
+The completion scanner uses current proof-gated `projection_resolved` joins,
+explicit gateway-outcome mapping, and retains source eligibility after bounded
+outbox/storage failures. Existing migrations are discovered at startup; tenant
+usage remains disabled pending the reviewed live correlation/history proofs.
