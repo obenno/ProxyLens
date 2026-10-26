@@ -466,3 +466,96 @@ coordinator must run migrations on startup and install the router using #5's
 actual Principal dependency, role map and Keycloak group adapter. Joint signed-JWT
 API tests and live Keycloak evidence remain integration gates. No app wiring or
 live provider/identity proof is claimed by the dependency-injection tests.
+
+## 2026-10-26 — Issue #6 independent operations tranche
+
+### Scope and decisions
+
+Started clean at integration `9113a97` on `impl/issue-6-operations`. Owns
+`docs/operations.md`, `scripts/{recovery,ci-tests}.py`, `.github/workflows/ci.yml`,
+`operations.py`, `operations_health.py`, migration `006_operations.sql` and tests.
+Runtime app/config/Compose wiring is reserved for coordinator continuation after
+#7/#10/#8. No neighboring worktrees inspected or edited.
+
+- Separate configurable lifetimes: request/projection/outbox 90 days, audit 365,
+  remote observations 90. Strict UTC `< cutoff`; equality retained. Shared writer
+  advisory lock and durable monotonic floors prevent expired-source resurrection
+  when import/export integrate the helper. Increasing retention cannot recreate
+  data already pruned by a prior floor.
+- Retention requires explicit gateway/projection/outbox participants; no default
+  destructive scheduler. Participant prune, holds, floor update, lineage cleanup
+  and deletion audit share one PostgreSQL transaction. Audit failure rolls back all.
+- Retained native-ID collision components preserve every conflicting owner: pruning
+  one expired owner must never give its surviving peer false attribution. Pending
+  work holds have no implicit time expiry; participant retirement must release them.
+  Existing lineage event timestamps are first-seen time, so local source-identity
+  cleanup is conservative; final CPAMP projection admission uses original event time.
+- Typed health consumes existing probes/adapter status, reports independent
+  dependency/projection/export states, and discards arbitrary error strings.
+  Current CPAMP status cannot prove dropped-event counts/queue coverage; output is
+  explicitly unknown. No CPA usage-queue access or automatic upstream deletion.
+- Recovery tools require new directories/databases/volumes, preserve current state,
+  reject symlink/traversal paths, verify checksums, use 0700/0600 outputs, and never
+  print subprocess/server exception details. Credentials enter via private files;
+  process arguments never carry their values. Matching recovery-set label, source
+  commit/pins/locks and explicit external-store scope accompany each backup.
+- Logical PostgreSQL dump and row fingerprints share one exported snapshot; restore
+  is transactional into a newly created database with matching-major tools. Cold
+  foundation backup uses read-only host source mounts, whole-volume archives, a
+  digest-pinned helper and stopped-writer checks. Restore uses new labeled empty
+  volumes and never starts services. Secret/config, CPAMP encryption key, and
+  external Langfuse stores remain a coordinated operator responsibility.
+- OSS Langfuse runbook uses actual v2 observations plus trace DELETE and separate
+  blob lifecycle; no Enterprise-only setting advertised as OSS enforcement. Remote
+  deletion is not executed by these scripts. Earlier successful foundation restore
+  and Langfuse live experiments are acknowledged with their actual limitations.
+- CI runs hashed locked install, Ruff lint/format, Compose config and real PostgreSQL
+  tests. It creates isolated DBs and fails on any skipped test. No credentialed CI
+  service: ephemeral loopback PostgreSQL trust is restricted to the disposable runner.
+
+### Validation performed
+
+TDD red/green at agreed acceptance-matrix seams: absent operations/health/recovery
+modules first; then real PostgreSQL exact cutoff, persisted floors/restart,
+pending holds, collision ownership, audit rollback and health outage/unknown tests.
+Recovery tests reject existing/symlink destinations, public/tampered archives and
+archive traversal; populated real PostgreSQL restore checks resources/key
+authorization/policies/audit/lineage and every table fingerprint. Only synthetic
+group authority is injected; transactions and database utilities are real.
+
+Full independent-base suite passed **201 tests, zero skips** before the additional
+source-identity cutoff case. The updated suite is rerun after integration merge.
+Ruff lint and Compose config passed; original CPAMP docs fenced-code format failure
+is assigned to gateway integration and intentionally not edited here.
+
+Synthetic five-volume cold backup/restore also exercised the actual script through
+rootless Podman, digest-pinned PostgreSQL 17.11 helper, fresh volumes only. Fixture
+contents and secret copy preserved; existing-volume restore refused; all ten owned
+volumes removed. Evidence is private scratch `issue6-cold-f2aa5207/evidence.json`.
+This tests archive mechanics, not a new live full-stack restore. Two preliminary
+helpers failed safely on local tag lookup/Podman `--mount volume-nocopy` syntax;
+digest-only image lookup and portable `-v ...:nocopy` resolved both. No user service
+or provider/OAuth credential was touched. Tests' real connection values stay scratch.
+
+### Concrete remaining integration hooks (same issue #6)
+
+1. Central settings/Compose: wire typed retention config and worker cadence; run 006
+   with production migrations. Keep cleanup disabled until all participants exist.
+2. Gateway #7: terminal request-row prune plus active/uncertain holds; shared lock
+   before lineage writes; safe post-dispatch DB-failure/unknown recovery; no replay.
+3. Projection #10: original-event-time admission on every incremental/rebuild/replay
+   path using `retention_cutoffs`; prune projection children before ingress, preserve
+   incomplete coverage/cursors and ambiguity evidence, maintain/release holds.
+4. Exporter #8: request-time admission, pending/dead-letter/uncertain holds and
+   audited explicit expiry; dedup/immutable-send state must survive all eligible
+   replay windows. Shared lock ordering prevents floor/import/export races. Finish
+   gateway/projection-to-outbox scanner and worker lifetime wiring.
+5. Health: adapt actual #10/#8 snapshots and CPAMP read/status to operator endpoint;
+   retain independent readiness/nonblocking exporter semantics, no queue probe.
+6. Audit: add redacted integration/export/reconciliation transitions with truthful
+   failure behavior. Do not manufacture durable events when PostgreSQL is down.
+7. Extend CI database variable provisioning for final gateway/projection/exporter
+   suites; rerun all tests non-skipped and frozen-code backup/restore with populated
+   final projection/outbox. Exercise final restart/outage/collision/retention races.
+8. Remote retention/lifecycle and full final-stack upgrade/rollback remain live
+   gates; documented OSS API plan is not proof that remote objects were deleted.
