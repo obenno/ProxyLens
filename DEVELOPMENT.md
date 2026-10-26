@@ -548,3 +548,66 @@ coordinator must run migrations on startup and install the router using #5's
 actual Principal dependency, role map and Keycloak group adapter. Joint signed-JWT
 API tests and live Keycloak evidence remain integration gates. No app wiring or
 live provider/identity proof is claimed by the dependency-injection tests.
+
+## 2026-10-26 — Issue #10: CPAMP-derived usage projection
+
+### Scope and decisions
+
+Implemented on `impl/issue-10-projection`, integration base `9113a97`. Owns
+`projection.py`, `projection_settings.py`, `projection_routes.py`, migration
+`010_projection.sql`, projection tests and `docs/projection.md`. Coordinator owns
+application/configuration/Compose startup wiring.
+
+- Rebuildable PostgreSQL facts derive only from the pinned CPAMP adapter. Distinct
+  event hashes survive even when native IDs coincide. Raw HTTP-surfaced tokens,
+  versioned exclusive normalization, requested/resolved models, null cost and
+  available safe native identifiers stay distinct; no raw content or secrets.
+- Fixed overlapping windows (30-second target/5-minute overlap) plus hourly
+  retained-history reconciliation discover late imports. All windows stage before
+  one atomic records/lineage/checkpoint commit. Advisory locking excludes concurrent
+  workers. Failed windows or promotion retain last valid data; restart replays safely.
+- Analytics/JSONL EOF cannot prove a complete snapshot. Reconciliation upserts;
+  it never infers source deletion. Missing retained records degrade explicitly.
+  Unverified export cannot replace anything. Local 90-day retention alone deletes
+  expired projection rows, strictly before the UTC millisecond cutoff.
+- Every tenant/export join resolves current lineage, invalidating prior attribution
+  after late collisions. Group/application state is read live from resource tables;
+  orphan repair never reassigns historical ownership. No group guessing.
+- Tenant routes require the real identity dependency, READ capability plus scope,
+  matching persisted deployment binding and both reviewed live evidence artifacts.
+  Evidence digests/pins/instances/scenarios must match. Defaults are disabled;
+  synthetic proof is temporary test input only, never a deployment enable flag.
+- Missing records, unknown normalization/cost and unknown completeness remain null
+  or explicitly observed-only. Health distinguishes unavailable/stale/degraded/
+  available; successful polling cannot hide old window ends, unmatched native-bound
+  requests or historical retention gaps. Tenant health omits global source counts.
+
+### Validation performed
+
+TDD red/green slices exercised production migrations on disposable real PostgreSQL
+17.6 (`proxylens_projection`, localhost:55432), per-test isolated schemas. External
+CPAMP/JWKS HTTP only is mocked; real JWT signature checks, repository transactions,
+concurrent-worker locking, cancellation, restart/reconnection, trigger-injected
+commit rollback, replay/keyset pagination, late imports, source corrections,
+rebuild equivalence/failure, stale boundaries, gaps, collision poisoning, scope,
+orphan repair and fail-closed proof checks are covered.
+
+Python 3.12.13 with locked requirements: 15 projection/route tests passed; full
+repository suite: 203 passed against the dedicated PostgreSQL database. Projection
+Ruff lint/format and `git diff --check` pass. No provider/OAuth/live CPAMP correlation evidence
+was created or claimed; the production gates remain blocked.
+
+Post-commit integration merge: gateway tip `92b7128` merged as `39b1d43`; full
+merged suite **244 passed**. First run had a transient gateway concurrent-rate test
+503 versus expected 429 (243 passed); isolated rerun and subsequent full suite
+passed. No gateway code was changed for that failure. Projection tests stayed green.
+
+### Integration and follow-up discipline
+
+`docs/projection.md` documents schema, exporter-safe current joins, API helper,
+worker lifecycle, migration helper, proof review and exact completeness limits.
+API startup must install `install_projection_routes`; worker startup must own
+`projection_worker_lifespan`; run migrations before both. #8 must re-resolve lineage
+before one finalized generation and respect proof/unknown fields. #6 must coordinate
+lineage/exporter retention, outage cleanup and health wrapping. Keep staging private
+and collision evidence for at least the entire dependent projected-history lifetime.
