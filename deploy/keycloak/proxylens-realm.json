@@ -4,19 +4,79 @@
   "registrationAllowed": false,
   "resetPasswordAllowed": false,
   "sslRequired": "external",
+  "accessTokenLifespan": 300,
+  "defaultSignatureAlgorithm": "RS256",
+  "roles": {
+    "client": {
+      "proxylens-api": [
+        {"name": "platform-admin"}, {"name": "group-admin"},
+        {"name": "group-member"}, {"name": "auditor"}
+      ]
+    }
+  },
   "clients": [
     {
-      "clientId": "proxylens",
-      "name": "ProxyLens",
+      "clientId": "proxylens-browser",
+      "name": "ProxyLens browser PKCE",
       "enabled": true,
       "protocol": "openid-connect",
-      "publicClient": false,
-      "secret": "${PROXYLENS_CLIENT_SECRET}",
+      "publicClient": true,
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
       "serviceAccountsEnabled": false,
+      "fullScopeAllowed": false,
+      "defaultClientScopes": [],
+      "optionalClientScopes": [],
       "redirectUris": ["${PROXYLENS_REDIRECT_URI}"],
-      "attributes": {"pkce.code.challenge.method": "S256"}
+      "webOrigins": [],
+      "attributes": {"pkce.code.challenge.method": "S256", "access.token.signed.response.alg": "RS256"},
+      "protocolMappers": [
+        {
+          "name": "ProxyLens subject", "protocol": "openid-connect",
+          "protocolMapper": "oidc-sub-mapper", "config": {"access.token.claim": "true"}
+        },
+        {
+          "name": "ProxyLens audience", "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {"included.client.audience": "proxylens-api", "access.token.claim": "true", "id.token.claim": "false"}
+        },
+        {
+          "name": "ProxyLens roles", "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-client-role-mapper",
+          "config": {"usermodel.clientRoleMapping.clientId": "proxylens-api", "claim.name": "resource_access.proxylens-api.roles", "jsonType.label": "String", "multivalued": "true", "access.token.claim": "true", "id.token.claim": "false"}
+        },
+        {
+          "name": "ProxyLens stable group IDs", "protocol": "openid-connect",
+          "protocolMapper": "proxylens-flat-group-ids",
+          "config": {"access.token.claim": "true"}
+        }
+      ]
+    },
+    {
+      "clientId": "proxylens-api", "name": "ProxyLens API audience and roles",
+      "enabled": true, "protocol": "openid-connect", "bearerOnly": true,
+      "standardFlowEnabled": false, "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false, "fullScopeAllowed": false
+    },
+    {
+      "clientId": "proxylens-admin", "name": "ProxyLens read-only group authority",
+      "enabled": true, "protocol": "openid-connect", "publicClient": false,
+      "secret": "${PROXYLENS_CLIENT_SECRET}",
+      "standardFlowEnabled": false, "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true, "fullScopeAllowed": false,
+      "defaultClientScopes": ["roles"]
+    }
+  ],
+  "clientScopeMappings": {
+    "proxylens-api": [{"client": "proxylens-browser", "roles": ["platform-admin", "group-admin", "group-member", "auditor"]}],
+    "realm-management": [{"client": "proxylens-admin", "roles": ["view-users", "query-groups"]}]
+  },
+  "users": [
+    {
+      "username": "service-account-proxylens-admin", "enabled": true,
+      "serviceAccountClientId": "proxylens-admin",
+      "clientRoles": {"realm-management": ["view-users", "query-groups"]}
     }
   ]
 }

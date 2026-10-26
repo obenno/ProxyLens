@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import yaml
@@ -59,3 +60,28 @@ def test_persistent_state_secret_mounts_health_and_dependency_graph():
             source = mount.split(":")[0]
             if source.startswith("./"):
                 assert (ROOT / source).is_file(), f"missing bind source: {source}"
+
+
+def test_keycloak_clients_are_separate_and_only_authority_consumers_receive_secret():
+    realm = json.loads((ROOT / "deploy/keycloak/proxylens-realm.json").read_text())
+    clients = {client["clientId"]: client for client in realm["clients"]}
+    browser = clients["proxylens-browser"]
+    assert browser["publicClient"] is True and "secret" not in browser
+    assert browser["attributes"]["pkce.code.challenge.method"] == "S256"
+    assert browser["directAccessGrantsEnabled"] is False
+    assert browser["serviceAccountsEnabled"] is False
+    mappers = {mapper["protocolMapper"] for mapper in browser["protocolMappers"]}
+    assert {"oidc-sub-mapper", "proxylens-flat-group-ids", "oidc-audience-mapper"} <= mappers
+    assert clients["proxylens-api"]["bearerOnly"] is True
+    admin = clients["proxylens-admin"]
+    assert admin["publicClient"] is False
+    assert admin["standardFlowEnabled"] is False and admin["serviceAccountsEnabled"] is True
+    grants = realm["clientScopeMappings"]["realm-management"][0]["roles"]
+    assert set(grants) == {"view-users", "query-groups"}
+    stack = yaml.safe_load((ROOT / "compose.yaml").read_text())
+    consumers = {
+        name
+        for name, service in stack["services"].items()
+        if "keycloak_client_secret" in service.get("secrets", [])
+    }
+    assert consumers == {"keycloak", "api", "worker"}

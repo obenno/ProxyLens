@@ -1,6 +1,7 @@
-"""Runnable role entrypoints. Business routes and background jobs land in later issues."""
+"""Service entrypoints, dependency health, and the API's Keycloak identity boundary."""
 
 import asyncio
+from contextlib import asynccontextmanager
 
 import httpx
 import psycopg
@@ -8,6 +9,9 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 from proxylens.config import Settings, secret_file
+from proxylens.identity import AuthorityUnavailable
+from proxylens.keycloak import KeycloakAuthority
+from proxylens.oidc import IdentityService, install_identity_routes
 
 
 async def database_ready(settings: Settings) -> bool:
@@ -39,11 +43,37 @@ async def http_ready(url: str) -> bool:
         return False
 
 
-def create_app(role: str) -> FastAPI:
+async def group_authority_ready(settings: Settings) -> bool:
+    try:
+        async with httpx.AsyncClient(timeout=2, trust_env=False) as client:
+            await KeycloakAuthority(settings.identity, client).require_available()
+        return True
+    except AuthorityUnavailable:
+        return False
+
+
+def create_app(role: str, *, identity_transport: httpx.AsyncBaseTransport | None = None) -> FastAPI:
     if role not in {"api", "gateway", "worker"}:
         raise ValueError("role must be api, gateway, or worker")
     settings = Settings.from_environment()
-    app = FastAPI(title=f"ProxyLens {role}", docs_url=None, redoc_url=None, openapi_url=None)
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        async with httpx.AsyncClient(
+            timeout=2, trust_env=False, transport=identity_transport
+        ) as client:
+            app.state.identity = IdentityService(settings.identity, client)
+            yield
+
+    app = FastAPI(
+        title=f"ProxyLens {role}",
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=None,
+        lifespan=lifespan,
+    )
+    if role == "api":
+        install_identity_routes(app)
 
     @app.get("/health/live")
     async def live():
@@ -56,6 +86,8 @@ def create_app(role: str) -> FastAPI:
             probes["keycloak"] = http_ready(
                 f"{settings.keycloak_url}/realms/proxylens/.well-known/openid-configuration"
             )
+        if role == "api":
+            probes["keycloak_group_authority"] = group_authority_ready(settings)
         if role == "gateway":
             probes["cliproxyapi"] = http_ready(f"{settings.cpa_url}/healthz")
         if role == "worker":

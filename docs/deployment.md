@@ -1,9 +1,9 @@
 # Single-host foundation deployment
 
-This is issue #2's runnable foundation. API, gateway, and worker currently expose
-health endpoints only; a healthy stack does **not** mean the Phase 1 POC is complete.
-Provider OAuth, JWT validation, client keys, forwarding, correlation, projections,
-and asynchronous Langfuse export land in subsequent tickets.
+This includes issue #2's foundation and issue #5's Keycloak identity boundary.
+API supports OIDC login and `/api/me`; a healthy stack does **not** mean the
+Phase 1 POC is complete. See `docs/identity.md` for clients, role/scope rules,
+existing-realm migration and the bounded token-validation outage policy.
 
 ## Prerequisites and setup
 
@@ -70,10 +70,12 @@ directory prevents traversal by other host users. Compose cannot reliably apply
 and back it up encrypted. Host root and the container-engine administrator can
 read these values. No secret is interpolated into `compose.yaml` or `.env`.
 
-Keycloak imports one `proxylens` realm and one confidential OIDC client with PKCE,
-using the mounted client secret. Sign in to its admin console as `admin`, using
+Keycloak imports one `proxylens` realm with separate public browser PKCE,
+API-audience and confidential read-only Admin clients. The custom pinned image
+includes the stable group-ID mapper. Sign in to its admin console as `admin`, using
 `secrets/keycloak_admin_password`; create a permanent operator account and remove
-the temporary bootstrap account. No test user/group or role mapping is implied.
+the temporary bootstrap account. Create human users/flat groups and assign
+`proxylens-api` roles in Keycloak; no test users/groups are seeded.
 Keycloak persists realm, users, and sessions in `keycloak_db_data`. The import
 JSON is only a first-boot seed; restarting skips an existing realm.
 
@@ -258,7 +260,7 @@ authorization decision. Unknown/business routes remain 404 in this foundation.
 | Dependency unavailable | Foundation behavior | Recovery / data consequence |
 | --- | --- | --- |
 | ProxyLens PostgreSQL | API/gateway/worker ready=503, live=200 | Restore DB; probes recover automatically. Later authorization must fail closed. |
-| Keycloak or its DB | API/gateway ready=503; worker independent | Restore identity service; foundation makes no cached-token claim. |
+| Keycloak or its DB | API/gateway ready=503 | Cached-key, unexpired-token reads only; new login/management fail closed; see `docs/identity.md`. |
 | CPA | Gateway ready=503; CPAMP may remain HTTP-healthy | Restore CPA; inspect collector. In-memory queue is lost on CPA restart. |
 | CPAMP | Worker ready=503; API/gateway health unaffected | CPA queues only in memory, configured retention 3600s. Collector downtime beyond retention or CPA restart can lose records. No replay guarantee. |
 | Langfuse | No foundation export, no readiness dependency | Later exporter must report backlog and retry asynchronously; no successful-delivery claim now. |
