@@ -84,4 +84,4 @@ def test_keycloak_clients_are_separate_and_only_authority_consumers_receive_secr
         for name, service in stack["services"].items()
         if "keycloak_client_secret" in service.get("secrets", [])
     }
-    assert consumers == {"keycloak", "api", "worker"}
+    assert consumers == {"keycloak", "api", "gateway", "worker"}

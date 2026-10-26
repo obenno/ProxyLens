@@ -33,7 +33,7 @@ def test_health_distinguishes_live_process_from_unavailable_dependencies(
                 assert response.json()["dependencies"]["postgres"] == "unavailable"
                 assert "must-never-appear" not in response.text
                 response = await client.post("/v1/responses", json={"input": "hello"})
-                assert response.status_code == 404
+                assert response.status_code == (503 if role == "gateway" else 404)
                 assert (await client.get("/health/live")).status_code == 200
 
         asyncio.run(check_health())
