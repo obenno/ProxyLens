@@ -25,14 +25,14 @@ action/state fields and counts, never HTTP bodies, arbitrary upstream metadata,
 exception strings, tokens, authorization URLs, OAuth state or credentials.
 
 `RetentionPolicy.from_environment(mapping)` accepts positive whole days through
-these names. These are central settings/Compose inputs:
+these names. They govern local cleanup. Remote Langfuse retention is a separately
+reviewed operator lifecycle and is not configured as a ProxyLens local cutoff:
 
 ```text
 PROXYLENS_RETENTION_REQUEST_DAYS=90
 PROXYLENS_RETENTION_PROJECTION_DAYS=90
 PROXYLENS_RETENTION_OUTBOX_DAYS=90
 PROXYLENS_RETENTION_AUDIT_DAYS=365
-PROXYLENS_RETENTION_REMOTE_OBSERVATION_DAYS=90
 ```
 
 ### Exact local cutoff and transaction contract

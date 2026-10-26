@@ -210,3 +210,96 @@ def test_source_identity_rows_use_strict_cutoff_and_reimport_reads_committed_flo
         assert (await runner.run(now=NOW)).events_deleted == 0
 
     asyncio.run(scenario())
+
+
+def test_real_outbox_retention_expires_then_prunes_terminal_work(ops_database):
+    async def scenario():
+        from proxylens.exporter_repository import ExportRepository
+        from proxylens.exporter_settings import ExporterSettings
+        from proxylens.runtime import (
+            GatewayRetentionParticipant,
+            OutboxRetentionParticipant,
+            ProjectionRetentionParticipant,
+        )
+
+        request = IngressRequest.new(Ownership("issuer", "g", "app", "key"))
+        old = NOW - timedelta(days=91)
+        async with ops_database.transaction() as conn:
+            await LineageRepository(conn).record_ingress(request)
+            await conn.execute(
+                "UPDATE lineage_ingress SET accepted_at=%s WHERE request_id=%s",
+                (old, request.request_id),
+            )
+            await conn.execute(
+                "INSERT INTO exporter_outbox("
+                "destination, request_id, trace_id, generation_id, identity_hash, "
+                "started_at, created_at, updated_at, finalize_after, expires_at, "
+                "state, payload, payload_hash, next_attempt_at"
+                ") VALUES ("
+                "'langfuse', %s, %s, %s, %s, %s, %s, %s, %s, %s, "
+                "'WAITING', %s, %s, %s"
+                ")",
+                (
+                    request.request_id,
+                    request.trace_id,
+                    request.generation_id,
+                    "1" * 64,
+                    old,
+                    old,
+                    old,
+                    old,
+                    NOW + timedelta(days=1),
+                    b"{}",
+                    "2" * 64,
+                    old,
+                ),
+            )
+            await conn.execute(
+                "INSERT INTO operations_retention_hold(participant, reference, request_id) "
+                "VALUES ('outbox', 'langfuse', %s)",
+                (request.request_id,),
+            )
+
+        repository = ExportRepository(
+            ops_database,
+            ExporterSettings(enabled=True, destination="langfuse"),
+        )
+        participants = (
+            OutboxRetentionParticipant(repository),
+            ProjectionRetentionParticipant(),
+            GatewayRetentionParticipant(),
+        )
+        runner = RetentionRunner(ops_database, RetentionPolicy(), participants)
+        first = await runner.run(now=NOW)
+        assert first.participant_deleted["outbox"] == 0
+        async with ops_database.transaction() as conn:
+            row = await (
+                await conn.execute(
+                    "SELECT state, last_code FROM exporter_outbox WHERE request_id=%s",
+                    (request.request_id,),
+                )
+            ).fetchone()
+            assert row == {"state": "DEAD_LETTER", "last_code": "retention_expired"}
+            counter = await (
+                await conn.execute(
+                    "SELECT count FROM exporter_counters "
+                    "WHERE destination='langfuse' AND code='retention_expired'"
+                )
+            ).fetchone()
+            assert counter["count"] == 1
+
+        second = await runner.run(now=NOW + timedelta(days=1))
+        assert second.participant_deleted["outbox"] == 1
+        async with ops_database.transaction() as conn:
+            assert (
+                await (
+                    await conn.execute(
+                        "SELECT 1 FROM operations_retention_hold WHERE request_id=%s",
+                        (request.request_id,),
+                    )
+                ).fetchone()
+                is None
+            )
+            assert await LineageRepository(conn).get_ingress(request.request_id) is None
+
+    asyncio.run(scenario())

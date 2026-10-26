@@ -64,6 +64,13 @@ def test_manifest_cannot_read_outside_recovery_set(tmp_path):
         recovery.validate(directory)
 
 
+def test_manifest_root_must_be_an_object(tmp_path):
+    directory = recovery.new_directory(tmp_path / "backup")
+    recovery.private_write(directory / "manifest.json", b"[]")
+    with pytest.raises(recovery.RecoveryError):
+        recovery.validate(directory)
+
+
 def test_recovery_tar_rejects_path_traversal_and_escaping_links(tmp_path):
     for name, link in (("../escape", ""), ("./link", "../../escape"), ("/absolute", "")):
         archive = tmp_path / "bad.tar.gz"

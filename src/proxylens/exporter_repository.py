@@ -61,11 +61,12 @@ class ExportRepository:
             async with self.database.transaction() as conn:
                 yield conn
 
-    async def _count(self, conn, code):
+    async def _count(self, conn, code, *, amount=1):
         await conn.execute(
-            "INSERT INTO exporter_counters(destination, code, count) VALUES (%s,%s,1) "
-            "ON CONFLICT(destination,code) DO UPDATE SET count=exporter_counters.count+1",
-            (self.settings.destination, code),
+            "INSERT INTO exporter_counters(destination, code, count) VALUES (%s,%s,%s) "
+            "ON CONFLICT(destination,code) DO UPDATE SET "
+            "count=exporter_counters.count+EXCLUDED.count",
+            (self.settings.destination, code, amount),
         )
 
     async def enqueue(
@@ -224,10 +225,11 @@ class ExportRepository:
             raise ExportError(error)
         return job
 
-    async def recover(self, *, now: datetime | None = None) -> None:
+    async def recover(self, *, now: datetime | None = None, connection=None) -> None:
         """Startup/periodic scan. Lost leases are ambiguous, never automatically replayed."""
         now = now or datetime.now(UTC)
-        async with self.database.transaction() as conn:
+        async with self.transaction(connection) as conn:
+            await retention_cutoffs(conn, self.retention, now=now)
             await conn.execute(
                 "UPDATE exporter_outbox SET state='UNCERTAIN',last_code='lease_expired',"
                 "lease_token=NULL,lease_until=NULL,updated_at=%s "
@@ -258,6 +260,7 @@ class ExportRepository:
         now = now or datetime.now(UTC)
         await self.recover(now=now)
         async with self.database.transaction() as conn:
+            await retention_cutoffs(conn, self.retention, now=now)
             row = await (
                 await conn.execute(
                     "SELECT * FROM exporter_outbox WHERE destination=%s "
@@ -326,6 +329,7 @@ class ExportRepository:
             else:
                 next_at = now + timedelta(seconds=delay)
         async with self.database.transaction() as conn:
+            await retention_cutoffs(conn, self.retention, now=now)
             changed = await conn.execute(
                 "UPDATE exporter_outbox SET state=%s,last_code=%s,next_attempt_at=%s,"
                 "lease_token=NULL,lease_until=NULL,updated_at=%s "
@@ -404,25 +408,32 @@ class ExportRepository:
         if type(limit) is not int or not 1 <= limit <= 10000:
             raise ExportError("invalid_prune_limit")
         now = now or datetime.now(UTC)
-        await self.recover(now=now)
         async with self.database.transaction() as conn:
             cutoffs = await retention_cutoffs(conn, self.retention, now=now)
+            await self.recover(now=now, connection=conn)
             cutoff = max(
                 now - timedelta(seconds=self.settings.retention_seconds),
                 cutoffs.outbox,
             )
-            deleted = await conn.execute(
-                "DELETE FROM exporter_outbox WHERE (destination,request_id) IN ("
-                "SELECT destination,request_id FROM exporter_outbox WHERE destination=%s "
-                "AND started_at<%s AND state IN ('ACCEPTED','UNCERTAIN','DEAD_LETTER') "
-                "ORDER BY started_at LIMIT %s FOR UPDATE SKIP LOCKED)",
-                (self.settings.destination, cutoff, limit),
-            )
-            if deleted.rowcount:
+            rows = await (
                 await conn.execute(
-                    "INSERT INTO exporter_counters(destination,code,count) VALUES (%s,'pruned',%s) "
-                    "ON CONFLICT(destination,code) DO UPDATE SET "
-                    "count=exporter_counters.count+EXCLUDED.count",
-                    (self.settings.destination, deleted.rowcount),
+                    "SELECT request_id FROM exporter_outbox WHERE destination=%s "
+                    "AND started_at<%s AND state IN ('ACCEPTED','UNCERTAIN','DEAD_LETTER') "
+                    "ORDER BY started_at LIMIT %s FOR UPDATE SKIP LOCKED",
+                    (self.settings.destination, cutoff, limit),
                 )
+            ).fetchall()
+            request_ids = [row["request_id"] for row in rows]
+            if not request_ids:
+                return 0
+            deleted = await conn.execute(
+                "DELETE FROM exporter_outbox WHERE destination=%s AND request_id = ANY(%s)",
+                (self.settings.destination, request_ids),
+            )
+            await conn.execute(
+                "DELETE FROM operations_retention_hold WHERE participant='outbox' "
+                "AND reference=%s AND request_id = ANY(%s)",
+                (self.settings.destination, request_ids),
+            )
+            await self._count(conn, "pruned", amount=deleted.rowcount)
             return deleted.rowcount

@@ -20,7 +20,6 @@ class RetentionPolicy:
     projection_days: int = 90
     outbox_days: int = 90
     audit_days: int = 365
-    remote_observation_days: int = 90
 
     def __post_init__(self):
         for value in vars(self).values():

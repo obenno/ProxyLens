@@ -117,11 +117,11 @@ directory and file permissions described above. The worker has the Linux
 containers, not exclusively host loopback. Alternatively use a reachable local
 hostname. Use its root base URL, not an invented ingestion route.
 
-Empty URL means unconfigured. This foundation sends nothing and has no receiver,
-export queue, or delivery claim. Langfuse credentials are mounted only to the
-worker. Its actual export, retry/redaction semantics, endpoint compatibility, and
-dependency-state reporting are follow-up work. Existing Langfuse state must have
-its own persistent storage and backup/restore runbook.
+Empty URL means unconfigured; the worker then keeps export disabled. When
+configured, Langfuse credentials are mounted only to the worker, which owns the
+metadata-only outbox, bounded delivery/recovery, retry uncertainty, and redacted
+dependency-state reporting. Existing Langfuse state must have its own persistent
+storage and backup/restore runbook.
 
 ## Persistent state and rotation
 
@@ -263,7 +263,7 @@ authorization decision. Unknown/business routes remain 404 in this foundation.
 | Keycloak or its DB | API/gateway ready=503 | Cached-key, unexpired-token reads only; new login/management fail closed; see `docs/identity.md`. |
 | CPA | Gateway ready=503; CPAMP may remain HTTP-healthy | Restore CPA; inspect collector. In-memory queue is lost on CPA restart. |
 | CPAMP | Worker ready=503; API/gateway health unaffected | CPA queues only in memory, configured retention 3600s. Collector downtime beyond retention or CPA restart can lose records. No replay guarantee. |
-| Langfuse | No foundation export, no readiness dependency | Later exporter must report backlog and retry asynchronously; no successful-delivery claim now. |
+| Langfuse | Disabled when URL is empty; otherwise asynchronous worker export | Provider forwarding remains independent; inspect worker backlog, uncertainty, and dead letters. |
 
 Long-form `depends_on` gates initial startup. It does not stop dependent services
 when a dependency fails later. `restart: unless-stopped` restarts exited processes,

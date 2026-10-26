@@ -97,7 +97,7 @@ class ProjectionRepository:
             cutoff_ms = int(cutoffs.projection.timestamp() * 1000)
             for record in result.records:
                 if record.timestamp_ms < cutoff_ms:
-                    continue
+                    raise ValueError("retention_expired")
                 if (
                     record.instance_id != self.settings.cpamp_instance_id
                     or record.cpamp_version != self.settings.binding.cpamp_version
@@ -499,10 +499,15 @@ class ProjectionWorker:
     async def poll_once(self, *, rebuild=False):
         try:
             return await self._poll_once(rebuild=rebuild)
-        except (StorageUnavailable, ValueError):
+        except (StorageUnavailable, ValueError) as error:
             # Commit failure preserves old rows/checkpoint. Persist only a fixed safe code.
             with suppress(StorageUnavailable):
-                await self.repository.failed(["projection_commit_or_binding_failure"])
+                reason = (
+                    "retention_expired"
+                    if str(error) == "retention_expired"
+                    else "projection_commit_or_binding_failure"
+                )
+                await self.repository.failed([reason])
             return False
 
     async def _poll_once(self, *, rebuild=False):

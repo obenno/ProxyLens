@@ -838,3 +838,15 @@ The completion scanner uses current proof-gated `projection_resolved` joins,
 explicit gateway-outcome mapping, and retains source eligibility after bounded
 outbox/storage failures. Existing migrations are discovered at startup; tenant
 usage remains disabled pending the reviewed live correlation/history proofs.
+
+### 2026-10-26 correction pass after fixed-point review
+
+The final correction pass made retention admission explicit for old projection
+events, fenced exporter recovery/mutation paths with the shared retention floor,
+preserved visible terminal exporter outcomes before pruning, released outbox holds
+on standalone pruning, validated non-object recovery manifests, persisted final
+worker status checkpoints, and removed the integration branch from CI triggers.
+The real outbox retention participant now has isolated PostgreSQL coverage. The
+post-correction locked suite passed **304 tests, zero skips**; Ruff, formatting,
+compilation, and diff checks passed. Docker Compose validation remains unavailable
+in this environment because Docker and a Compose provider are absent.

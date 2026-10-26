@@ -35,11 +35,8 @@ RUNTIME_SCAN_LOCK = 706769009
 def _runtime_audit(action: str, *, outcome: str, details: dict) -> tuple:
     """Build fixed-shape audit data; callers must execute it in their transaction."""
     allowed = {
-        "runtime.projection.poll",
-        "runtime.projection.failure",
         "runtime.export.scan",
         "runtime.export.failure",
-        "runtime.retention.participant",
     }
     if action not in allowed or outcome not in {"success", "denied"}:
         raise ValueError("invalid runtime audit")
@@ -317,10 +314,15 @@ class OutboxRetentionParticipant:
             "AND state IN ('WAITING','READY','RETRY_WAIT')",
             (cutoffs.now, self.repository.settings.destination, cutoffs.outbox),
         )
+        if uncertain.rowcount:
+            await self.repository._count(conn, "retention_expired_ambiguous")
+        if dead_lettered.rowcount:
+            await self.repository._count(conn, "retention_expired")
         deleted = await conn.execute(
             "DELETE FROM exporter_outbox WHERE destination=%s AND started_at < %s "
-            "AND state IN ('ACCEPTED','UNCERTAIN','DEAD_LETTER') RETURNING request_id",
-            (self.repository.settings.destination, cutoffs.outbox),
+            "AND state IN ('ACCEPTED','UNCERTAIN','DEAD_LETTER') "
+            "AND updated_at < %s RETURNING request_id",
+            (self.repository.settings.destination, cutoffs.outbox, cutoffs.now),
         )
         await conn.execute(
             "DELETE FROM operations_retention_hold h WHERE h.participant='outbox' "
@@ -331,15 +333,9 @@ class OutboxRetentionParticipant:
                 self.repository.settings.destination,
             ),
         )
-        changed = uncertain.rowcount + dead_lettered.rowcount + deleted.rowcount
+        changed = deleted.rowcount
         if changed:
-            await conn.execute(
-                "INSERT INTO exporter_counters(destination, code, count) "
-                "VALUES (%s, 'retention', %s) "
-                "ON CONFLICT(destination, code) DO UPDATE SET "
-                "count=exporter_counters.count+EXCLUDED.count",
-                (self.repository.settings.destination, changed),
-            )
+            await self.repository._count(conn, "retention_pruned", amount=changed)
         return changed
 
 

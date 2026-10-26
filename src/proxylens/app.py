@@ -259,7 +259,7 @@ def create_app(role: str, *, identity_transport: httpx.AsyncBaseTransport | None
                             "ON CONFLICT(component) DO UPDATE SET "
                             "observed_at=EXCLUDED.observed_at, "
                             "state=EXCLUDED.state, details=EXCLUDED.details",
-                            (component, state["state"], {}),
+                            (component, state["state"], {"state": state["state"]}),
                         )
 
             async with projection_worker_lifespan(projection_repository, adapter, gate=proof_gate):
@@ -297,6 +297,8 @@ def create_app(role: str, *, identity_transport: httpx.AsyncBaseTransport | None
                     for task in (supervisor_task, reconcile_task, status_task):
                         with suppress(asyncio.CancelledError):
                             await task
+                    with suppress(Exception):
+                        await checkpoint_status()
 
     app = FastAPI(
         title=f"ProxyLens {role}",

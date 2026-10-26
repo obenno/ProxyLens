@@ -84,6 +84,8 @@ def write_manifest(directory: Path, metadata: dict, files: list[Path]):
 def validate(directory: Path) -> dict:
     directory = private_path(directory, directory=True)
     manifest = json.loads(private_path(directory / "manifest.json").read_text())
+    if not isinstance(manifest, dict):
+        raise RecoveryError("invalid recovery manifest")
     files = manifest.get("files")
     if manifest.get("format") != 1 or not isinstance(files, dict) or not files:
         raise RecoveryError("invalid recovery manifest")
