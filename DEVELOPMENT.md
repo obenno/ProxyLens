@@ -642,6 +642,21 @@ or provider/OAuth credential was touched. Tests' real connection values stay scr
 8. Remote retention/lifecycle and full final-stack upgrade/rollback remain live
    gates; documented OSS API plan is not proof that remote objects were deleted.
 
+### Integration-tip validation
+
+Committed independent tranche `fcc7476`; merged integration `9aa9d48` (gateway #7
+and projection #10) as `bf6700c`, preserving both development-note additions. CI
+now provisions their DSN variables too. Gateway's fixture parses PostgreSQL URLs,
+so CI emits escaped URLs rather than libpq keyword DSNs; ephemeral trust CI gets a
+random nonempty unused password for the mounted-file contract. The first merged
+run exposed that URL mismatch and one previously observed resource concurrent-rate
+storage error. After correcting the harness, the complete suite passed **258 tests,
+zero skipped** in 38.84s. Ruff lint/format (64 files), Compose config and diff checks
+passed. Current PostgreSQL recovery test also restores the newly merged schemas,
+but only resources/lineage have populated recovery fixtures; final populated
+projection/exporter recovery still requires the continuation. No app/config/Compose
+runtime edits were authored by this tranche.
+
 ## 2026-10-26 — Issue #10: CPAMP-derived usage projection
 
 ### Scope and decisions
