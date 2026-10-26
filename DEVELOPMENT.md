@@ -403,3 +403,66 @@ import does not overwrite persisted realms. See `docs/identity.md`.
 When changing identity, inspect `identity.py`, `keycloak.py`, `oidc.py`, API
 lifespan/config, realm/mappers/build and corresponding tests together. Preserve
 strict error boundaries, live write checks and no local membership authority.
+
+## 2026-10-24 — Issue #9: durable resources and narrowing policy
+
+### Scope and decisions
+
+Implemented on `impl/issue-9-resources`, based on integration `d97f7b4`. Owns
+`db.py`, `resources.py`, `policies.py`, `resource_routes.py`, resource migrations
+with prefix 009, tests, and `docs/resources.md`. Identity-owned application,
+configuration, packaging and deployment files were not edited.
+
+- PostgreSQL transactions are the durability boundary. Migration startup is
+  advisory-lock serialized and checksum verified. Composite application/group
+  foreign keys prevent mismatched key ownership; no local users/memberships.
+- Keycloak group existence is an async injected authoritative lookup returning
+  verified flat-group information. Request claims do not establish existence;
+  upstream failure never implies deletion. Identity #5 owns Principal/JWT/role
+  validation and group freshness. Resource routes use an injected real dependency
+  plus explicit capability/scope adapters rather than implementing JWT again.
+- Keys contain 256 random secret bits, with independently generated nonsecret
+  prefixes; only SHA256 hashes persist. Issuance reveals plaintext once after
+  commit. Rotation revokes the old key with zero overlap and audits atomically.
+  Read/authorization connections do not cache revoked/expired key acceptance.
+- Explicit model/provider constraints intersect; absent/null is unconstrained at
+  that level, empty is deny, no applicable allowlist is deny. Numeric ceilings take
+  the minimum. Broader application policies are clipped at use time. Shared
+  PostgreSQL rate counters admit application/key budgets atomically in 60-second
+  first-request-anchored windows; they are not simultaneous-request semaphores.
+- Orphan repair creates a replacement application, revokes old keys, and keeps
+  original ownership immutable. Historical request/usage records must never be
+  reassigned. Explicit repair/revoke/reconcile events include old/new references.
+- Lifecycle mutation/audit failure rolls back together. Authentication denials
+  honestly record null identity/scope; scoped audits omit other groups. Database
+  outage fails closed with a redacted 503. Gateway must commit its own request
+  lineage before dispatch; a committed rate reservation is not automatically
+  refunded if subsequent dispatch/lineage fails.
+
+### Validation
+
+TDD red/green slices recorded missing modules/methods and missing rate enforcement,
+then exercised production migrations and real transactions against dedicated
+PostgreSQL `proxylens_resources` on localhost:55432. Tests cover key persistence,
+plaintext absence, policy intersections/updates, expiration, scoped HTTP routes,
+orphan reconciliation/repair, outage behavior, audit-constraint rollback, composite
+FK mismatch, concurrent rotation and shared rate limits. Independent child Python
+processes verify restart durability and committed revocation visibility. Only
+external group lookup and verified-principal seams are stubbed.
+
+All 24 repository tests passed (16 resource/route cases plus 8 foundation cases),
+including subprocess restart validation. Resource-file Ruff lint/format and
+`git diff --check` passed. The real PostgreSQL audit constraint failpoint proved
+that a failed rotation preserves the original usable key and writes no partial
+replacement/audit. This is local persistence/control-plane evidence, not a live
+Keycloak or provider acceptance claim.
+
+### Integration follow-up
+
+`docs/resources.md` freezes gateway methods, fields, errors, policy semantics,
+rates, and API routes. Coordinator summary is in the shared phase-1
+`resources-contract.md`. At implementation time identity #5 had not merged;
+coordinator must run migrations on startup and install the router using #5's
+actual Principal dependency, role map and Keycloak group adapter. Joint signed-JWT
+API tests and live Keycloak evidence remain integration gates. No app wiring or
+live provider/identity proof is claimed by the dependency-injection tests.
