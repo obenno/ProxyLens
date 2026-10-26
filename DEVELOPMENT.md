@@ -611,3 +611,118 @@ API startup must install `install_projection_routes`; worker startup must own
 before one finalized generation and respect proof/unknown fields. #6 must coordinate
 lineage/exporter retention, outage cleanup and health wrapping. Keep staging private
 and collision evidence for at least the entire dependent projected-history lifetime.
+
+## 2026-10-26 — Issue #8: immutable metadata-only Langfuse outbox
+
+### Scope and decisions
+
+Based `impl/issue-8-langfuse` on integration `9113a97`; read issue #8, merged
+correlation interfaces and coordinated contract/live reports. Own modules/settings,
+PostgreSQL migration `008_exporter.sql`, tests, exporter documentation and synthetic
+live proof script. Gateway/shared app/config/Compose are owned by other tickets.
+
+- One finalized root generation per persisted ingress trace/generation ID. Live
+  v4.69.0 same-ID enrichment duplicates visible observations; therefore no early
+  generation/update or optimistic sink deduplication claim.
+- Typed allowlist serializes only trusted ownership/native IDs, verified principal
+  subject, safe session, gateway status/time/model/provider, proof-gated exclusive
+  usage and explicitly classified cost. Unknown cost stays absent; possible sink
+  inference is labeled estimated/not billing. No content-capture or raw-error field.
+- Immutable payload bytes at first committed attempt. Before attempt, enrichment
+  uses row-lock serialization; later change records a sticky stale flag/hash only.
+  Default proof-disabled input finalizes gateway-only `usage_unproven`; future
+  proof-enabled incomplete inputs have a bounded explicit partial-finalization wait.
+- Durable fenced leases, SKIP LOCKED claims, bounded rows/payload bytes/response/
+  attempts/request age/backoff. Admission uses one advisory lock and aggregate spool
+  accounting (Phase 1 O(N) tradeoff). Retain terminal dedup rows through local retention;
+  reject expired original requests even after pruning. Source scans must remain
+  retryable after capacity suppression; aggregate rejection counters are durable.
+- HTTP/JSON v4 with bounded credential-file reads and Basic auth. Actual 200 queue-job
+  objects accepted; strict partial-success parsing, no response text persisted.
+  Established connection failure retries; 429 requires explicit pre-admission trust.
+  Timeout/disconnect/5xx/408/malformed success/expired lease are UNCERTAIN, never an
+  automatic resend. No credential redirects/environment proxies or provider replay.
+
+### Validation and integration limits
+
+TDD public seams: typed snapshots, real PostgreSQL outbox/leases, external HTTP,
+worker drain and actual v2 readback. Red phases preceded serialization, migrations,
+repository lifecycle, transport, worker, retention, pre-send fencing and timezone-
+stable identity hashing. Independent interpreters verify durable pending claims and
+abandoned-attempt recovery. Native cache-write tokens remain a separate exclusive
+bucket, not double-counted inclusive input. All tests use synthetic identities.
+
+Live disposable Langfuse v4.69.0 ingestion/readback on 2026-10-26 passed: genuine
+loopback connection refusal followed by fresh repository/transport recovery, one
+root generation, original IDs, null input/output, empty supplied usage/cost and
+`usage_unproven`. Repeated scan/late enrichment scheduled no second send. Machine
+user omission reads back as empty string rather than null, verified and recorded
+in the proof harness. Evidence: `docs/evidence/exporter-v4.69.0.json`.
+Additional actual-sink fault injection accepted a fresh generation then replaced
+only its acknowledgement with malformed JSON. The production worker persisted
+`UNCERTAIN/malformed_success`, v2 readback showed exactly one generation, and later
+drain did not resend it (`docs/evidence/exporter-v4.69.0-uncertain.json`).
+
+Supported Python 3.12.13 environment installed from hash-locked requirements.
+Validation before integration merge: 221 tests passed, 9 lineage tests skipped
+without their opt-in DSN; all 9 then passed against isolated schemas in the exporter
+test database (230 total). Includes 42 exporter cases. Owned-file Ruff lint/format
+and `git diff --check` passed. No new runtime dependency or lock change required.
+After committing implementation `310d13a`, merged integration `92b7128` via
+`a86e862` (gateway #7 and shared wiring). Full supported-Python suite with the
+lineage database gate enabled: **271 passed**, zero skips. Owned-file Ruff lint,
+format and diff checks passed after merge. Shared app/config/Compose changes are
+inherited from integration, not exporter-owned edits.
+
+Concrete gateway/projection scan orchestration, principal-evidence persistence,
+health scheduling and retention wiring are deferred to #6 because #7/#10 lifecycle
+tables were developing concurrently. Exact methods and mapping are documented in
+`docs/exporter.md`; no claim of integrated provider-response isolation yet.
+Uncertain read reconciliation, destination-wide auth pause and remote retention
+remain operational follow-up. No provider calls/OAuth, live CPAMP attribution or
+native usage fabrication occurred. Local deletion is not remote deletion proof.
+
+## 2026-10-26 — Projection/exporter integration and unified validation
+
+### Scope and merge decisions
+
+Verified clean `integration/phase-1-poc` at gateway merge `92b7128`. Merged
+`impl/issue-10-projection` tip `f803f07` with `--no-ff` as `9aa9d48`, then merged
+`impl/issue-8-langfuse` tip `1b8efb6` with `--no-ff`. The only conflict was appended
+`DEVELOPMENT.md` sections; both implementers' additions were preserved verbatim.
+Implementation findings are deferred to the coordinator's single correction pass.
+
+### Validation performed
+
+- Supported Python 3.12.13, pytest 9.1.1, real PostgreSQL 17.6 on the existing
+  loopback test instance. Each validation batch created its own uniquely named
+  database and dropped it afterward. All five test DSN variables were explicitly
+  redirected, including `PROXYLENS_TEST_DATABASE_URL` for the nine lineage tests.
+- First unified suite: **285 passed, 1 failed, zero skips**. Failure:
+  `tests/test_resources.py::test_concurrent_rate_ceilings_share_postgres_across_repository_instances`.
+  Concurrent authorization raised `StorageUnavailable` through `db.py:36` instead
+  of returning the expected allowed/rate-limited results.
+- In a fresh isolated database, that test alone passed; the following full suite
+  repeated the same failure: **285 passed, 1 failed, zero skips**. Root cause and
+  correction remain open; this is not a clean unified test result.
+- Repository-wide Ruff lint passed; format check passed for all 63 Python files.
+  Compose v5.6.1 `--env-file /dev/null -f compose.yaml config --quiet` passed.
+  Working/staged whitespace checks and verbatim preservation of both development
+  sections passed. No runtime credentials or GitHub access were used.
+- Test logs/JUnit/validation metadata are under
+  `/data/tmp/opencode/proxylens-phase1/merger-20261026-c1eff389099f/` and
+  `/data/tmp/opencode/proxylens-phase1/merger-retry-20261026-13f7b392af84/`.
+
+### Remaining #6 wiring
+
+`app.py`/`config.py` must install projection routes and own the CPAMP adapter/poll
+lifespan, independent projection/exporter settings, deployment binding and reviewed
+proof gate. The worker still needs completion/overlap scans from
+`gateway_observations`, current proof-gated `projection_resolved` joins, explicit
+transport-outcome mapping, and retained verified-principal evidence or omitted user
+attribution. Preserve source eligibility across outbox capacity/storage failures.
+Schedule exporter recovery/drain/prune outside forwarding, operator health and
+diagnostics, group reconciliation and coordinated lineage/projection/outbox
+retention. Wire the required Compose configuration/mounts and validate restart,
+outage and response isolation. Existing migrations are discovered at startup;
+tenant usage remains disabled pending the reviewed live correlation/history proofs.
