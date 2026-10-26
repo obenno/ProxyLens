@@ -22,7 +22,7 @@ from proxylens.identity import (
 @pytest.mark.parametrize(
     "fault", [None, "state", "nonce", "exchange", "subject", "issuer", "offline"]
 )
-def test_browser_code_pkce_session_and_failures(monkeypatch, tmp_path, fault):
+def test_browser_code_pkce_session_and_failures(monkeypatch, tmp_path, fault, environment):
     secret = tmp_path / "admin-secret"
     secret.write_text("admin-secret-sentinel")
     monkeypatch.setenv("PROXYLENS_KEYCLOAK_CLIENT_SECRET_FILE", str(secret))
@@ -115,7 +115,9 @@ def test_browser_code_pkce_session_and_failures(monkeypatch, tmp_path, fault):
     asyncio.run(check())
 
 
-def test_protected_dependency_denies_mutation_and_reports_authority_outage(monkeypatch, tmp_path):
+def test_protected_dependency_denies_mutation_and_reports_authority_outage(
+    monkeypatch, tmp_path, environment
+):
     secret = tmp_path / "secret"
     secret.write_text("secret")
     monkeypatch.setenv("PROXYLENS_KEYCLOAK_CLIENT_SECRET_FILE", str(secret))
