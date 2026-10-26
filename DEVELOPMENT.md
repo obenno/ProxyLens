@@ -857,6 +857,6 @@ the unrequested CLIProxyAPI commercial-mode change was removed. The locked suite
 remains green at **306 tests, zero skips**.
 
 The final documentation/freshness pass updates the runtime scope and locked-suite
-prerequisites in the user-facing guides and propagates projection window staleness
-into worker operations health. The same locked suite remains green at **306 tests,
-zero skips**.
+prerequisites in the user-facing guides, propagates projection window staleness
+into worker operations health, and makes CPAMP adapter/collector health gate worker
+readiness. The same locked suite remains green at **307 tests, zero skips**.

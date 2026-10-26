@@ -103,9 +103,11 @@ discarded. Langfuse health does not gate gateway forwarding.
 
 Projection becomes stale at **age >= 60 seconds** or adapter failure; a reported
 source gap remains degraded even after a successful recent poll. Unknown counts
-remain null. Gateway readiness depends on PostgreSQL, Keycloak and CPA, not remote
-observation delivery. Health is diagnostic and never substitutes for per-request
-authorization, group validation or durable lineage.
+remain null. Worker readiness requires the CPAMP adapter and collector contract;
+projection freshness and Langfuse delivery remain diagnostic and do not gate
+provider forwarding. Gateway readiness depends on PostgreSQL, Keycloak and CPA,
+not remote observation delivery. Health is diagnostic and never substitutes for
+per-request authorization, group validation or durable lineage.
 
 CPAMP status supplies collector state, last-consumed/last-inserted timestamps and
 dead-letter count. Its current status contract does not prove queue completeness:

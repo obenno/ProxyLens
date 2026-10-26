@@ -138,6 +138,14 @@ async def _worker_operations_health(app, settings, *, postgres, keycloak, clipro
     )
 
 
+def worker_operations_ready(snapshot: dict | None) -> bool:
+    """Gate worker readiness on the CPAMP adapter and collector contract only."""
+    if snapshot is None:
+        return False
+    cpamp = snapshot.get("dependencies", {}).get("cpamp", {})
+    return cpamp.get("state") == "available" and cpamp.get("collector_state") == "available"
+
+
 @dataclass(frozen=True)
 class WorkerRuntime:
     adapter: CPAMPAdapter
@@ -366,6 +374,7 @@ def create_app(role: str, *, identity_transport: httpx.AsyncBaseTransport | None
                 keycloak=dependencies.get("keycloak_group_authority") == "ready",
                 cliproxyapi=dependencies.get("cliproxyapi") == "ready",
             )
+            results.append(worker_operations_ready(operations))
         return JSONResponse(
             status_code=200 if all(results) else 503,
             content={

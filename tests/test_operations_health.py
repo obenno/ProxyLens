@@ -1,5 +1,6 @@
 from datetime import UTC, datetime, timedelta
 
+from proxylens.app import worker_operations_ready
 from proxylens.cpamp import AdapterHealth, CollectorStatus
 from proxylens.operations_health import ExportHealth, ProjectionHealth, operations_health
 
@@ -74,3 +75,17 @@ def test_freshness_boundary_and_reported_source_gaps_remain_visible():
         ]
         == "stale"
     )
+
+
+def test_worker_readiness_requires_cpamp_adapter_and_collector():
+    healthy = snapshot()
+    assert worker_operations_ready(healthy) is True
+    unavailable = snapshot(adapter=AdapterHealth("unavailable", None, ()))
+    assert worker_operations_ready(unavailable) is False
+    assert (
+        worker_operations_ready(
+            snapshot(collector=CollectorStatus("degraded", ("dead_letters",), 0, 0, 1))
+        )
+        is False
+    )
+    assert worker_operations_ready(None) is False

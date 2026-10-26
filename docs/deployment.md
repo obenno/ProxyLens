@@ -258,7 +258,8 @@ Health semantics are deliberately narrow: `/health/live` says the process serves
 HTTP; `/health/ready` checks a real PostgreSQL `SELECT 1` plus role dependencies,
 in parallel with bounded timeouts. Errors become fixed `unavailable` labels,
 without credentials, exception bodies, or internal URLs. Neither endpoint is an
-authorization decision. Unknown/business routes remain 404 in this foundation.
+authorization decision. Unknown routes remain 404; authorized routes still enforce
+their own identity, policy, and proof gates.
 
 | Dependency unavailable | Foundation behavior | Recovery / data consequence |
 | --- | --- | --- |

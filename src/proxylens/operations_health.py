@@ -48,7 +48,7 @@ def operations_health(
     def count(value):
         return value if type(value) is int and value >= 0 else None
 
-    states = {"available", "unavailable", "degraded", "stale", "disabled"}
+    states = {"available", "unavailable", "degraded", "stale", "disabled", "unknown"}
     adapter_state = adapter.state if adapter.state in states else "unavailable"
     collector_state = collector.state if collector.state in states else "unavailable"
     projection_age = age(projection.last_success)
