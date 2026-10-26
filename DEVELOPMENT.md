@@ -657,6 +657,13 @@ but only resources/lineage have populated recovery fixtures; final populated
 projection/exporter recovery still requires the continuation. No app/config/Compose
 runtime edits were authored by this tranche.
 
+Exporter integration `c19e5a3` arrived during final tip synchronization and was
+merged as `2e879b8`. Added its isolated CI DSN; full suite now **300 passed, zero
+skipped** in 44.02s, including repeated real populated PostgreSQL backup/restore
+into new databases. Independent phase is complete with all three dependency tips
+present; the concrete runtime/retention/health hooks above remain for coordinator
+continuation, rather than being silently enabled during this merge.
+
 ## 2026-10-26 — Issue #10: CPAMP-derived usage projection
 
 ### Scope and decisions

@@ -25,6 +25,7 @@ def main():
         "PROXYLENS_OPS_TEST_DSN",
         "PROXYLENS_GATEWAY_TEST_DSN",
         "PROXYLENS_PROJECTION_TEST_DSN",
+        "PROXYLENS_EXPORTER_TEST_DSN",
     )
     created = []
     env = dict(os.environ)
