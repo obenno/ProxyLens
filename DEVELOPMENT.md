@@ -185,3 +185,56 @@ Check `compose.yaml`, `Dockerfile`, dependency locks, `deploy/`, `src/proxylens/
 `tests/`, and both deployment/pin documents together when changing a dependency.
 Preserve CPAMP's sole-consumer ownership and explicitly document any new secret
 grant, published listener, persistent-state migration, or health contract.
+
+## 2026-10-24 — Issue #3: deterministic request-lineage contract
+
+### Scope and decisions
+
+Based `impl/issue-3-correlation` on integration `d97f7b4`. Added reusable frozen
+dataclasses, bounded CPA trace parsing/diagnostic propagation, exact-match
+correlation, redacted observation metadata, PostgreSQL repository and migration
+`003_lineage.sql`. Interfaces/lifecycle are in `docs/correlation.md`.
+
+Use gateway-generated UUIDv4 ingress IDs and reverse-map only the returned CPA
+v8.0.40 full UUIDv7. Incoming IDs, timestamps, shared credentials and provider
+Responses object IDs cannot establish ownership. Preserve CPAMP v1.14.9
+`(instance, event_hash)` identities one-to-many for retries. Missing/partial,
+correlated, duplicate and ambiguous are distinct. Structural correlation does
+not certify deployed compatibility.
+
+Retain all competing native-ID claims. A live SQL resolution view removes
+ownership from earlier events when a later collision appears, including two
+requests from the same owner. Conflicting replay of one CPAMP hash is sticky
+ambiguous. Duplicate reads are not second countable attributions. No broader
+resource/identity tables, raw content or credentials are stored by this module.
+
+### Validation and integration boundaries
+
+Test-first slices failed before parser, ingress generation, correlation,
+PostgreSQL persistence and metadata/gate implementation. Tests exercise production
+SQL in unique schemas on the coordinator's disposable PostgreSQL, including
+reconnection, concurrent connections, late collisions, rollback, replays and
+secrets/unsafe-value rejection. Full suite: **41 passed** (33 new contract/repository
+cases, including 9 real PostgreSQL cases); Ruff lint, changed-file format checks
+and `git diff --check` passed. No provider or Langfuse delivery is simulated as proof.
+
+#7 must commit resolved ingress ownership before dispatch, bind returned headers
+immediately, and own transport/protocol outcomes without replaying provider work
+to repair telemetry. #10 must query current resolution for scoped publication,
+not trust cached owner columns; it owns projection/cursor transaction wiring.
+#8 consumes only allowlisted IDs/status metadata. Migration/startup orchestration,
+resource foreign keys and full gateway/projection lifecycle wiring remain those
+tickets' responsibilities. Retention must preserve ambiguity/dedup evidence for
+the whole projected-history lifetime.
+
+### Blocker / proof gate
+
+`docs/evidence/issue-3-correlation.json` explicitly records no live samples.
+Authorized Codex execution → returned CPA header → actual CPAMP collector
+persistence remains unproven; no provider OAuth was configured by this workflow.
+The pinned-source and synthetic-history evidence lives in
+`/data/tmp/opencode/proxylens-phase1/contracts.md`. Tenant usage remains hard-gated
+off even if a caller supplies a durable-history proof flag. Enablement requires
+an evidence-reviewed change, both #3/#4 gates, and the real scenarios listed in
+the artifact. Distinct application credentials are only a possible coarse-owner
+fallback, not request-level proof; no irreversible fallback/ADR selected.
