@@ -118,9 +118,11 @@ class ResourceRepository:
             ),
         )
 
-    async def record_denial(self, action, *, actor=None, group_id=None, resource_id=None):
+    async def record_denial(
+        self, action, *, actor=None, group_id=None, resource_id=None, **details
+    ):
         async with self.database.transaction() as conn:
-            await self._audit(conn, action, actor, group_id, resource_id, "denied")
+            await self._audit(conn, action, actor, group_id, resource_id, "denied", **details)
 
     async def create_application(self, group_id: str, name: str, *, actor: str):
         if not group_id or len(group_id) > 200 or not name.strip() or len(name) > 200:

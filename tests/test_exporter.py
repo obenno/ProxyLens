@@ -405,6 +405,86 @@ def test_untrusted_proxy_statuses_do_not_establish_nonacceptance(tmp_path, statu
     asyncio.run(scenario())
 
 
+@pytest.mark.parametrize("status", [408, 500, 502, 503, 504])
+def test_temporary_http_failures_remain_uncertain_without_admission_attestation(tmp_path, status):
+    import httpx
+
+    from proxylens.exporter_settings import ExporterSettings
+    from proxylens.exporter_transport import OtlpTransport
+
+    key = tmp_path / "synthetic"
+    key.write_text("synthetic-key")
+
+    def server(request):
+        return httpx.Response(status)
+
+    async def scenario():
+        settings = ExporterSettings(public_key_file=key, secret_key_file=key)
+        result = await OtlpTransport(settings, transport=httpx.MockTransport(server)).send(b"{}")
+        assert result.state == "UNCERTAIN"
+        assert result.code == "http_uncertain"
+
+    asyncio.run(scenario())
+
+
+def test_attested_pre_admission_temporary_failure_is_durably_retryable(tmp_path):
+    import httpx
+
+    from proxylens.exporter_settings import ExporterSettings
+    from proxylens.exporter_transport import OtlpTransport
+
+    key = tmp_path / "synthetic"
+    key.write_text("synthetic-key")
+
+    def server(request):
+        return httpx.Response(503, headers={"x-proxylens-admission": "not-admitted"})
+
+    async def scenario():
+        settings = ExporterSettings(
+            public_key_file=key,
+            secret_key_file=key,
+            trusted_pre_admission_temporary_failures=True,
+        )
+        result = await OtlpTransport(settings, transport=httpx.MockTransport(server)).send(b"{}")
+        assert result.state == "RETRY_WAIT"
+        assert result.code == "temporary_http_before_send"
+
+    asyncio.run(scenario())
+
+
+def test_pre_send_write_timeout_is_retryable_but_body_write_timeout_is_uncertain(tmp_path):
+    import httpx
+
+    from proxylens.exporter_settings import ExporterSettings
+    from proxylens.exporter_transport import OtlpTransport
+
+    key = tmp_path / "synthetic"
+    key.write_text("synthetic-key")
+    settings = ExporterSettings(public_key_file=key, secret_key_file=key)
+
+    async def body_started(request):
+        async for _ in request.stream:
+            break
+        raise httpx.WriteTimeout("during body write", request=request)
+
+    class PreSendTimeout(httpx.AsyncBaseTransport):
+        async def handle_async_request(self, request):
+            raise httpx.WriteTimeout("before admission", request=request)
+
+    async def scenario():
+        pre_send_result = await OtlpTransport(settings, transport=PreSendTimeout()).send(b"{}")
+        assert pre_send_result.state == "RETRY_WAIT"
+        assert pre_send_result.code == "write_timeout_before_send"
+
+        body_result = await OtlpTransport(
+            settings, transport=httpx.MockTransport(body_started)
+        ).send(b"{}")
+        assert body_result.state == "UNCERTAIN"
+        assert body_result.code == "transport_uncertain"
+
+    asyncio.run(scenario())
+
+
 def test_cache_creation_is_exclusive_and_unknown_cost_is_not_zero():
     from uuid import UUID
 

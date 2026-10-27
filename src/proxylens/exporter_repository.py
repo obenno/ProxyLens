@@ -43,6 +43,25 @@ class ExportLease:
     lease_until: datetime
 
 
+def _source_identity(observation):
+    correlation = observation.correlation
+    if (
+        observation.binding is None
+        or correlation is None
+        or correlation.status != CorrelationStatus.CORRELATED
+    ):
+        return None
+    event = correlation.event
+    if event.cpa_request_id is None:
+        return None
+    return (
+        event.cpamp_instance_id,
+        event.event_hash,
+        event.cpa_instance_id,
+        observation.ingress.owner.keycloak_issuer,
+    )
+
+
 def _job(row) -> ExportJob:
     return ExportJob(**{name: row[name] for name in ExportJob.__dataclass_fields__})
 
@@ -120,6 +139,7 @@ class ExportRepository:
             ).encode()
         ).hexdigest()
         expires = ingress.accepted_at + timedelta(seconds=self.settings.max_age_seconds)
+        source = _source_identity(observation)
         error = None
         job = None
         async with self.transaction(connection) as conn:
@@ -175,11 +195,14 @@ class ExportRepository:
                         row = await (
                             await conn.execute(
                                 "UPDATE exporter_outbox SET payload=%s,payload_hash=%s,state=%s, "
+                                "source_cpamp_instance_id=%s,source_event_hash=%s,"
+                                "source_cpa_instance_id=%s,source_keycloak_issuer=%s,"
                                 "updated_at=%s WHERE destination=%s AND request_id=%s RETURNING *",
                                 (
                                     payload,
                                     digest,
                                     state,
+                                    *(source or (None, None, None, None)),
                                     now,
                                     self.settings.destination,
                                     ingress.request_id,
@@ -192,8 +215,11 @@ class ExportRepository:
                                 "INSERT INTO exporter_outbox(destination,request_id,trace_id,"
                                 "generation_id,"
                                 "identity_hash,started_at,created_at,updated_at,finalize_after,expires_at,"
-                                "state,payload,payload_hash,next_attempt_at) "
-                                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *",
+                                "state,payload,payload_hash,next_attempt_at,"
+                                "source_cpamp_instance_id,source_event_hash,"
+                                "source_cpa_instance_id,source_keycloak_issuer) "
+                                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) "
+                                "RETURNING *",
                                 (
                                     self.settings.destination,
                                     ingress.request_id,
@@ -209,6 +235,7 @@ class ExportRepository:
                                     payload,
                                     digest,
                                     now,
+                                    *(source or (None, None, None, None)),
                                 ),
                             )
                         ).fetchone()
@@ -261,16 +288,32 @@ class ExportRepository:
         await self.recover(now=now)
         async with self.database.transaction() as conn:
             await retention_cutoffs(conn, self.retention, now=now)
-            row = await (
-                await conn.execute(
-                    "SELECT * FROM exporter_outbox WHERE destination=%s "
-                    "AND state IN ('READY','RETRY_WAIT') AND next_attempt_at<=%s AND expires_at>%s "
-                    "ORDER BY next_attempt_at,request_id FOR UPDATE SKIP LOCKED LIMIT 1",
-                    (self.settings.destination, now, now),
-                )
-            ).fetchone()
-            if not row:
-                return None
+            while True:
+                row = await (
+                    await conn.execute(
+                        "SELECT * FROM exporter_outbox WHERE destination=%s "
+                        "AND state IN ('READY','RETRY_WAIT') "
+                        "AND next_attempt_at<=%s AND expires_at>%s "
+                        "ORDER BY next_attempt_at,request_id FOR UPDATE SKIP LOCKED LIMIT 1",
+                        (self.settings.destination, now, now),
+                    )
+                ).fetchone()
+                if not row:
+                    return None
+                if not await self._current_source_matches(conn, row):
+                    await conn.execute(
+                        "UPDATE exporter_outbox SET state='UNCERTAIN',last_code=%s,"
+                        "updated_at=%s WHERE destination=%s AND request_id=%s",
+                        (
+                            "lineage_invalidated",
+                            now,
+                            self.settings.destination,
+                            row["request_id"],
+                        ),
+                    )
+                    await self._count(conn, "lineage_invalidated")
+                    continue
+                break
             token = uuid4()
             until = now + timedelta(seconds=self.settings.lease_seconds)
             await conn.execute(
@@ -287,6 +330,25 @@ class ExportRepository:
                 row["expires_at"],
                 until,
             )
+
+    async def _current_source_matches(self, conn, row) -> bool:
+        if row["source_event_hash"] is None:
+            return True
+        current = await (
+            await conn.execute(
+                "SELECT 1 FROM projection_resolved WHERE cpamp_instance_id=%s "
+                "AND event_hash=%s AND cpa_instance_id=%s AND keycloak_issuer=%s "
+                "AND request_id=%s AND correlation_status='correlated'",
+                (
+                    row["source_cpamp_instance_id"],
+                    row["source_event_hash"],
+                    row["source_cpa_instance_id"],
+                    row["source_keycloak_issuer"],
+                    row["request_id"],
+                ),
+            )
+        ).fetchone()
+        return current is not None
 
     async def get(self, request_id: UUID) -> ExportJob | None:
         async with self.database.transaction() as conn:
@@ -365,12 +427,30 @@ class ExportRepository:
         async with self.database.transaction() as conn:
             row = await (
                 await conn.execute(
-                    "SELECT 1 FROM exporter_outbox WHERE destination=%s AND request_id=%s "
+                    "SELECT * FROM exporter_outbox WHERE destination=%s AND request_id=%s "
                     "AND state='IN_FLIGHT' AND lease_token=%s AND lease_until>%s AND expires_at>%s",
                     (self.settings.destination, lease.request_id, lease.token, now, now),
                 )
             ).fetchone()
-            return row is not None
+            if row is None:
+                return False
+            if await self._current_source_matches(conn, row):
+                return True
+            await conn.execute(
+                "UPDATE exporter_outbox SET state='UNCERTAIN',last_code=%s,"
+                "lease_token=NULL,lease_until=NULL,updated_at=%s "
+                "WHERE destination=%s AND request_id=%s AND state='IN_FLIGHT' "
+                "AND lease_token=%s",
+                (
+                    "lineage_invalidated",
+                    now,
+                    self.settings.destination,
+                    lease.request_id,
+                    lease.token,
+                ),
+            )
+            await self._count(conn, "lineage_invalidated")
+            return False
 
     async def stats(self, *, now: datetime | None = None) -> dict:
         now = now or datetime.now(UTC)

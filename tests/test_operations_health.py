@@ -7,6 +7,8 @@ from proxylens.app import worker_operations_ready
 from proxylens.cpamp import AdapterHealth, CollectorStatus, CPAMPAdapter
 from proxylens.operations_health import ExportHealth, ProjectionHealth, operations_health
 
+pytest_plugins = ("test_operations",)
+
 NOW = datetime(2026, 10, 26, tzinfo=UTC)
 
 
@@ -92,6 +94,35 @@ def test_worker_readiness_requires_cpamp_adapter_and_collector():
         is False
     )
     assert worker_operations_ready(None) is False
+
+
+def test_checkpoint_status_persists_jsonb_details_on_real_postgres(ops_database):
+    from proxylens.app import checkpoint_worker_status
+
+    class Supervisor:
+        status = {
+            "completion_scan": {
+                "state": "available",
+                "observed_at": NOW,
+            }
+        }
+
+    async def scenario():
+        await checkpoint_worker_status(ops_database, Supervisor())
+        async with ops_database.transaction() as conn:
+            row = await (
+                await conn.execute(
+                    "SELECT state, details FROM operations_status WHERE component=%s",
+                    ("completion_scan",),
+                )
+            ).fetchone()
+        assert row["state"] == "available"
+        assert row["details"] == {
+            "state": "available",
+            "observed_at": NOW.isoformat(),
+        }
+
+    asyncio.run(scenario())
 
 
 def test_proof_disabled_worker_uses_authenticated_collector_without_reading_history():

@@ -104,6 +104,22 @@ def test_real_signed_identity_scopes_every_usage_path_and_live_orphan_state(data
                 assert body["coverage"] == "unknown"
                 assert "coverage_details" not in body["health"]
                 assert "duplicate_count" not in body["health"]
+                group_result = await client.get(f"/api/groups/{G1}/usage")
+                assert group_result.status_code == 200
+                assert [r["group_id"] for r in group_result.json()["records"]] == [G1]
+                application_result = await client.get(f"/api/applications/{a1['id']}/usage")
+                assert application_result.status_code == 200, application_result.text
+                assert [r["application_id"] for r in application_result.json()["records"]] == [
+                    a1["id"]
+                ]
+                client.headers["Authorization"] = "Bearer " + token((G1, G2), ("platform-admin",))
+                scoped_group = await client.get(f"/api/groups/{G2}/usage")
+                assert [r["group_id"] for r in scoped_group.json()["records"]] == [G2]
+                scoped_application = await client.get(f"/api/applications/{a2['id']}/usage")
+                assert [r["application_id"] for r in scoped_application.json()["records"]] == [
+                    a2["id"]
+                ]
+                client.headers["Authorization"] = "Bearer " + token()
                 other_config = replace(config, cpa_instance_id="another-cpa")
                 other_app = FastAPI()
                 other_app.state.identity = app.state.identity

@@ -29,6 +29,10 @@ class ExporterSettings:
     backoff_cap_seconds: float = 300
     # Enable only with operator evidence that this destination's 429 is pre-admission.
     trusted_pre_admission_429: bool = False
+    # A destination may attest that a temporary HTTP response happened before
+    # admission. Without this destination-specific signal, the response is
+    # ambiguous because a proxy may fail after Langfuse accepted the payload.
+    trusted_pre_admission_temporary_failures: bool = False
 
     def __post_init__(self):
         from proxylens.exporter import _safe

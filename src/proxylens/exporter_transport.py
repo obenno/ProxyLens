@@ -1,4 +1,4 @@
-"""Bounded OTLP v4 HTTP/JSON delivery. Only pre-send nonacceptance is retryable."""
+"""Bounded OTLP v4 HTTP/JSON delivery with explicit pre-admission retries."""
 
 import asyncio
 import json
@@ -34,7 +34,13 @@ class DeliveryResult:
                 "unexpected_status",
                 "cancelled",
             },
-            "RETRY_WAIT": {"connect_failed", "pool_timeout", "throttled"},
+            "RETRY_WAIT": {
+                "connect_failed",
+                "pool_timeout",
+                "throttled",
+                "write_timeout_before_send",
+                "temporary_http_before_send",
+            },
         }
         if self.code not in allowed.get(self.state, set()):
             raise ExportError("invalid_delivery_result")
@@ -108,6 +114,17 @@ class OtlpTransport:
             auth = self._credentials()
         except ExportError:
             return DeliveryResult("DEAD_LETTER", "credentials_unavailable")
+        body_started = False
+
+        class TrackedBody(httpx.AsyncByteStream):
+            async def __aiter__(self):
+                nonlocal body_started
+                body_started = True
+                yield payload
+
+            async def aclose(self):
+                return None
+
         try:
             async with asyncio.timeout(self.settings.request_timeout_seconds):
                 # No environment proxy, redirects, compression or built-in transport retries.
@@ -121,7 +138,7 @@ class OtlpTransport:
                     client.stream(
                         "POST",
                         self.settings.endpoint,
-                        content=payload,
+                        content=TrackedBody(),
                         auth=auth,
                         headers={
                             "content-type": "application/json",
@@ -149,7 +166,13 @@ class OtlpTransport:
                                 )
                         return DeliveryResult("RETRY_WAIT", "throttled", delay)
                     if response.status_code >= 500 or response.status_code == 408:
-                        # A reverse proxy can return these after upstream acceptance.
+                        # Retry only with an explicit destination attestation that
+                        # admission did not occur. Bare 408/5xx is ambiguous.
+                        if (
+                            self.settings.trusted_pre_admission_temporary_failures
+                            and response.headers.get("x-proxylens-admission") == "not-admitted"
+                        ):
+                            return DeliveryResult("RETRY_WAIT", "temporary_http_before_send")
                         return DeliveryResult("UNCERTAIN", "http_uncertain")
                     if 400 <= response.status_code < 500:
                         return DeliveryResult("DEAD_LETTER", "http_rejected")
@@ -167,5 +190,9 @@ class OtlpTransport:
             return DeliveryResult("RETRY_WAIT", "connect_failed")
         except httpx.PoolTimeout:
             return DeliveryResult("RETRY_WAIT", "pool_timeout")
+        except httpx.WriteTimeout:
+            if not body_started:
+                return DeliveryResult("RETRY_WAIT", "write_timeout_before_send")
+            return DeliveryResult("UNCERTAIN", "transport_uncertain")
         except (httpx.HTTPError, TimeoutError, OSError):
             return DeliveryResult("UNCERTAIN", "transport_uncertain")

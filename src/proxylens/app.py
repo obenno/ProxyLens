@@ -9,6 +9,7 @@ import httpx
 import psycopg
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from psycopg.types.json import Jsonb
 
 from proxylens.config import Settings, secret_file
 from proxylens.cpamp import CollectorStatus, CPAMPAdapter
@@ -147,6 +148,27 @@ def worker_operations_ready(snapshot: dict | None) -> bool:
     return cpamp.get("state") == "available" and cpamp.get("collector_state") == "available"
 
 
+async def checkpoint_worker_status(database, supervisor) -> None:
+    """Persist the fixed, redacted supervisor diagnostic shape as JSONB."""
+    async with database.transaction() as conn:
+        for component, state in supervisor.status.items():
+            observed_at = state.get("observed_at")
+            if isinstance(observed_at, datetime):
+                observed_at = observed_at.isoformat()
+            await conn.execute(
+                "INSERT INTO operations_status(component, observed_at, state, details) "
+                "VALUES (%s, clock_timestamp(), %s, %s) "
+                "ON CONFLICT(component) DO UPDATE SET "
+                "observed_at=EXCLUDED.observed_at, "
+                "state=EXCLUDED.state, details=EXCLUDED.details",
+                (
+                    component,
+                    state["state"],
+                    Jsonb({"state": state["state"], "observed_at": observed_at}),
+                ),
+            )
+
+
 @dataclass(frozen=True)
 class WorkerRuntime:
     adapter: CPAMPAdapter
@@ -260,25 +282,6 @@ def create_app(role: str, *, identity_transport: httpx.AsyncBaseTransport | None
 
                 await app.state.identity.authority.reconcile(group_ids, mark_unusable)
 
-            async def checkpoint_status():
-                async with database.transaction() as conn:
-                    for component, state in supervisor.status.items():
-                        observed_at = state.get("observed_at")
-                        if isinstance(observed_at, datetime):
-                            observed_at = observed_at.isoformat()
-                        await conn.execute(
-                            "INSERT INTO operations_status(component, observed_at, state, details) "
-                            "VALUES (%s, clock_timestamp(), %s, %s) "
-                            "ON CONFLICT(component) DO UPDATE SET "
-                            "observed_at=EXCLUDED.observed_at, "
-                            "state=EXCLUDED.state, details=EXCLUDED.details",
-                            (
-                                component,
-                                state["state"],
-                                {"state": state["state"], "observed_at": observed_at},
-                            ),
-                        )
-
             async with projection_worker_lifespan(projection_repository, adapter, gate=proof_gate):
                 stop = asyncio.Event()
                 # Establish the initial checkpoint before background tasks can
@@ -301,12 +304,13 @@ def create_app(role: str, *, identity_transport: httpx.AsyncBaseTransport | None
                     periodic_tick(
                         stop,
                         settings.worker_interval_seconds,
-                        checkpoint_status,
+                        lambda: checkpoint_worker_status(database, supervisor),
                         name="status_checkpoint",
                         status=supervisor.status,
                     ),
                     name="status-checkpoint",
                 )
+                await checkpoint_worker_status(database, supervisor)
                 try:
                     yield
                 finally:
@@ -317,7 +321,7 @@ def create_app(role: str, *, identity_transport: httpx.AsyncBaseTransport | None
                         with suppress(asyncio.CancelledError):
                             await task
                     with suppress(Exception):
-                        await checkpoint_status()
+                        await checkpoint_worker_status(database, supervisor)
 
     app = FastAPI(
         title=f"ProxyLens {role}",
