@@ -79,11 +79,25 @@ the temporary bootstrap account. Create human users/flat groups and assign
 Keycloak persists realm, users, and sessions in `keycloak_db_data`. The import
 JSON is only a first-boot seed; restarting skips an existing realm.
 
-`cpa-init` seeds `cpa_config:/config/config.yaml` from the v8 template and mounted
-keys only if no config exists. JSON input is valid YAML; CPA rewrites and hashes
-the management key in its writable config. Operator changes persist across
-restarts. OAuth credentials live in `cpa_auth`. Raw request logging and the
-downloaded CPA panel are disabled. No provider is logged in by this ticket.
+`cpa-init` seeds `cpa_config:/config/config.yaml` from the pinned v8 template and
+mounted keys only if no config exists. The template sets
+`server.commercial-mode: true` and keeps `observability.logs.debug`,
+`logging-to-file`, and `request-log` false. In CPA v8.0.40, commercial mode is the
+supported setting that omits the request-body logging middleware; `request-log:
+false` alone is not sufficient to prevent error-path body capture. JSON input is
+valid YAML; CPA rewrites and hashes the management key in its writable config.
+Operator changes persist across restarts. OAuth credentials live in `cpa_auth`.
+Raw request logging and the downloaded CPA panel are disabled. No provider is
+logged in by this ticket.
+
+On every boot, `cpa-init` preserves an existing config byte-for-byte only when it
+explicitly contains the pinned contract's safe logging settings. A legacy or
+manually edited config that lacks `server.commercial-mode: true` or enables any
+of the three raw-logging switches causes `cpa-init` to fail closed; it is not
+overwritten and CPA is not started. Before retrying, back up `cpa_config`, apply
+the v8.0.40 config migration by adding the supported settings above, and rerun
+the initializer. This migration rule protects persistent deployments while
+preserving provider OAuth state and operator configuration.
 
 CPAMP bootstraps the CPA connection from its URL and mounted management key,
 uses its real Full Mode SQLite database under `/data`, and is the **only** usage
@@ -142,8 +156,10 @@ Changing secret files does not rotate persisted credentials automatically:
   values together, then recreate dependent containers.
 - Keycloak bootstrap passwords and realm import client secrets are initialization-
   only; rotate through Keycloak and update the corresponding mounted files.
-- CPA config is intentionally preserved. Rotate its management/client keys through
-  the supported management interface and update CPAMP/gateway secret mounts together.
+- CPA config is intentionally preserved after the raw-logging safety guard passes.
+  Rotate its management/client keys through the supported management interface and
+  update CPAMP/gateway secret mounts together. Do not bypass the initializer's
+  fail-closed migration check for an older config.
 - CPAMP stores its connection/config; verify its effective connection after rotation.
   Preserve its data key unless using an upstream-supported re-encryption migration.
 - Recreate affected containers after replacing a secret file; bind mounts can retain

@@ -45,6 +45,7 @@ fallback collector. Future ProxyLens management adapters should use v8.
 | Contract | Official source |
 | --- | --- |
 | CPA v8 nested config, writable config/hash updates, OAuth directory, usage retention | `router-for-me/CLIProxyAPI@v8.0.40/config.example.yaml` |
+| CPA v8 request-body logging guard (`server.commercial-mode`) | `router-for-me/CLIProxyAPI@v8.0.40/internal/api/server.go`; `internal/api/server_options.go` |
 | CPA executable path and Debian runtime (Bash available; no curl/wget assumed) | `router-for-me/CLIProxyAPI@v8.0.40/Dockerfile` |
 | Nonconsumptive CPA `GET /healthz` | `router-for-me/CLIProxyAPI@v8.0.40/internal/api/server_routes.go` |
 | CPAMP `CPA_UPSTREAM_URL`, key-file variables, `http` collector mode | `seakee/CPA-Manager-Plus@v1.14.9/apps/manager-server/internal/config/config.go` |
