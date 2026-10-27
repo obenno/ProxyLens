@@ -17,6 +17,7 @@ from proxylens.correlation import (
     TenantUsageGate,
     UsageIdentity,
 )
+from proxylens.cpamp import HistoryWindow
 from proxylens.db import StorageUnavailable
 from proxylens.exporter import ExclusiveUsage, ExportError, Observation
 from proxylens.exporter_worker import ExportWorker
@@ -406,7 +407,26 @@ class OperationsSupervisor:
             or (now - self._last_retention).total_seconds() >= self.retention_interval_seconds
         ) and await self._step("retention", lambda: self.retention.run(now=now)) is not None:
             self._last_retention = now
-        self.collector = await self._step("cpamp_status", self.adapter.read_status)
+
+        async def history_probe():
+            if self.adapter.last_success is None:
+                end_ms = int(now.timestamp() * 1000) + 1000
+                start_ms = max(1, end_ms - 60_000)
+                history = await self.adapter.read_window(HistoryWindow(start_ms, end_ms))
+                if history.state != "available" or not history.traversal_complete:
+                    raise RuntimeError("cpamp_history_unavailable")
+            return await self.adapter.read_status()
+
+        self.collector = await self._step("cpamp_status", history_probe)
+        # A healthy collector is not sufficient for readiness: the worker must
+        # have completed at least one authenticated durable-history read. This
+        # prevents a newly restarted worker from reporting ready while its
+        # projection source is still unknown.
+        if self.collector is not None and self.adapter.last_success is None:
+            self.status["cpamp_status"] = {
+                "state": "unavailable",
+                "observed_at": datetime.now(UTC).isoformat(),
+            }
         await self._step("projection_health", self.projection.health)
 
     async def run(self, stop: asyncio.Event):

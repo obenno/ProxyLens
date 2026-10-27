@@ -2,8 +2,10 @@
 
 ## Status
 
-The implementation is locally validated, **not live-provider proven**. Both live
-proof gates remain closed by default. Synthetic tests do not enable deployment.
+The implementation is locally validated, with partial live provider/correlation
+evidence recorded privately by the Phase 1 continuation harness. Both live proof
+gates remain closed by default. Partial live evidence and synthetic tests do not
+enable deployment.
 CPAMP remains the history authority and sole usage-queue consumer. This module
 calls only the existing version-pinned `CPAMPAdapter` read methods.
 
