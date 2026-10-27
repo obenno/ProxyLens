@@ -258,6 +258,7 @@ def create_app(role: str, *, identity_transport: httpx.AsyncBaseTransport | None
                 retention_interval_seconds=settings.retention_interval_seconds,
                 scan_limit=settings.worker_scan_limit,
                 drain_limit=settings.worker_drain_limit,
+                history_enabled=proof_gate.permits(settings.projection),
             )
             app.state.adapter = adapter
             app.state.exporter = exporter_repository
@@ -278,7 +279,9 @@ def create_app(role: str, *, identity_transport: httpx.AsyncBaseTransport | None
                 group_ids = [row["id"] for row in rows]
 
                 async def mark_unusable(evidence):
-                    await repository.reconcile_group(evidence.group_id, actor="worker")
+                    await repository.reconcile_group(
+                        evidence.group_id, actor="worker", evidence=evidence
+                    )
 
                 await app.state.identity.authority.reconcile(group_ids, mark_unusable)
 

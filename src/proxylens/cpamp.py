@@ -189,6 +189,10 @@ def _text(value: Any) -> bool:
 @dataclass
 class _Read:
     records: dict[str, UsageRecord] = field(default_factory=dict)
+    # Conflict identity is retained before exact request filtering. The
+    # bounded traversal must produce the same quarantine regardless of page
+    # order or which copy matches the request-id hint.
+    observed: dict[str, UsageRecord] = field(default_factory=dict)
     conflicts: set[str] = field(default_factory=set)
     reasons: set[str] = field(default_factory=set)
     duplicates: int = 0
@@ -211,22 +215,25 @@ class _Read:
         if record.event_hash in self.conflicts:
             self.rejected += 1
             return
-        if previous := self.records.get(record.event_hash):
+        previous = self.observed.get(record.event_hash)
+        if previous:
             self.duplicates += 1
             self.reasons.add("duplicate_record")
             if previous != record:
-                del self.records[record.event_hash]
+                self.records.pop(record.event_hash, None)
                 self.conflicts.add(record.event_hash)
                 self.reasons.add("conflicting_record")
                 self.rejected += 2
-            return
+                return
+        else:
+            self.observed[record.event_hash] = record
         if window and window.request_id and record.request_id != window.request_id:
             return  # CPAMP search is substring, not an exact identity predicate.
         if record.normalized.quality != "derived":
             self.reasons.add("normalization_" + record.normalized.quality)
         if not record.request_id:
             self.reasons.add("missing_request_id")
-        self.records[record.event_hash] = record
+        self.records.setdefault(record.event_hash, record)
 
     def result(self, *, complete: bool, unavailable: bool = False) -> ReadResult:
         return ReadResult(

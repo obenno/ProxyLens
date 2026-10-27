@@ -44,6 +44,38 @@ class ProjectionRepository:
         self.database, self.settings, self.clock_ms = database, settings, clock_ms
         self.retention = retention or RetentionPolicy(projection_days=settings.retention_days)
 
+    @staticmethod
+    async def _integration_audit(conn, action: str, *, outcome: str, details: dict) -> None:
+        if action not in {
+            "integration.cpamp.read",
+            "integration.projection.promote",
+            "integration.projection.failure",
+        } or outcome not in {"success", "denied"}:
+            raise ValueError("invalid integration audit")
+        await conn.execute(
+            "INSERT INTO resource_audit(id, actor, action, outcome, details) "
+            "VALUES (%s, %s, %s, %s, %s)",
+            (uuid4(), "system:worker", action, outcome, Jsonb(details)),
+        )
+
+    async def record_cpamp_read(self, result: ReadResult) -> None:
+        """Record bounded CPAMP traversal facts without copying source rows."""
+        async with self.database.transaction() as conn:
+            await self._integration_audit(
+                conn,
+                "integration.cpamp.read",
+                outcome="success" if result.state != "unavailable" else "denied",
+                details={
+                    "state": result.state,
+                    "traversal_complete": result.traversal_complete,
+                    "pages": result.pages,
+                    "records": len(result.records),
+                    "rejected": result.rejected_count,
+                    "duplicates": result.duplicate_count,
+                    "reasons": sorted(result.reasons),
+                },
+            )
+
     async def source_state(self):
         async with self.database.transaction() as conn:
             return await (
@@ -226,6 +258,16 @@ class ProjectionRepository:
                 ),
             )
             await conn.execute("DELETE FROM projection_runs WHERE run_id = %s", (run_id,))
+            await self._integration_audit(
+                conn,
+                "integration.projection.promote",
+                outcome="success",
+                details={
+                    "reconcile": reconcile,
+                    "duplicate_count": duplicate_count,
+                    "reason_count": len(reasons),
+                },
+            )
 
     async def failed(self, reasons):
         async with self.database.transaction() as conn:
@@ -240,6 +282,12 @@ class ProjectionRepository:
                     Jsonb(sorted(set(reasons))),
                     self.settings.cpamp_instance_id,
                 ),
+            )
+            await self._integration_audit(
+                conn,
+                "integration.projection.failure",
+                outcome="denied",
+                details={"reason_count": len(set(reasons))},
             )
 
     async def diagnostic_records(self, *, limit=200, offset=0):
@@ -560,6 +608,7 @@ class ProjectionWorker:
                         min(end, window_start + config.window_ms),
                     )
                 )
+                await self.repository.record_cpamp_read(result)
                 if (
                     not result.traversal_complete
                     or result.rejected_count

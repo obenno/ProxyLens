@@ -86,6 +86,13 @@ at the last **committed window end minus overlap**, never at a row timestamp or
 response-generation timestamp. No finite overlap proves historical completeness;
 periodic reconciliation scans the whole locally retained interval for late imports.
 
+Each CPAMP window records one redacted `integration.cpamp.read` audit event with
+state, completion, bounded counts and fixed reason codes only. Successful
+promotion and failed publication append `integration.projection.promote` or
+`integration.projection.failure` in the same PostgreSQL transaction as their
+checkpoint/data changes; hashes, request IDs, raw rows and source error text are
+never included.
+
 Each window is read by the adapter, then persisted into a private PostgreSQL run.
 All windows must finish before a single transaction promotes staged records,
 updates lineage, prunes expired projection rows and advances the checkpoint.

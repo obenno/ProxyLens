@@ -8,6 +8,7 @@ import sys
 import pytest
 
 from proxylens.db import Database, StorageUnavailable
+from proxylens.identity import GroupEvidence, GroupState
 from proxylens.policies import Policy
 from proxylens.resources import ResourceError, ResourceRepository, VerifiedGroup
 
@@ -105,6 +106,30 @@ def test_verified_group_orphans_and_explicit_reassignment_preserve_history(datab
         repair = next(event for event in audit if event["action"] == "application.reassign")
         assert repair["details"]["previous_group_id"] == "g1"
         assert repair["group_id"] == "g2"
+
+    asyncio.run(scenario())
+
+
+def test_nested_group_evidence_is_persisted_as_unusable_and_audited_atomically(database):
+    async def scenario():
+        repo = ResourceRepository(database, lookup)
+        app = await repo.create_application("g1", "Nested candidate", actor="alice")
+        evidence = GroupEvidence(
+            "https://identity.example/realms/proxylens", "g1", GroupState.NESTED, 1.0
+        )
+
+        result = await repo.reconcile_group("g1", actor="worker", evidence=evidence)
+
+        assert result == {"id": "g1", "state": "unusable"}
+        assert (await repo.get_application(app["id"]))["state"] == "unusable"
+        with pytest.raises(ResourceError, match="group_orphaned"):
+            await repo.create_application("g1", "blocked", actor="operator")
+        events = await repo.list_audit({"g1"})
+        reconciliation = next(event for event in events if event["action"] == "group.reconcile")
+        assert reconciliation["details"] == {
+            "state": "unusable",
+            "evidence_state": "nested",
+        }
 
     asyncio.run(scenario())
 

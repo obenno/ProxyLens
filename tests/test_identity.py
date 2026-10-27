@@ -1,4 +1,5 @@
 import asyncio
+import json
 import time
 
 import httpx
@@ -249,6 +250,50 @@ def test_unusable_jwks_is_never_an_authentication_success(response):
         ) as client:
             with pytest.raises(AuthorityUnavailable):
                 await TokenVerifier(settings(), client).validate(signed())
+
+    asyncio.run(check())
+
+
+def test_jwks_body_is_streamed_with_a_strict_limit_and_valid_streams_still_verify():
+    class Stream(httpx.AsyncByteStream):
+        def __init__(self, body, *, stall=False):
+            self.body = body
+            self.stall = stall
+            self.closed = False
+
+        async def __aiter__(self):
+            yield self.body[:100]
+            if self.stall:
+                await asyncio.sleep(1)
+            yield self.body[100:]
+
+        async def aclose(self):
+            self.closed = True
+
+    valid = json.dumps(jwks()).encode()
+    oversized = Stream(valid + b"x" * (65_536 - len(valid) + 1))
+    slow = Stream(valid, stall=True)
+    streams = [oversized]
+
+    def handle(request):
+        return httpx.Response(200, stream=streams[0])
+
+    async def check():
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handle)) as client:
+            verifier = TokenVerifier(settings(jwks_timeout_seconds=0.01), client)
+            with pytest.raises(AuthorityUnavailable):
+                await verifier.validate(signed())
+            assert oversized.closed
+
+            streams[0] = slow
+            verifier = TokenVerifier(settings(jwks_timeout_seconds=0.01), client)
+            with pytest.raises(AuthorityUnavailable):
+                await verifier.validate(signed())
+            assert slow.closed
+
+            streams[0] = Stream(valid)
+            verifier = TokenVerifier(settings(), client)
+            assert (await verifier.validate(signed())).subject == SUBJECT
 
     asyncio.run(check())
 

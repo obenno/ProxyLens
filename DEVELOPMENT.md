@@ -968,3 +968,33 @@ claim is made.
 Private raw evidence and credentials remain under
 `/data/tmp/opencode/proxylens-phase1/live-acceptance-20261027/` and are not
 copied into the repository.
+
+## 2026-10-27 — Final review correction follow-up
+
+The second final-review correction pass closes the remaining boundedness,
+ordering, identity-evidence, readiness, and integration-audit defects.
+
+- CPAMP `_Read` retains bounded sanitized records by event hash before exact
+  request filtering. Conflicting copies therefore quarantine both copies in
+  either page order; filtered rows cannot hide a conflict and no raw payload is
+  retained.
+- OIDC callback state is accepted only as 1–256 URL-safe ASCII characters before
+  constant-time comparison. Unicode, malformed, and oversized values return the
+  fixed 401 identity error while preserving single-use login state.
+- JWKS refresh uses `httpx` streaming, rejects redirects/compression, enforces a
+  65,536-byte body cap incrementally, and applies a two-second whole-refresh
+  deadline while retaining serialized refresh/cooldown behavior.
+- Group reconciliation passes the authoritative `GroupEvidence` into the
+  resource transaction. Missing groups persist `orphaned`; nested groups persist
+  `unusable`; transient authority failures do neither. The state transition and
+  redacted `group.reconcile` audit are atomic, with migration `013` adding the
+  supported state.
+- Proof-disabled worker readiness reads only authenticated CPAMP collector
+  status. CPAMP/projection integration transitions now write bounded metadata-only
+  audit events transactionally. Gateway model POST behavior remains intentionally
+  zero-retry for ambiguous provider admission, including pre-response failures.
+
+Validation completed: the isolated locked suite passed **335 tests** with zero
+skips; Ruff check and format check passed; Python compilation and `git diff --check`
+passed. The dedicated PostgreSQL databases were created and removed by the locked
+suite harness.

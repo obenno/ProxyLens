@@ -239,6 +239,36 @@ async def bind(database, group="g1", application="app1", native=NATIVE):
     return request
 
 
+def test_cpamp_reads_and_projection_transitions_write_safe_integration_audits(database, tmp_path):
+    async def scenario():
+        config, clock = settings(retention_days=1), [NOW]
+        history = History([event()])
+        repo = ProjectionRepository(database, config, clock_ms=lambda: clock[0])
+        async with adapter(history, config, clock) as source:
+            worker = ProjectionWorker(
+                repo,
+                source,
+                gate=synthetic_gate(tmp_path, config),
+                clock_ms=lambda: clock[0],
+            )
+            assert await worker.poll_once()
+        async with database.transaction() as conn:
+            rows = await (
+                await conn.execute(
+                    "SELECT action, outcome, details FROM resource_audit "
+                    "WHERE action LIKE 'integration.%' ORDER BY occurred_at"
+                )
+            ).fetchall()
+        assert [row["action"] for row in rows] == [
+            "integration.cpamp.read",
+            "integration.projection.promote",
+        ]
+        assert all(row["outcome"] == "success" for row in rows)
+        assert all("event_hash" not in str(row["details"]) for row in rows)
+
+    asyncio.run(scenario())
+
+
 def test_late_collision_and_missing_ids_never_use_stale_ownership(database, tmp_path):
     async def scenario():
         config, clock = settings(retention_days=1), [NOW]

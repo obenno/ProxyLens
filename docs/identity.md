@@ -116,6 +116,8 @@ Errors: invalid identity 401; scope/CSRF/unusable group 403; unavailable authori
   Refresh serialized and at most once per 15 seconds per process, including
   failures/unknown kids (`PROXYLENS_JWKS_REFRESH_INTERVAL`, 1–TTL). Unknown kid
   during cooldown fails closed; it is never accepted using a different key.
+  JWKS refreshes stream at most 65,536 bytes with a two-second whole-refresh
+  deadline, reject redirects/compression, and never buffer an unbounded body.
   Bad signatures do not trigger a refresh storm. No stale-key grace beyond TTL.
 - Already-authenticated READ requests may continue during outage only with an
   unexpired token and a still-valid cached key. Membership changes/revocation are
@@ -135,13 +137,19 @@ Only authoritative 404 means missing; 401/403/5xx/timeouts/schema mismatch raise
 
 `await authority.reconcile(group_ids, mark_unusable)` calls the supplied async
 hook for missing/nested groups. The resources worker must schedule it, persist
-orphan status and audit evidence transactionally, and block orphaned use. This
+orphan/unusable status and audit evidence transactionally, and block unusable
+use. Missing evidence persists `orphaned`; authoritative nested evidence
+persists `unusable`. This
 identity ticket supplies the detection/hook; it does **not** persist application
 orphans or start a resources worker. The hook never auto-clears an orphan or
 reassigns ownership. Explicit audited repair/revoke belongs to resource management;
 historical ownership stays unchanged. Transient authority failure aborts the scan,
 preserving existing flags; retry later. Check ownership live before new use/writes
 so a reconciliation interval cannot silently authorize a deleted target.
+
+The worker passes the exact `GroupEvidence` returned by the scan into the resource
+repository. The repository does not perform a second active-only lookup, so nested
+groups cannot be converted into an outage or lose their transactional audit.
 
 ## Verification
 

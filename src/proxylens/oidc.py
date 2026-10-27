@@ -2,6 +2,7 @@
 
 import base64
 import hashlib
+import re
 import secrets
 import time
 from dataclasses import dataclass
@@ -27,6 +28,14 @@ class Session:
     token: str
     csrf: str
     expires_at: float
+
+
+_CALLBACK_STATE_RE = re.compile(r"[A-Za-z0-9_-]{1,256}\Z")
+
+
+def _valid_callback_state(value: object) -> bool:
+    """Validate bounded URL-safe ASCII before constant-time comparison."""
+    return isinstance(value, str) and _CALLBACK_STATE_RE.fullmatch(value) is not None
 
 
 def principal_json(principal: Principal) -> dict:
@@ -132,7 +141,11 @@ class IdentityService:
         self.prune()
         state = request.query_params.get("state", "")
         cookie = request.cookies.get(self.login_cookie, "")
-        if not state or not cookie or not secrets.compare_digest(state, cookie):
+        if (
+            not _valid_callback_state(state)
+            or not _valid_callback_state(cookie)
+            or not secrets.compare_digest(state, cookie)
+        ):
             raise IdentityError("invalid_callback")
         login = self.logins.pop(state, None)  # single-use, including rejected callbacks
         code = request.query_params.get("code", "")

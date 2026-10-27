@@ -54,7 +54,7 @@ class NoopRetention:
         return None
 
 
-def supervisor(adapter):
+def supervisor(adapter, *, history_enabled=True):
     return OperationsSupervisor(
         adapter=adapter,
         projection=NoopProjection(),
@@ -65,6 +65,7 @@ def supervisor(adapter):
         retention_interval_seconds=3600,
         scan_limit=10,
         drain_limit=10,
+        history_enabled=history_enabled,
     )
 
 
@@ -88,5 +89,18 @@ def test_worker_history_probe_allows_cpamp_after_authenticated_history_read():
         assert worker.collector.state == "available"
         assert worker.status["cpamp_status"]["state"] == "available"
         assert adapter.status_calls == 1
+
+    asyncio.run(run())
+
+
+def test_worker_proof_disabled_uses_collector_without_history_read():
+    async def run():
+        adapter = FakeAdapter(ReadResult((), "unavailable", False, reasons=("transport",)))
+        worker = supervisor(adapter, history_enabled=False)
+        await worker.tick(now=datetime(2026, 10, 27, tzinfo=UTC))
+        assert worker.collector.state == "available"
+        assert worker.status["cpamp_status"]["state"] == "available"
+        assert adapter.status_calls == 1
+        assert adapter.last_success is None
 
     asyncio.run(run())
