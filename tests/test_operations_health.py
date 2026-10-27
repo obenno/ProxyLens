@@ -1,7 +1,10 @@
+import asyncio
 from datetime import UTC, datetime, timedelta
 
+import httpx
+
 from proxylens.app import worker_operations_ready
-from proxylens.cpamp import AdapterHealth, CollectorStatus
+from proxylens.cpamp import AdapterHealth, CollectorStatus, CPAMPAdapter
 from proxylens.operations_health import ExportHealth, ProjectionHealth, operations_health
 
 NOW = datetime(2026, 10, 26, tzinfo=UTC)
@@ -89,3 +92,48 @@ def test_worker_readiness_requires_cpamp_adapter_and_collector():
         is False
     )
     assert worker_operations_ready(None) is False
+
+
+def test_proof_disabled_worker_uses_authenticated_collector_without_reading_history():
+    async def scenario():
+        calls = []
+        online = True
+
+        def server(request):
+            calls.append(request.url.path)
+            assert request.headers["authorization"] == "Bearer synthetic-manager"
+            if not online:
+                return httpx.Response(503)
+            return httpx.Response(
+                200,
+                json={
+                    "collector": {
+                        "collector": "running",
+                        "lastConsumedAt": 0,
+                        "lastInsertedAt": 0,
+                        "deadLetters": 0,
+                    }
+                },
+            )
+
+        async with CPAMPAdapter(
+            "http://cpamp.example",
+            "synthetic-manager",
+            instance_id="synthetic",
+            transport=httpx.MockTransport(server),
+        ) as adapter:
+            for online in (True, False, True):
+                collector = await adapter.read_status()
+                health = snapshot(
+                    adapter=adapter.health(),
+                    collector=collector,
+                    projection=ProjectionHealth(enabled=False),
+                )
+                assert worker_operations_ready(health) is online
+                assert health["dependencies"]["projection"]["state"] == "disabled"
+                assert health["dependencies"]["cpamp"]["history_state"] == "disabled"
+                assert health["dependencies"]["cpamp"]["history_last_success_ms"] is None
+                assert health["dependencies"]["cpamp"]["queue_coverage"] == "unknown"
+        assert calls == ["/status", "/status", "/status"]
+
+    asyncio.run(scenario())
