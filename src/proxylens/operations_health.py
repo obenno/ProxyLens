@@ -79,8 +79,11 @@ def operations_health(
             "keycloak": {"state": "available" if keycloak else "unavailable"},
             "cliproxyapi": {"state": "available" if cliproxyapi else "unavailable"},
             "cpamp": {
-                "state": adapter_state,
+                # The authenticated collector status remains a readiness probe
+                # when live proof gates intentionally disable history polling.
+                "state": adapter_state if projection.enabled else collector_state,
                 "collector_state": collector_state,
+                "history_state": adapter_state if projection.enabled else "disabled",
                 "history_last_success_ms": count(adapter.last_success_ms),
                 "last_consumed_at_ms": count(collector.last_consumed_at_ms),
                 "last_inserted_at_ms": count(collector.last_inserted_at_ms),

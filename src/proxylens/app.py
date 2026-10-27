@@ -81,12 +81,13 @@ async def _worker_operations_health(app, settings, *, postgres, keycloak, clipro
         return None
 
     now = datetime.now(UTC)
-    projection = ProjectionHealth(enabled=True)
+    projection_enabled = runtime.scanner.gate.permits(settings.projection)
+    projection = ProjectionHealth(enabled=projection_enabled)
     try:
         projection_snapshot = await runtime.projection.health()
         last_success_ms = projection_snapshot.get("last_success_ms")
         projection = ProjectionHealth(
-            enabled=True,
+            enabled=projection_enabled,
             last_success=(
                 datetime.fromtimestamp(last_success_ms / 1000, UTC)
                 if isinstance(last_success_ms, int)
@@ -103,7 +104,7 @@ async def _worker_operations_health(app, settings, *, postgres, keycloak, clipro
             stale=projection_snapshot.get("state") == "stale",
         )
     except Exception:
-        projection = ProjectionHealth(enabled=True)
+        projection = ProjectionHealth(enabled=projection_enabled)
 
     exporter = ExportHealth(enabled=runtime.scanner.exporter.settings.enabled)
     if exporter.enabled:

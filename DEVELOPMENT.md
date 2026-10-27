@@ -860,3 +860,47 @@ The final documentation/freshness pass updates the runtime scope and locked-suit
 prerequisites in the user-facing guides, propagates projection window staleness
 into worker operations health, and makes CPAMP adapter/collector health gate worker
 readiness. The same locked suite remains green at **307 tests, zero skips**.
+
+## 2026-10-27 — Operations/deployment acceptance continuation
+
+### Scope and decision
+
+Completed the remaining operations acceptance work from clean integration tip
+`d794a02`. The worker now distinguishes authenticated CPAMP collector readiness from
+the optional CPAMP history reader: with the live correlation/durable-history proof
+gate disabled, `history_state` and projection state are explicitly `disabled`, no
+history success timestamp is fabricated, and a healthy collector can still bring the
+worker ready. Once the reviewed proof gate is enabled, the history adapter remains a
+readiness requirement. This avoids a startup deadlock while preserving fail-closed
+tenant usage.
+
+The populated PostgreSQL recovery seam now includes final-schema projection source
+records/checkpoints and an in-flight exporter lease. Restored records and fingerprints
+are compared in a new database; an expired lease becomes `UNCERTAIN` and cannot be
+claimed for an automatic resend. A synthetic CPAMP read failure preserves the prior
+projection and checkpoint, and replay does not duplicate the projection.
+
+### Validation performed
+
+- Locked suite: **309 passed, zero skipped** against fresh PostgreSQL databases.
+- Ruff check/format passed for changed Python files.
+- Standalone Compose v5.6.1 configuration validation passed with `/dev/null` env.
+- New isolated Podman Compose project built the pinned app and Keycloak images and
+  started PostgreSQL, Keycloak, CPA, CPAMP, API, gateway, and worker. With proof files
+  absent, all roles reached expected readiness; worker health reported collector
+  `available`, history `disabled`, projection `disabled`, and queue coverage `unknown`.
+- Private recovery drill seeded only synthetic resources, lineage, gateway lifecycle,
+  projection, and exporter rows. It exercised dependency outage/restart transitions,
+  populated logical backup/restore, and cold five-store backup/restore into new
+  labeled volumes. Raw logs, secrets, tokens, and private identifiers remain under
+  `/data/tmp/opencode/proxylens-phase1/operations-acceptance-runtime`.
+
+### Evidence boundaries and remaining gates
+
+The recovery and outage fixtures are synthetic and prove application/storage behavior;
+they do not prove provider OAuth validity, real provider request recovery, live CPA-to-
+CPAMP correlation, live Langfuse acceptance, remote retention deletion, or a full
+operator restore of an external Langfuse deployment. The existing live runtime was
+not stopped or modified. Tenant-scoped usage remains disabled until independently
+reviewed live correlation and durable-history artifacts exist for the exact deployment
+binding.
