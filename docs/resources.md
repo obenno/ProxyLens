@@ -135,6 +135,10 @@ trusted internal interfaces; callers exposing them must apply these identity rul
 
 An authoritative reconciliation not-found marks the group reference and its active
 or disabled applications orphaned atomically, blocking all new key resolution.
+Authoritative nested-group evidence marks the reference and active/disabled
+applications `unusable` atomically; nested ownership is never reassigned or
+treated as a transient identity outage. Both transitions write safe reconciliation
+audit details in the same transaction.
 Dependency errors leave state untouched and fail closed. A later same-name group
 or even a recovered lookup does not silently reactivate resources.
 
@@ -142,7 +146,9 @@ Explicit repair creates a **new application ID** in the verified target group,
 copies name/application policy, records `predecessor_id`, revokes every old key,
 and leaves the original application and keys under their original group forever.
 New keys must be issued separately. Original request/usage ownership never moves.
-Repair is only allowed from orphaned state; same-group repair is rejected. Explicit
+Repair is only allowed from orphaned state; unusable nested state requires an
+explicit resource decision before any future repair path is introduced. Same-group
+repair is rejected. Explicit
 application revocation is also available for orphans. Both operations are atomic
 with audit events; old/new group/application references are recorded.
 

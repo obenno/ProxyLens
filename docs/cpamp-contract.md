@@ -74,8 +74,11 @@ and deduplicate. Do not reuse a cursor with changed window/filter parameters.
 persistently; change it when replacing CPAMP with an unrelated store. A repeated
 native `request_id` can name several attempts; it is not the dedup key. Duplicate
 hashes within one traversal are counted and emitted once. Conflicting sanitized
-records with one hash quarantine both. Dedup across calls/restarts belongs to the
-durable projection, not this bounded in-memory adapter.
+records with one hash quarantine both. The adapter retains bounded sanitized
+conflict identity before applying exact request filtering, so quarantine is
+independent of page/order and cannot be bypassed by a nonmatching search result
+arriving first. Dedup across calls/restarts belongs to the durable projection,
+not this bounded in-memory adapter.
 
 One adapter per polling task, sequential calls. Client ownership is scoped by
 `async with`; cancellation propagates and closes the response. No retries or

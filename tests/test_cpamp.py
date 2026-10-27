@@ -448,6 +448,34 @@ def test_conflicting_duplicate_is_quarantined_and_missing_request_id_is_explicit
     asyncio.run(exercise())
 
 
+@pytest.mark.parametrize("order", [("other", "wanted"), ("wanted", "other")])
+def test_request_filter_cannot_make_conflict_quarantine_order_dependent(order):
+    data = page()
+    first = copy.deepcopy(data["events"]["items"][0])
+    second = copy.deepcopy(first)
+    wanted = "wanted-request"
+    first["request_id"] = wanted if order[0] == "wanted" else "other-request"
+    second["request_id"] = wanted if order[1] == "wanted" else "other-request"
+    second["model"] = "different-model"
+    data["events"]["items"] = [first, second]
+    data["events"]["total_count"] = 2
+
+    async def exercise():
+        async with CPAMPAdapter(
+            "http://cpamp.test",
+            "key",
+            instance_id="one",
+            transport=httpx.MockTransport(lambda _: httpx.Response(200, json=data)),
+        ) as adapter:
+            result = await adapter.read_window(HistoryWindow(STAMP, STAMP + 1, request_id=wanted))
+            assert result.records == ()
+            assert result.state == "degraded"
+            assert "conflicting_record" in result.reasons
+            assert result.rejected_count == 2
+
+    asyncio.run(exercise())
+
+
 @pytest.mark.parametrize(
     "kwargs",
     [

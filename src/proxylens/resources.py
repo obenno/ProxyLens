@@ -11,6 +11,7 @@ from uuid import UUID, uuid4
 from psycopg.types.json import Jsonb
 
 from proxylens.db import Database
+from proxylens.identity import GroupEvidence, GroupState
 from proxylens.policies import EffectivePolicy, Policy, effective_policy
 
 
@@ -218,9 +219,25 @@ class ResourceRepository:
             app = await self._active_application(conn, application_id)
             return await self._issue(conn, app, actor, expires_at)
 
-    async def reconcile_group(self, group_id, *, actor):
-        """Only authoritative absence marks an orphan; dependency errors never do."""
-        group = await self._lookup_group(group_id)
+    async def reconcile_group(self, group_id, *, actor, evidence: GroupEvidence | None = None):
+        """Persist one verified group result without performing a second lookup.
+
+        The worker passes the evidence returned by its authoritative scan. This
+        keeps nested groups distinguishable from missing groups and ensures the
+        state change plus audit are one PostgreSQL transaction. An absent
+        evidence value is retained for the explicit operator route, whose
+        active-only lookup can still distinguish authoritative missing from
+        dependency failure.
+        """
+        if evidence is None:
+            group = await self._lookup_group(group_id)
+            evidence_state = GroupState.ACTIVE if group is not None else GroupState.MISSING
+        else:
+            if evidence.group_id != group_id:
+                raise ResourceError("identity_unavailable", 503)
+            evidence_state = evidence.state
+            if evidence_state == GroupState.ACTIVE:
+                raise ResourceError("invalid_reconciliation", 422)
         async with self.database.transaction() as conn:
             row = await (
                 await conn.execute(
@@ -230,22 +247,36 @@ class ResourceRepository:
             ).fetchone()
             if not row:
                 raise ResourceError("not_found", 404)
-            if group is None:
+            current_state = row["state"]
+            target_state = current_state
+            if current_state != "orphaned" and evidence_state == GroupState.MISSING:
+                target_state = "orphaned"
+            elif current_state == "active" and evidence_state == GroupState.NESTED:
+                target_state = "unusable"
+            if target_state != current_state:
                 await conn.execute(
-                    "UPDATE resource_group_refs SET state = 'orphaned' WHERE id = %s", (group_id,)
+                    "UPDATE resource_group_refs SET state = %s WHERE id = %s",
+                    (target_state, group_id),
                 )
                 await conn.execute(
-                    "UPDATE resource_applications SET state = 'orphaned' "
-                    "WHERE group_id = %s AND state IN ('active', 'disabled')",
-                    (group_id,),
+                    "UPDATE resource_applications SET state = %s "
+                    "WHERE group_id = %s AND state IN ('active', 'disabled', 'unusable')",
+                    (target_state, group_id),
                 )
             await conn.execute(
                 "UPDATE resource_group_refs SET verified_at = clock_timestamp() WHERE id = %s",
                 (group_id,),
             )
-            state = "orphaned" if group is None else row["state"]
-            await self._audit(conn, "group.reconcile", actor, group_id, group_id, state=state)
-            return {"id": group_id, "state": state}
+            await self._audit(
+                conn,
+                "group.reconcile",
+                actor,
+                group_id,
+                group_id,
+                state=target_state,
+                evidence_state=evidence_state.value,
+            )
+            return {"id": group_id, "state": target_state}
 
     async def revoke_application(self, application_id, *, actor):
         async with self.database.transaction() as conn:
@@ -368,19 +399,30 @@ class ResourceRepository:
         async with self.database.transaction() as conn:
             rows = await (
                 await conn.execute(
-                    f"SELECT {KEY_COLUMNS}, "
+                    "SELECT resource_client_keys.id, resource_client_keys.application_id, "
+                    "resource_client_keys.group_id, resource_client_keys.prefix, "
+                    "resource_client_keys.created_at, resource_client_keys.expires_at, "
+                    "resource_client_keys.revoked_at, "
+                    "CASE WHEN resource_client_keys.revoked_at IS NOT NULL THEN 'revoked' "
+                    "WHEN resource_client_keys.expires_at <= clock_timestamp() THEN 'expired' "
+                    "ELSE 'active' END AS state, g.state AS group_state, "
                     "EXISTS (SELECT 1 FROM resource_applications a "
                     "JOIN resource_group_refs g ON g.id = a.group_id "
                     "WHERE a.id = resource_client_keys.application_id "
-                    "AND (a.state = 'orphaned' OR g.state = 'orphaned')) AS orphaned "
-                    "FROM resource_client_keys "
-                    "WHERE application_id = %s ORDER BY created_at, id",
+                    "AND (a.state IN ('orphaned', 'unusable') OR "
+                    "g.state IN ('orphaned', 'unusable'))) AS unusable "
+                    "FROM resource_client_keys JOIN resource_group_refs g "
+                    "ON g.id = resource_client_keys.group_id "
+                    "WHERE resource_client_keys.application_id = %s "
+                    "ORDER BY resource_client_keys.created_at, resource_client_keys.id",
                     (application_id,),
                 )
             ).fetchall()
             for row in rows:
-                if row["state"] == "active" and row["orphaned"]:
-                    row["state"] = "orphaned"
+                if row["state"] == "active" and row["unusable"]:
+                    row["state"] = "orphaned" if row["group_state"] == "orphaned" else "unusable"
+                row.pop("group_state", None)
+                row.pop("unusable", None)
             return [public(row) for row in rows]
 
     async def set_group_policy(self, group_id, policy: Policy, *, actor):

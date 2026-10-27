@@ -101,16 +101,16 @@ discarded. Langfuse health does not gate gateway forwarding.
 | CPAMP/read adapter | Preserve last valid projection; `stale`, `degraded` or initial `unavailable`, never fabricated zero usage. A successful collector poll does not prove durable-history completeness. |
 | Langfuse | Provider response remains independent; backlog/uncertain/dead-letter state visible. Disabled exporter is `disabled`, not successful delivery. Remote acceptance is not confirmed query visibility. |
 
-After a worker restart, CPAMP readiness also requires one successful authenticated
-durable-history read; collector health alone is not sufficient. This avoids
-advertising a ready worker whose projection source has not yet been established.
-Projection becomes stale at **age >= 60 seconds** or adapter failure; a reported
-source gap remains degraded even after a successful recent poll. Unknown counts
-remain null. Worker readiness requires authenticated CPAMP collector status. When
-the live proof gate permits history polling, it also requires the read adapter;
-otherwise CPAMP `history_state` and projection state explicitly report `disabled`,
+After a worker restart, CPAMP readiness requires one successful authenticated
+durable-history read when the reviewed live proof gate permits history polling;
+collector health alone is not sufficient in that mode. When the proof gate is
+disabled, the worker does not read history, and collector health is the readiness
+contract. CPAMP `history_state` and projection state explicitly report `disabled`,
 with no invented history-success timestamp. An intentionally disabled history
-reader must not prevent first startup. Collector failures still fail readiness.
+reader must not prevent first startup. Projection becomes stale at **age >= 60
+seconds** or adapter failure; a reported source gap remains degraded even after a
+successful recent poll. Unknown counts remain null. Collector failures still fail
+readiness.
 Projection freshness and Langfuse delivery remain diagnostic and do not gate
 provider forwarding. Gateway readiness depends on PostgreSQL, Keycloak and CPA,
 not remote observation delivery. Health is diagnostic and never substitutes for
@@ -128,17 +128,19 @@ restart. Do not promise replay without an actual supported CPAMP durable record.
 
 Resource reconciliation uses stable Keycloak group IDs. Confirmed missing groups
 leave their applications/keys visible to authorized operators and unusable.
+Confirmed nested groups persist `unusable` state and safe reconciliation audit
+evidence; authority outages preserve the prior state and do not mark deletion.
 Recreating the same display name cannot repair them. Explicit administrator repair
 creates a replacement application, revokes old keys and audits old/new references;
 historical lineage keeps the original group. See `docs/resources.md`.
 
 Lifecycle mutation/audit are atomic. Denials must be redacted and durably recorded
 where storage is available. Retention appends its audit in the deletion transaction.
-Final integration must add safe integration/export/reconciliation transitions to
-the same audit boundary; sink HTTP acknowledgement and DB commit cannot be made
-one distributed transaction. A crash after possible remote acceptance becomes
-`uncertain`, not an automatic resend. Restart resumes projection/outbox work only;
-it never resubmits inference.
+CPAMP reads and projection promotion/failure transitions write fixed-shape,
+metadata-only integration audit events transactionally. Sink HTTP acknowledgement
+and DB commit cannot be made one distributed transaction. A crash after possible
+remote acceptance becomes `uncertain`, not an automatic resend. Restart resumes
+projection/outbox work only; it never resubmits inference.
 
 ## Backup tooling: private, matching recovery sets
 

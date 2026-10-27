@@ -1,6 +1,8 @@
 """Keycloak-only token validation and bounded public signing-key cache."""
 
 import asyncio
+import json
+import math
 import time
 from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass
@@ -19,6 +21,9 @@ from proxylens.identity import (
     Principal,
 )
 
+JWKS_MAX_BYTES = 65_536
+JWKS_REFRESH_TIMEOUT_SECONDS = 2.0
+
 
 @dataclass(frozen=True)
 class IdentitySettings:
@@ -32,12 +37,17 @@ class IdentitySettings:
     jwks_ttl: int = 300
     refresh_interval: int = 15
     clock_skew: int = 5
+    jwks_timeout_seconds: float = JWKS_REFRESH_TIMEOUT_SECONDS
 
     def __post_init__(self):
         if not (
             15 <= self.jwks_ttl <= 300
             and 1 <= self.refresh_interval <= self.jwks_ttl
             and 0 <= self.clock_skew <= 30
+            and isinstance(self.jwks_timeout_seconds, (int, float))
+            and not isinstance(self.jwks_timeout_seconds, bool)
+            and math.isfinite(self.jwks_timeout_seconds)
+            and 0 < self.jwks_timeout_seconds <= 10
         ):
             raise ValueError("invalid identity cache or skew limits")
         for value, path, public in (
@@ -88,24 +98,51 @@ class TokenVerifier:
                 raise IdentityError("signing_key_unavailable")
             self.attempted_at = now
             try:
-                response = await self.client.get(f"{self.settings.protocol_url}/certs", timeout=2)
-                response.raise_for_status()
-                if len(response.content) > 65536:
-                    raise ValueError("oversized keyset")
-                keys = response.json()["keys"]
-                if not isinstance(keys, list) or len(keys) > 32:
-                    raise ValueError("invalid keyset")
-                parsed = {
-                    item["kid"]: jwt.PyJWK(item, algorithm="RS256")
-                    for item in keys
-                    if item.get("kty") == "RSA"
-                    and item.get("alg") == "RS256"
-                    and item.get("use") == "sig"
-                }
-                if not parsed:
-                    raise ValueError("empty keyset")
+                async with asyncio.timeout(self.settings.jwks_timeout_seconds):
+                    async with self.client.stream(
+                        "GET",
+                        f"{self.settings.protocol_url}/certs",
+                        timeout=self.settings.jwks_timeout_seconds,
+                        follow_redirects=False,
+                    ) as response:
+                        if response.status_code != 200:
+                            raise httpx.HTTPStatusError(
+                                "unexpected JWKS response",
+                                request=response.request,
+                                response=response,
+                            )
+                        if (
+                            response.headers.get("content-encoding", "identity").lower()
+                            != "identity"
+                        ):
+                            raise ValueError("unsupported keyset encoding")
+                        length = response.headers.get("content-length")
+                        if length is not None and (
+                            not length.isdecimal()
+                            or len(length) > 20
+                            or int(length) > JWKS_MAX_BYTES
+                        ):
+                            raise ValueError("oversized keyset")
+                        body = bytearray()
+                        async for chunk in response.aiter_bytes():
+                            if len(body) + len(chunk) > JWKS_MAX_BYTES:
+                                raise ValueError("oversized keyset")
+                            body.extend(chunk)
+                    keys = json.loads(bytes(body))["keys"]
+                    if not isinstance(keys, list) or len(keys) > 32:
+                        raise ValueError("invalid keyset")
+                    parsed = {
+                        item["kid"]: jwt.PyJWK(item, algorithm="RS256")
+                        for item in keys
+                        if item.get("kty") == "RSA"
+                        and item.get("alg") == "RS256"
+                        and item.get("use") == "sig"
+                    }
+                    if not parsed:
+                        raise ValueError("empty keyset")
             except (
                 httpx.HTTPError,
+                TimeoutError,
                 ValueError,
                 KeyError,
                 TypeError,

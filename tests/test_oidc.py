@@ -20,7 +20,19 @@ from proxylens.identity import (
 
 
 @pytest.mark.parametrize(
-    "fault", [None, "state", "nonce", "exchange", "subject", "issuer", "offline"]
+    "fault",
+    [
+        None,
+        "state",
+        "unicode-state",
+        "malformed-state",
+        "long-state",
+        "nonce",
+        "exchange",
+        "subject",
+        "issuer",
+        "offline",
+    ],
 )
 def test_browser_code_pkce_session_and_failures(monkeypatch, tmp_path, fault, environment):
     secret = tmp_path / "admin-secret"
@@ -84,8 +96,14 @@ def test_browser_code_pkce_session_and_failures(monkeypatch, tmp_path, fault, en
             authorization[0] = parse_qs(urlparse(login.headers["location"]).query)
             assert authorization[0]["response_type"] == ["code"]
             assert authorization[0]["code_challenge_method"] == ["S256"]
+            invalid_state = {
+                "state": "wrong",
+                "unicode-state": "é",
+                "malformed-state": "!",
+                "long-state": "a" * 257,
+            }
             query = {
-                "state": "wrong" if fault == "state" else authorization[0]["state"][0],
+                "state": invalid_state.get(fault, authorization[0]["state"][0]),
                 "iss": "https://wrong" if fault == "issuer" else ISSUER,
                 "code": "one-time",
             }

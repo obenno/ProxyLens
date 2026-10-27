@@ -357,6 +357,7 @@ class OperationsSupervisor:
         retention_interval_seconds: float,
         scan_limit: int,
         drain_limit: int,
+        history_enabled: bool = True,
     ):
         self.adapter = adapter
         self.projection = projection
@@ -367,6 +368,7 @@ class OperationsSupervisor:
         self.retention_interval_seconds = retention_interval_seconds
         self.scan_limit = scan_limit
         self.drain_limit = drain_limit
+        self.history_enabled = history_enabled
         self.status = {}
         self.collector = None
         self._last_retention: datetime | None = None
@@ -409,6 +411,8 @@ class OperationsSupervisor:
             self._last_retention = now
 
         async def history_probe():
+            if not self.history_enabled:
+                return await self.adapter.read_status()
             if self.adapter.last_success is None:
                 end_ms = int(now.timestamp() * 1000) + 1000
                 start_ms = max(1, end_ms - 60_000)
@@ -422,7 +426,11 @@ class OperationsSupervisor:
         # have completed at least one authenticated durable-history read. This
         # prevents a newly restarted worker from reporting ready while its
         # projection source is still unknown.
-        if self.collector is not None and self.adapter.last_success is None:
+        if (
+            self.history_enabled
+            and self.collector is not None
+            and self.adapter.last_success is None
+        ):
             self.status["cpamp_status"] = {
                 "state": "unavailable",
                 "observed_at": datetime.now(UTC).isoformat(),

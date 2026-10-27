@@ -76,7 +76,9 @@ prove successful inference.
 Rate caps use the existing atomic PostgreSQL key/application 60-second windows,
 shared across instances. A reservation can remain consumed if later authorization
 lineage fails; no automatic refund or retry. There are **zero automatic model POST
-retries**, including pre-byte connection failures and timeouts. CPA's internal
+retries**, including pre-byte connection failures and timeouts. This is the explicit
+safe policy for ambiguous provider admission: ProxyLens never replays a model
+request merely because no response bytes were observed. CPA's internal
 retry/failover policy remains its own operator-controlled provider boundary.
 
 Disconnects cancel the upstream operation, including during response-header wait.
