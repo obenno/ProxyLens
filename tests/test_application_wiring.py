@@ -178,7 +178,10 @@ def test_worker_lifespan_constructs_and_stops_runtime_components(environment):
         authority = IdentityServer()
         app = create_app("worker", identity_transport=httpx.MockTransport(authority))
         async with app.router.lifespan_context(app):
-            assert app.state.runtime.adapter is app.state.adapter
+            assert app.state.runtime.supervisor_adapter is app.state.supervisor_adapter
+            assert app.state.runtime.projection_adapter is app.state.projection_adapter
+            assert app.state.runtime.supervisor_adapter is not app.state.runtime.projection_adapter
+            assert app.state.supervisor_adapter is not app.state.projection_adapter
             assert app.state.runtime.projection is app.state.projection
             assert app.state.runtime.scanner is app.state.scanner
             assert app.state.runtime.supervisor is app.state.supervisor

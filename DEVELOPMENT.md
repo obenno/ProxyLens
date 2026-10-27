@@ -1,5 +1,30 @@
 # Development Notes
 
+## 2026-10-27 — Final review: isolate CPAMP polling owners and audit readiness reads
+
+### Scope and decisions
+
+The worker now constructs two independently owned `CPAMPAdapter` instances from
+the same server-side CPAMP key. The projection worker owns one adapter/client and
+the operations supervisor owns the other for history readiness and collector
+status. Both are explicitly entered and closed by the worker lifespan. This
+matches the CPAMP contract's one-adapter-per-polling-task rule and prevents
+mutable `last_success`, health, and collector state from crossing task boundaries.
+
+The supervisor's proof-enabled readiness history read uses
+`ProjectionRepository.record_cpamp_read()` before it can establish readiness.
+Unavailable/exceptional reads receive bounded fixed reason metadata where possible;
+an audit-storage failure propagates through the supervisor step and leaves
+CPAMP readiness degraded. Proof-disabled mode continues to use collector status
+only and does not force a durable history read. Tenant usage remains disabled.
+
+### Validation performed
+
+Added regression coverage for independent adapter state, production worker wiring,
+readiness audit persistence, unavailable history outcomes, and fail-closed audit
+storage. Targeted and locked full-suite checks are recorded in the final-review
+artifact for this change.
+
 ## 2026-10-26 — Issue #7 gateway and #5/#9 application wiring
 
 ### Scope and decisions

@@ -2,6 +2,7 @@ import asyncio
 from datetime import UTC, datetime
 
 from proxylens.cpamp import AdapterHealth, CollectorStatus, ReadResult
+from proxylens.db import StorageUnavailable
 from proxylens.runtime import OperationsSupervisor
 
 
@@ -45,8 +46,22 @@ class NoopScanner:
 
 
 class NoopProjection:
+    async def record_cpamp_read(self, _result):
+        return None
+
     async def health(self):
         return {"state": "unavailable"}
+
+
+class RecordingProjection(NoopProjection):
+    def __init__(self, *, fail=False):
+        self.reads = []
+        self.fail = fail
+
+    async def record_cpamp_read(self, result):
+        if self.fail:
+            raise StorageUnavailable("audit unavailable")
+        self.reads.append(result)
 
 
 class NoopRetention:
@@ -54,10 +69,10 @@ class NoopRetention:
         return None
 
 
-def supervisor(adapter, *, history_enabled=True):
+def supervisor(adapter, *, history_enabled=True, projection=None):
     return OperationsSupervisor(
         adapter=adapter,
-        projection=NoopProjection(),
+        projection=projection or NoopProjection(),
         scanner=NoopScanner(),
         exporter=NoopExporter(),
         retention=NoopRetention(),
@@ -77,6 +92,10 @@ def test_worker_history_probe_keeps_cpamp_unavailable_without_a_durable_read():
         assert worker.collector is None
         assert worker.status["cpamp_status"]["state"] == "degraded"
         assert adapter.status_calls == 0
+        await worker.tick(now=datetime(2026, 10, 27, tzinfo=UTC))
+        assert worker.collector is None
+        assert worker.status["cpamp_status"]["state"] == "degraded"
+        assert adapter.status_calls == 0
 
     asyncio.run(run())
 
@@ -89,6 +108,33 @@ def test_worker_history_probe_allows_cpamp_after_authenticated_history_read():
         assert worker.collector.state == "available"
         assert worker.status["cpamp_status"]["state"] == "available"
         assert adapter.status_calls == 1
+
+    asyncio.run(run())
+
+
+def test_worker_history_probe_audits_its_durable_read_before_status():
+    async def run():
+        history = ReadResult((), "available", True)
+        adapter = FakeAdapter(history)
+        projection = RecordingProjection()
+        worker = supervisor(adapter, projection=projection)
+        await worker.tick(now=datetime(2026, 10, 27, tzinfo=UTC))
+        assert projection.reads == [history]
+        assert adapter.status_calls == 1
+        assert worker.collector.state == "available"
+
+    asyncio.run(run())
+
+
+def test_worker_history_probe_fails_closed_when_read_audit_storage_fails():
+    async def run():
+        adapter = FakeAdapter(ReadResult((), "available", True))
+        projection = RecordingProjection(fail=True)
+        worker = supervisor(adapter, projection=projection)
+        await worker.tick(now=datetime(2026, 10, 27, tzinfo=UTC))
+        assert worker.collector is None
+        assert worker.status["cpamp_status"]["state"] == "degraded"
+        assert adapter.status_calls == 0
 
     asyncio.run(run())
 

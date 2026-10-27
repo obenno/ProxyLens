@@ -14,11 +14,12 @@ import pytest
 from psycopg import sql
 
 from proxylens.correlation import IngressRequest, Ownership
-from proxylens.cpamp import CPAMPAdapter
-from proxylens.db import Database
+from proxylens.cpamp import CollectorStatus, CPAMPAdapter, ReadResult
+from proxylens.db import Database, StorageUnavailable
 from proxylens.lineage import LineageRepository
 from proxylens.projection import ProjectionRepository, ProjectionWorker, projection_worker_lifespan
 from proxylens.projection_settings import ProjectionSettings, load_proof_gate
+from proxylens.runtime import OperationsSupervisor
 
 DSN = os.environ.get(
     "PROXYLENS_PROJECTION_TEST_DSN",
@@ -265,6 +266,118 @@ def test_cpamp_reads_and_projection_transitions_write_safe_integration_audits(da
         ]
         assert all(row["outcome"] == "success" for row in rows)
         assert all("event_hash" not in str(row["details"]) for row in rows)
+
+    asyncio.run(scenario())
+
+
+class ReadinessAdapter:
+    def __init__(self, result):
+        self.result = result
+        self.last_success = None
+        self.status_calls = 0
+
+    async def read_window(self, _window):
+        if self.result.state == "available":
+            self.last_success = self.result
+        return self.result
+
+    async def read_status(self):
+        self.status_calls += 1
+        return CollectorStatus("available")
+
+
+class RuntimeNoopExporter:
+    async def recover(self, **_kwargs):
+        return None
+
+    async def drain(self, **_kwargs):
+        return 0
+
+
+class RuntimeNoopScanner:
+    def __init__(self):
+        self.exporter = RuntimeNoopExporter()
+
+    async def scan(self, **_kwargs):
+        return 0
+
+
+class RuntimeNoopRetention:
+    async def run(self, **_kwargs):
+        return None
+
+
+class FailingReadAuditProjection(ProjectionRepository):
+    async def record_cpamp_read(self, _result):
+        raise StorageUnavailable("audit unavailable")
+
+
+def readiness_supervisor(adapter, projection):
+    return OperationsSupervisor(
+        adapter=adapter,
+        projection=projection,
+        scanner=RuntimeNoopScanner(),
+        exporter=RuntimeNoopExporter(),
+        retention=RuntimeNoopRetention(),
+        interval_seconds=30,
+        retention_interval_seconds=3600,
+        scan_limit=10,
+        drain_limit=10,
+    )
+
+
+def test_readiness_history_probe_persists_bounded_cpamp_audit_and_fails_closed_on_storage_error(
+    database,
+):
+    async def scenario():
+        result = ReadResult((), "available", True)
+        repo = ProjectionRepository(database, settings())
+        adapter = ReadinessAdapter(result)
+        supervisor = readiness_supervisor(adapter, repo)
+        await supervisor.tick(now=datetime(2026, 10, 27, tzinfo=UTC))
+        async with database.transaction() as conn:
+            audit = await (
+                await conn.execute(
+                    "SELECT action, outcome, details FROM resource_audit "
+                    "WHERE action='integration.cpamp.read'"
+                )
+            ).fetchone()
+        assert audit["action"] == "integration.cpamp.read"
+        assert audit["outcome"] == "success"
+        assert audit["details"] == {
+            "state": "available",
+            "traversal_complete": True,
+            "pages": 0,
+            "records": 0,
+            "rejected": 0,
+            "duplicates": 0,
+            "reasons": [],
+        }
+        assert adapter.status_calls == 1
+
+        unavailable = ReadinessAdapter(ReadResult((), "unavailable", False, reasons=("transport",)))
+        degraded = readiness_supervisor(unavailable, ProjectionRepository(database, settings()))
+        await degraded.tick(now=datetime(2026, 10, 27, tzinfo=UTC))
+        assert degraded.collector is None
+        assert degraded.status["cpamp_status"]["state"] == "degraded"
+        assert unavailable.status_calls == 0
+        async with database.transaction() as conn:
+            denied = await (
+                await conn.execute(
+                    "SELECT outcome, details FROM resource_audit "
+                    "WHERE action='integration.cpamp.read' ORDER BY occurred_at DESC LIMIT 1"
+                )
+            ).fetchone()
+        assert denied["outcome"] == "denied"
+        assert denied["details"]["state"] == "unavailable"
+        assert denied["details"]["reasons"] == ["transport"]
+
+        blocked = ReadinessAdapter(result)
+        failed = readiness_supervisor(blocked, FailingReadAuditProjection(database, settings()))
+        await failed.tick(now=datetime(2026, 10, 27, tzinfo=UTC))
+        assert failed.collector is None
+        assert failed.status["cpamp_status"]["state"] == "degraded"
+        assert blocked.status_calls == 0
 
     asyncio.run(scenario())
 
