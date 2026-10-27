@@ -104,6 +104,39 @@ def test_equal_timestamp_pages_preserve_attempts_and_surface_provenance():
     assert requests[2]["include"]["events_page"]["before_id"] == 2
 
 
+def test_separate_adapters_keep_concurrent_history_state_isolated():
+    def respond(request):
+        return httpx.Response(200, json=page())
+
+    async def exercise():
+        async with (
+            CPAMPAdapter(
+                "http://cpamp.test",
+                "test-admin",
+                instance_id="cpamp-local",
+                transport=httpx.MockTransport(respond),
+            ) as first,
+            CPAMPAdapter(
+                "http://cpamp.test",
+                "test-admin",
+                instance_id="cpamp-local",
+                transport=httpx.MockTransport(respond),
+            ) as second,
+        ):
+            results = await asyncio.gather(
+                first.read_window(HistoryWindow(STAMP, STAMP + 1000)),
+                second.read_window(HistoryWindow(STAMP, STAMP + 1000)),
+            )
+            assert all(result.state == "available" for result in results)
+            assert first.last_success is results[0]
+            assert second.last_success is results[1]
+            assert first.last_success is not second.last_success
+            assert first.health().last_success_ms is not None
+            assert second.health().last_success_ms is not None
+
+    asyncio.run(exercise())
+
+
 @pytest.mark.parametrize(
     "failure, reason",
     [

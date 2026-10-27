@@ -17,7 +17,7 @@ from proxylens.correlation import (
     TenantUsageGate,
     UsageIdentity,
 )
-from proxylens.cpamp import HistoryWindow
+from proxylens.cpamp import HistoryWindow, ReadResult
 from proxylens.db import StorageUnavailable
 from proxylens.exporter import ExclusiveUsage, ExportError, Observation
 from proxylens.exporter_worker import ExportWorker
@@ -371,6 +371,7 @@ class OperationsSupervisor:
         self.history_enabled = history_enabled
         self.status = {}
         self.collector = None
+        self._history_audited = False
         self._last_retention: datetime | None = None
 
     @staticmethod
@@ -413,12 +414,26 @@ class OperationsSupervisor:
         async def history_probe():
             if not self.history_enabled:
                 return await self.adapter.read_status()
-            if self.adapter.last_success is None:
+            if not self._history_audited:
                 end_ms = int(now.timestamp() * 1000) + 1000
                 start_ms = max(1, end_ms - 60_000)
-                history = await self.adapter.read_window(HistoryWindow(start_ms, end_ms))
+                try:
+                    history = await self.adapter.read_window(HistoryWindow(start_ms, end_ms))
+                except Exception:
+                    # Keep the audit bounded even when an injected/client failure happens
+                    # before the adapter can return its normal unavailable result. If this
+                    # audit write fails, the exception is intentionally propagated so the
+                    # readiness step remains fail-closed.
+                    await self.projection.record_cpamp_read(
+                        ReadResult((), "unavailable", False, reasons=("history_read_failed",))
+                    )
+                    raise
+                # This is the supervisor-owned history read. Projection polling has its
+                # own adapter and records its own reads; do not audit either read twice.
+                await self.projection.record_cpamp_read(history)
                 if history.state != "available" or not history.traversal_complete:
                     raise RuntimeError("cpamp_history_unavailable")
+                self._history_audited = True
             return await self.adapter.read_status()
 
         self.collector = await self._step("cpamp_status", history_probe)
@@ -426,11 +441,7 @@ class OperationsSupervisor:
         # have completed at least one authenticated durable-history read. This
         # prevents a newly restarted worker from reporting ready while its
         # projection source is still unknown.
-        if (
-            self.history_enabled
-            and self.collector is not None
-            and self.adapter.last_success is None
-        ):
+        if self.history_enabled and self.collector is not None and not self._history_audited:
             self.status["cpamp_status"] = {
                 "state": "unavailable",
                 "observed_at": datetime.now(UTC).isoformat(),

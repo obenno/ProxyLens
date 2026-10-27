@@ -133,7 +133,7 @@ async def _worker_operations_health(app, settings, *, postgres, keycloak, clipro
         postgres=postgres,
         keycloak=keycloak,
         cliproxyapi=cliproxyapi,
-        adapter=runtime.adapter.health(),
+        adapter=runtime.supervisor_adapter.health(),
         collector=collector,
         projection=projection,
         exporter=exporter,
@@ -171,10 +171,36 @@ async def checkpoint_worker_status(database, supervisor) -> None:
 
 @dataclass(frozen=True)
 class WorkerRuntime:
-    adapter: CPAMPAdapter
+    supervisor_adapter: CPAMPAdapter
+    projection_adapter: CPAMPAdapter
     projection: ProjectionRepository
     scanner: CompletionScanner
     supervisor: OperationsSupervisor
+
+    @property
+    def adapter(self) -> CPAMPAdapter:
+        """Compatibility view of the adapter used for runtime health/status."""
+        return self.supervisor_adapter
+
+
+@asynccontextmanager
+async def worker_cpamp_lifespan(repository, settings, admin_key, *, gate):
+    """Own separate CPAMP clients for projection and supervisor polling tasks."""
+    supervisor_adapter = CPAMPAdapter(
+        settings.cpamp_url,
+        admin_key,
+        instance_id=settings.projection.cpamp_instance_id,
+        stale_after_ms=settings.projection.stale_after_ms,
+    )
+    async with supervisor_adapter:
+        projection_adapter = CPAMPAdapter(
+            settings.cpamp_url,
+            admin_key,
+            instance_id=settings.projection.cpamp_instance_id,
+            stale_after_ms=settings.projection.stale_after_ms,
+        )
+        async with projection_worker_lifespan(repository, projection_adapter, gate=gate):
+            yield projection_adapter, supervisor_adapter
 
 
 def create_app(role: str, *, identity_transport: httpx.AsyncBaseTransport | None = None) -> FastAPI:
@@ -218,11 +244,8 @@ def create_app(role: str, *, identity_transport: httpx.AsyncBaseTransport | None
                 yield
                 return
 
-            adapter = CPAMPAdapter(
-                settings.cpamp_url,
-                secret_file("PROXYLENS_CPAMP_ADMIN_KEY_FILE", "/run/secrets/cpamp_admin_key"),
-                instance_id=settings.projection.cpamp_instance_id,
-                stale_after_ms=settings.projection.stale_after_ms,
+            admin_key = secret_file(
+                "PROXYLENS_CPAMP_ADMIN_KEY_FILE", "/run/secrets/cpamp_admin_key"
             )
             exporter_repository = ExportRepository(
                 database, settings.exporter, retention=settings.retention
@@ -248,28 +271,6 @@ def create_app(role: str, *, identity_transport: httpx.AsyncBaseTransport | None
                     OutboxRetentionParticipant(exporter_repository),
                 ),
             )
-            supervisor = OperationsSupervisor(
-                adapter=adapter,
-                projection=projection_repository,
-                scanner=scanner,
-                exporter=exporter_worker,
-                retention=retention,
-                interval_seconds=settings.worker_interval_seconds,
-                retention_interval_seconds=settings.retention_interval_seconds,
-                scan_limit=settings.worker_scan_limit,
-                drain_limit=settings.worker_drain_limit,
-                history_enabled=proof_gate.permits(settings.projection),
-            )
-            app.state.adapter = adapter
-            app.state.exporter = exporter_repository
-            app.state.scanner = scanner
-            app.state.supervisor = supervisor
-            app.state.runtime = WorkerRuntime(
-                adapter=adapter,
-                projection=projection_repository,
-                scanner=scanner,
-                supervisor=supervisor,
-            )
 
             async def reconcile_groups():
                 async with database.transaction() as conn:
@@ -285,7 +286,36 @@ def create_app(role: str, *, identity_transport: httpx.AsyncBaseTransport | None
 
                 await app.state.identity.authority.reconcile(group_ids, mark_unusable)
 
-            async with projection_worker_lifespan(projection_repository, adapter, gate=proof_gate):
+            async with worker_cpamp_lifespan(
+                projection_repository, settings, admin_key, gate=proof_gate
+            ) as (projection_adapter, supervisor_adapter):
+                supervisor = OperationsSupervisor(
+                    adapter=supervisor_adapter,
+                    projection=projection_repository,
+                    scanner=scanner,
+                    exporter=exporter_worker,
+                    retention=retention,
+                    interval_seconds=settings.worker_interval_seconds,
+                    retention_interval_seconds=settings.retention_interval_seconds,
+                    scan_limit=settings.worker_scan_limit,
+                    drain_limit=settings.worker_drain_limit,
+                    history_enabled=proof_gate.permits(settings.projection),
+                )
+                # Preserve the historical state alias for runtime health; ownership is
+                # nevertheless distinct from the projection adapter below.
+                app.state.adapter = supervisor_adapter
+                app.state.supervisor_adapter = supervisor_adapter
+                app.state.projection_adapter = projection_adapter
+                app.state.exporter = exporter_repository
+                app.state.scanner = scanner
+                app.state.supervisor = supervisor
+                app.state.runtime = WorkerRuntime(
+                    supervisor_adapter=supervisor_adapter,
+                    projection_adapter=projection_adapter,
+                    projection=projection_repository,
+                    scanner=scanner,
+                    supervisor=supervisor,
+                )
                 stop = asyncio.Event()
                 # Establish the initial checkpoint before background tasks can
                 # compete for the same test/deployment database connection.

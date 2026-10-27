@@ -82,8 +82,12 @@ not this bounded in-memory adapter.
 
 One adapter per polling task, sequential calls. Client ownership is scoped by
 `async with`; cancellation propagates and closes the response. No retries or
-background polling are hidden inside the adapter. This module is not wired into
-`app.py`, configuration, or tenant endpoints by this issue.
+background polling are hidden inside the adapter. In the worker integration,
+the projection polling task and operations supervisor each receive a separate
+adapter constructed from the same server-side key. The supervisor adapter owns
+readiness history/status state; the projection adapter owns projection polling
+state. Their HTTP reads are both read-only and neither consumes the CPA queue.
+This module is not wired into tenant endpoints by this issue.
 
 ## HTTP contracts
 
