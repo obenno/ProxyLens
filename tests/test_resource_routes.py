@@ -8,6 +8,7 @@ from test_resources import database as database
 from test_resources import lookup
 
 from proxylens.db import Database
+from proxylens.identity import IdentityError
 from proxylens.resource_routes import ResourceAccess, install_resource_routes
 from proxylens.resources import ResourceRepository
 
@@ -134,7 +135,7 @@ def test_http_lifecycle_rejects_cross_application_ids_and_audits_authentication_
 
         async def identity():
             if current[0] is None:
-                raise HTTPException(401)
+                raise IdentityError("authentication_required")
             return current[0]
 
         app = FastAPI()
@@ -229,6 +230,30 @@ def test_storage_and_keycloak_outages_fail_closed_without_mutation(database):
                 assert result.status_code == 503
                 assert result.json() == {"error": "storage_unavailable"}
         assert await repo.list_applications(None) == []
+
+    asyncio.run(scenario())
+
+
+def test_identity_denial_audit_storage_failure_returns_redacted_503():
+    async def scenario():
+        with socket.socket() as unavailable:
+            unavailable.bind(("127.0.0.1", 0))
+            repo = ResourceRepository(
+                Database(host="127.0.0.1", port=unavailable.getsockname()[1]), lookup
+            )
+
+        async def identity():
+            raise IdentityError("authentication_required")
+
+        app = FastAPI()
+        install_resource_routes(app, repo, principal_dependency=identity, access=access())
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app), base_url="http://test"
+        ) as client:
+            response = await client.get("/api/applications")
+        assert response.status_code == 503
+        assert response.json() == {"error": "storage_unavailable"}
+        assert "authentication_required" not in response.text
 
     asyncio.run(scenario())
 

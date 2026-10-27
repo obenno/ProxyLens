@@ -12,6 +12,7 @@ from fastapi.routing import APIRoute
 from pydantic import BaseModel, ConfigDict, Field
 
 from proxylens.db import StorageUnavailable
+from proxylens.identity import IdentityError
 from proxylens.policies import Policy
 from proxylens.resources import ResourceError, ResourceRepository
 
@@ -67,6 +68,23 @@ def install_resource_routes(
                     response = JSONResponse(
                         status_code=503, content={"error": "storage_unavailable"}
                     )
+                except IdentityError:
+                    try:
+                        await repository.record_denial(
+                            "management.denied",
+                            actor=getattr(request.state, "resource_actor", None),
+                            group_id=getattr(request.state, "resource_group", None),
+                            resource_id=getattr(request.state, "resource_id", None),
+                            code="unauthenticated",
+                        )
+                    except StorageUnavailable:
+                        response = JSONResponse(
+                            status_code=503, content={"error": "storage_unavailable"}
+                        )
+                    else:
+                        response = JSONResponse(
+                            status_code=401, content={"error": "unauthenticated"}
+                        )
                 except (ResourceError, HTTPException) as error:
                     status = error.status if isinstance(error, ResourceError) else error.status_code
                     code = (
@@ -83,6 +101,7 @@ def install_resource_routes(
                                 actor=getattr(request.state, "resource_actor", None),
                                 group_id=getattr(request.state, "resource_group", None),
                                 resource_id=getattr(request.state, "resource_id", None),
+                                code=code,
                             )
                         except StorageUnavailable:
                             status, code = 503, "storage_unavailable"

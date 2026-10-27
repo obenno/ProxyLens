@@ -49,14 +49,15 @@ def install_projection_routes(
 
     access_dependency = Depends(access)
 
-    async def usage_query(
+    async def usage_result(
+        principal,
+        *,
         group_id: str | None = None,
         application_id: UUID | None = None,
-        from_ms: int | None = Query(None, ge=1),
-        to_ms: int | None = Query(None, ge=1),
-        limit: int = Query(100, ge=1, le=200),
-        offset: int = Query(0, ge=0),
-        principal=access_dependency,
+        from_ms: int | None = None,
+        to_ms: int | None = None,
+        limit: int = 100,
+        offset: int = 0,
     ):
         result = await repository.query(
             principal,
@@ -80,6 +81,25 @@ def install_projection_routes(
         }
         return result
 
+    async def usage_query(
+        group_id: str | None = None,
+        application_id: UUID | None = None,
+        from_ms: int | None = Query(None, ge=1),
+        to_ms: int | None = Query(None, ge=1),
+        limit: int = Query(100, ge=1, le=200),
+        offset: int = Query(0, ge=0),
+        principal=access_dependency,
+    ):
+        return await usage_result(
+            principal,
+            group_id=group_id,
+            application_id=application_id,
+            from_ms=from_ms,
+            to_ms=to_ms,
+            limit=limit,
+            offset=offset,
+        )
+
     query_dependency = Depends(usage_query)
 
     @router.get("/usage")
@@ -91,12 +111,12 @@ def install_projection_routes(
         return {**result["totals"], "coverage": result["coverage"], "health": result["health"]}
 
     @router.get("/groups/{group_id}/usage")
-    async def group_usage(result=query_dependency):
-        return result
+    async def group_usage(group_id: str, principal=access_dependency):
+        return await usage_result(principal, group_id=group_id)
 
     @router.get("/applications/{application_id}/usage")
-    async def application_usage(result=query_dependency):
-        return result
+    async def application_usage(application_id: UUID, principal=access_dependency):
+        return await usage_result(principal, application_id=application_id)
 
     @router.get("/usage/records/{event_hash}")
     async def record(event_hash: str, principal=access_dependency):

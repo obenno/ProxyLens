@@ -105,3 +105,29 @@ def test_scanner_uses_current_unique_join_and_exclusive_buckets(ops_database, tm
         assert "langfuse.observation.metadata.cpamp_event_hash" not in attrs
 
     asyncio.run(scenario())
+
+
+def test_claim_invalidates_payload_when_native_owner_collides_after_scan(ops_database, tmp_path):
+    async def scenario():
+        request = await completed(ops_database)
+        config = settings(retention_days=1)
+        gate = synthetic_gate(tmp_path, config)
+        clock = [int((NOW + timedelta(seconds=2)).timestamp() * 1000)]
+        projection = ProjectionRepository(ops_database, config, clock_ms=lambda: clock[0])
+        async with adapter(History([event(timestamp=clock[0] - 1000)]), config, clock) as source:
+            assert await ProjectionWorker(
+                projection, source, gate=gate, clock_ms=lambda: clock[0]
+            ).poll_once()
+        exporter = ExportRepository(ops_database, ExporterSettings(enabled=True))
+        scanner = CompletionScanner(ops_database, config, exporter, gate=gate)
+        assert await scanner.scan(now=NOW + timedelta(seconds=2)) == 1
+
+        # A later native-ID claim makes the dynamic resolution ambiguous after
+        # the immutable payload was staged but before its first sink attempt.
+        await completed(ops_database, group="g2")
+        assert await exporter.claim(now=NOW + timedelta(seconds=3)) is None
+        job = await exporter.get(request.request_id)
+        assert job.state == "UNCERTAIN"
+        assert job.last_code == "lineage_invalidated"
+
+    asyncio.run(scenario())

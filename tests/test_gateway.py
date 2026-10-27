@@ -13,6 +13,7 @@ from test_application_wiring import IdentityServer, auth
 from test_identity import G1
 
 from proxylens.app import create_app
+from proxylens.db import StorageUnavailable
 
 NATIVE = "019a96c4-0c00-7000-8000-0123456789ab"
 TRACE = "20261024000000-synthetic_account-" + NATIVE
@@ -392,6 +393,87 @@ def test_shared_rate_caps_and_next_request_revocation(environment, monkeypatch, 
                     await client.post(base1 + "/v1/chat/completions", json={})
                 ).status_code == 404
         assert len(calls) == 2
+
+    asyncio.run(scenario())
+
+
+def test_gateway_policy_denial_is_audited_without_upstream_forwarding(
+    environment, monkeypatch, tmp_path
+):
+    routing(monkeypatch, tmp_path)
+
+    async def scenario():
+        identity = IdentityServer()
+        key, _ = await issue(
+            identity,
+            policy={"models": ["other"], "providers": ["codex"]},
+        )
+        calls = []
+
+        async def upstream(scope, receive, send):
+            calls.append(scope)
+            await send({"type": "http.response.start", "status": 200, "headers": []})
+            await send({"type": "http.response.body", "body": b"{}"})
+
+        async with serve(upstream) as url:
+            monkeypatch.setenv("PROXYLENS_CPA_URL", url)
+            gateway = create_app("gateway", identity_transport=httpx.MockTransport(identity))
+            async with serve(gateway) as base, httpx.AsyncClient() as client:
+                response = await client.post(
+                    base + "/v1/responses",
+                    json={"model": "demo"},
+                    headers={"Authorization": "Bearer " + key["plaintext"]},
+                )
+                assert response.status_code == 403
+                assert response.json() == {"error": "policy_denied"}
+        assert calls == []
+        async with environment.transaction() as conn:
+            denial = await (
+                await conn.execute(
+                    "SELECT * FROM resource_audit WHERE action='authorization.denied' "
+                    "ORDER BY occurred_at DESC LIMIT 1"
+                )
+            ).fetchone()
+        assert denial["actor"] is None
+        assert denial["group_id"] == G1
+        assert denial["resource_id"] is not None
+        assert denial["details"]["code"] == "policy_denied"
+
+    asyncio.run(scenario())
+
+
+def test_gateway_denial_audit_failure_fails_closed_without_forwarding(
+    environment, monkeypatch, tmp_path
+):
+    routing(monkeypatch, tmp_path)
+
+    async def scenario():
+        identity = IdentityServer()
+        key, _ = await issue(identity, policy={"models": ["other"], "providers": ["codex"]})
+        calls = []
+
+        async def upstream(scope, receive, send):
+            calls.append(scope)
+
+        async with serve(upstream) as url:
+            monkeypatch.setenv("PROXYLENS_CPA_URL", url)
+            gateway = create_app("gateway", identity_transport=httpx.MockTransport(identity))
+            async with serve(gateway) as base, httpx.AsyncClient() as client:
+                original = gateway.state.gateway.resources.record_denial
+
+                async def fail(*args, **kwargs):
+                    raise StorageUnavailable("synthetic audit failure")
+
+                gateway.state.gateway.resources.record_denial = fail
+                response = await client.post(
+                    base + "/v1/responses",
+                    json={"model": "demo"},
+                    headers={"Authorization": "Bearer " + key["plaintext"]},
+                )
+                gateway.state.gateway.resources.record_denial = original
+        assert response.status_code == 503
+        assert response.json() == {"error": "storage_unavailable"}
+        assert calls == []
 
     asyncio.run(scenario())
 

@@ -904,3 +904,52 @@ operator restore of an external Langfuse deployment. The existing live runtime w
 not stopped or modified. Tenant-scoped usage remains disabled until independently
 reviewed live correlation and durable-history artifacts exist for the exact deployment
 binding.
+
+## 2026-10-27 — Final code-review correction pass
+
+### Scope and decisions
+
+Addressed all actionable findings from the standards/spec review on branch
+`fix/phase1-final-review`, based on integration tip `266e7e4` (including the
+operations/deployment merge).
+
+- Path usage handlers now pass their `{group_id}` / `{application_id}` values into
+  the same authorization/query seam used by query routes. Application IDs are still
+  checked against their current resource group and the caller's current Keycloak
+  scope; query filters remain query parameters.
+- Management `IdentityError` denials are handled at the resource-route boundary and
+  recorded with null actor/group/resource when identity was unavailable. Audit write
+  failure changes the response to redacted 503 and never permits the operation.
+- Gateway authorization denials are recorded through the resource audit repository
+  before returning. Only resolved machine-key group/application references are used;
+  no request body, key, upstream text, or guessed human actor is recorded.
+- Exporter status policy remains conservative for ambiguous outcomes. Bounded durable
+  retries cover connection/pool failures and explicitly attested pre-admission 408/5xx
+  or pre-send write timeout; bare 408/5xx, read/write ambiguity after body start,
+  cancellation, and post-send failures remain `UNCERTAIN`. Scanner-produced
+  correlated payloads store a lineage tuple and recheck current resolution at claim
+  and immediately before send, invalidating stale ownership after a native collision.
+- Worker status checkpoints wrap JSONB details in psycopg `Jsonb`, preserving the
+  fixed redacted diagnostic shape.
+
+### Validation performed
+
+TDD regression coverage was added for path scoping, unauthenticated management
+audits, gateway denial audit/no-forwarding, real-PostgreSQL JSONB status persistence,
+temporary exporter response policy, and late native-ID collision invalidation between
+scan and claim.
+
+- The branch already contained integration tip `266e7e4`; no additional merge was
+  required. `integration/phase-1-poc` and `fix/phase1-final-review` pointed to the
+  same commit before this correction commit.
+- The complete isolated locked suite passed **322 tests** in 52.06 seconds using
+  `PROXYLENS_CI_DATABASE_URL` against the dedicated PostgreSQL 17.6 service and
+  `PROXYLENS_RECOVERY_ENGINE=podman`
+  `PROXYLENS_RECOVERY_PG_CONTAINER=proxylens-test-postgres`. This exercised both
+  populated recovery tests through the matching PostgreSQL utility container.
+- Earlier focused review regressions passed **7 tests**, the broader targeted batch
+  passed **104 tests**, and the exporter/runtime batch passed **52 tests**.
+- Ruff check passed; Ruff format check passed for all 50 checked Python files;
+  `python -m compileall -q src tests` passed; `git diff --check` passed.
+- No live service, provider credential, tracker, remote branch, or pull request was
+  modified. The exact changed-file list and commit are in the handoff artifact.

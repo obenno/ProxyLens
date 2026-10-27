@@ -153,6 +153,12 @@ upstream failure strings are stored. Authentication denials have honest null
 actor/group/resource. Scoped audit readers cannot see another group's events.
 Audit-storage failure returns 503; it never permits a mutation.
 
+Gateway policy, scope, key, group, and rate denials use the same redacted audit
+boundary before a response is returned. Machine-key requests have no verified human
+actor, so their audit actor is null; group and application references are included
+only after the key has resolved them. A denial audit failure returns a generic 503
+and never forwards the request.
+
 ## Local verification
 
 Run against the dedicated disposable PostgreSQL database (not production):

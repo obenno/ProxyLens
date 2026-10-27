@@ -132,6 +132,11 @@ class Gateway:
                 raise ResourceError("invalid_client_key", 401)
             key = credentials[0][7:]
             identity = await self.resources.resolve_key(key)
+            request.state.gateway_denial = {
+                "actor": None,
+                "group_id": identity.group_id,
+                "resource_id": identity.application_id,
+            }
             if (
                 request.headers.get("content-type", "").split(";", 1)[0].strip()
                 != "application/json"
@@ -367,6 +372,19 @@ def install_gateway_routes(app: FastAPI):
             return await gateway.prepare(request)
         except ResourceError as error:
             status, code = error.status, error.code
+            gateway = getattr(app.state, "gateway", None)
+            if gateway is not None and status in {401, 403, 409, 429}:
+                context = getattr(request.state, "gateway_denial", {})
+                try:
+                    await gateway.resources.record_denial(
+                        "authorization.denied",
+                        actor=context.get("actor"),
+                        group_id=context.get("group_id"),
+                        resource_id=context.get("resource_id"),
+                        code=code,
+                    )
+                except StorageUnavailable:
+                    status, code = 503, "storage_unavailable"
         except StorageUnavailable:
             status, code = 503, "storage_unavailable"
         except TimeoutError:

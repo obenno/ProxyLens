@@ -129,13 +129,16 @@ or ID field: adapters must source them from validated policy/lineage/projection.
 | Malformed/nonobject/truncated/oversized/compressed 200, duplicate JSON keys, impossible count | `UNCERTAIN`; never infer nonacceptance |
 | Connection establishment failure/timeout, pool timeout before send | `RETRY_WAIT` |
 | 429 | `UNCERTAIN` by default; retry only when `trusted_pre_admission_429=True` is backed by destination-specific evidence |
-| Read/write timeout, post-write disconnect, cancellation, expired lease, 408 or any 5xx | `UNCERTAIN`; no automatic retry |
+| Read/write timeout, post-write disconnect, cancellation, expired lease, 408 or any 5xx | `UNCERTAIN`; no automatic retry unless a destination-specific pre-admission attestation is present |
 | Other 4xx or missing/invalid credential files | `DEAD_LETTER` with redacted code |
 | Other 2xx or redirect | `UNCERTAIN`; never redirect credentials |
 
-OTLP allows retrying 502/503/504, but a proxy failure can occur after acceptance;
-this implementation deliberately chooses conservative uncertainty. Safe retries use
-identical bytes and jittered exponential delay: base 1 second, cap 300 seconds,
+OTLP allows retrying 502/503/504, but a proxy failure can occur after acceptance.
+This implementation preserves `UNCERTAIN` for bare 408/5xx, read/write timeouts,
+and post-send disconnects. A configured destination may explicitly attest a
+pre-admission temporary response with `X-ProxyLens-Admission: not-admitted`; only
+that response is converted to durable retry state. Safe retries use identical
+bytes and jittered exponential delay: base 1 second, cap 300 seconds,
 minimum 100 ms (no hot loop), max 10 attempts. Trusted 429 honors `Retry-After`
 seconds/HTTP date as a minimum. If the next attempt exceeds the request-start age
 limit (24 hours), dead-letter rather than retry earlier. Default total HTTP timeout
@@ -149,8 +152,11 @@ serialized; no silent pending-row eviction. Aggregate suppression counters persi
 the #6 scanner must retain per-source retry eligibility. O(N) spool accounting per
 enqueue is intentionally simple for Phase 1, not a high-throughput design claim.
 
-No automatic uncertain replay or readback reconciliation is implemented. Operators
-may inspect v2 observations using exact trace/span and original time bounds; absence
+No automatic uncertain replay or readback reconciliation is implemented. Before an
+actual scan-produced correlated payload is claimed, the repository rechecks current
+projection lineage; a late native-ID collision invalidates the queued job as
+`UNCERTAIN/lineage_invalidated` and prevents sending the stale owner payload.
+Operators may inspect v2 observations using exact trace/span and original time bounds; absence
 does not establish nonacceptance. Authentication failures are terminal per job;
 destination-wide pause/control and an operator repair workflow remain integration
 work. Local pruning does not delete remote observations. Built-in self-hosted remote

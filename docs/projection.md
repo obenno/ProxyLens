@@ -209,6 +209,12 @@ Use normalized fields, never sum raw overlapping token counters. Cost stays unkn
 Explicitly allowlist metadata; do not export the whole facts/view or raw tokens.
 Do not retain an earlier resolved owner as proof after later collisions.
 
+The outbox stores the source lineage tuple only for scanner-produced correlated
+observations. Its claim and pre-send lease fence re-read `projection_resolved` using
+that tuple and the original ingress request. If a late native-ID collision changes
+the current status, the job becomes `UNCERTAIN/lineage_invalidated` and no stale
+payload is sent.
+
 Stable generation IDs come from lineage. The selected Langfuse immutable-span
 contract requires one delayed finalized generation, not early usage plus replayed
 enrichment. Gate-disabled operation may export gateway-only partial metadata;

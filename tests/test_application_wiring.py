@@ -141,6 +141,38 @@ def test_signed_management_scope_and_flat_group_authority(environment):
     asyncio.run(scenario())
 
 
+def test_actual_identity_error_management_denial_is_audited(environment):
+    async def scenario():
+        authority = IdentityServer()
+        app = create_app("api", identity_transport=httpx.MockTransport(authority))
+        async with (
+            app.router.lifespan_context(app),
+            httpx.AsyncClient(
+                transport=httpx.ASGITransport(app=app), base_url="https://api.example"
+            ) as client,
+        ):
+            response = await client.get("/api/applications")
+            assert response.status_code == 401
+            assert response.json() == {"error": "unauthenticated"}
+        async with environment.transaction() as conn:
+            denial = await (
+                await conn.execute(
+                    "SELECT actor, group_id, resource_id, outcome, details "
+                    "FROM resource_audit WHERE action='management.denied' "
+                    "ORDER BY occurred_at DESC LIMIT 1"
+                )
+            ).fetchone()
+        assert denial == {
+            "actor": None,
+            "group_id": None,
+            "resource_id": None,
+            "outcome": "denied",
+            "details": {"code": "unauthenticated"},
+        }
+
+    asyncio.run(scenario())
+
+
 def test_worker_lifespan_constructs_and_stops_runtime_components(environment):
     async def scenario():
         authority = IdentityServer()
