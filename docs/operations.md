@@ -101,6 +101,9 @@ discarded. Langfuse health does not gate gateway forwarding.
 | CPAMP/read adapter | Preserve last valid projection; `stale`, `degraded` or initial `unavailable`, never fabricated zero usage. A successful collector poll does not prove durable-history completeness. |
 | Langfuse | Provider response remains independent; backlog/uncertain/dead-letter state visible. Disabled exporter is `disabled`, not successful delivery. Remote acceptance is not confirmed query visibility. |
 
+After a worker restart, CPAMP readiness also requires one successful authenticated
+durable-history read; collector health alone is not sufficient. This avoids
+advertising a ready worker whose projection source has not yet been established.
 Projection becomes stale at **age >= 60 seconds** or adapter failure; a reported
 source gap remains degraded even after a successful recent poll. Unknown counts
 remain null. Worker readiness requires authenticated CPAMP collector status. When
