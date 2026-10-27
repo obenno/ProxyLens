@@ -106,8 +106,12 @@ durable-history read; collector health alone is not sufficient. This avoids
 advertising a ready worker whose projection source has not yet been established.
 Projection becomes stale at **age >= 60 seconds** or adapter failure; a reported
 source gap remains degraded even after a successful recent poll. Unknown counts
-remain null. Worker readiness requires the CPAMP adapter and collector contract;
-projection freshness and Langfuse delivery remain diagnostic and do not gate
+remain null. Worker readiness requires authenticated CPAMP collector status. When
+the live proof gate permits history polling, it also requires the read adapter;
+otherwise CPAMP `history_state` and projection state explicitly report `disabled`,
+with no invented history-success timestamp. An intentionally disabled history
+reader must not prevent first startup. Collector failures still fail readiness.
+Projection freshness and Langfuse delivery remain diagnostic and do not gate
 provider forwarding. Gateway readiness depends on PostgreSQL, Keycloak and CPA,
 not remote observation delivery. Health is diagnostic and never substitutes for
 per-request authorization, group validation or durable lineage.
@@ -194,8 +198,9 @@ Use matching-major `pg_dump`/`pg_restore` on PATH. Alternatively add
 commands; the script verifies cluster system identifier and client/server major
 before use. This option requires permission to read `pg_control_system()`. It is
 not a way to restore into some other container silently. Pin patch versions for a
-release rehearsal; the local automated test uses the coordinator's PostgreSQL 17
-utility container and records its actual version.
+release rehearsal; local automated tests can use a dedicated PostgreSQL 17 utility
+container and record its actual version. The October 27 isolated acceptance drill
+uses the reference PostgreSQL 17.11 image, separate from shared test instances.
 
 ### Quiesced foundation backup
 
@@ -364,6 +369,11 @@ tests against freshly created real PostgreSQL databases. **Any skipped test fail
 CI.** The recovery test seeds resources/key/policy/audit/lineage, restores into a
 new database, compares fingerprints, verifies key authorization and lineage through
 repositories, and rejects a second restore to the existing target.
+The final-schema recovery case also populates projection records/checkpoints and
+an in-flight outbox attempt. Restore preserves those facts; an expired lease becomes
+`UNCERTAIN` and cannot be claimed for resend. A simulated CPAMP outage preserves
+restored records/last-success time, and replay after recovery does not duplicate
+them. This is synthetic source evidence, not provider recovery.
 
 Evidence boundaries:
 
