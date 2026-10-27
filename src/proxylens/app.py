@@ -286,7 +286,7 @@ def create_app(role: str, *, identity_transport: httpx.AsyncBaseTransport | None
                 stop = asyncio.Event()
                 # Establish the initial checkpoint before background tasks can
                 # compete for the same test/deployment database connection.
-                await checkpoint_status()
+                await checkpoint_worker_status(database, supervisor)
                 supervisor_task = asyncio.create_task(
                     supervisor.run(stop), name="operations-supervisor"
                 )
