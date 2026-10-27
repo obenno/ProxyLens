@@ -861,41 +861,41 @@ prerequisites in the user-facing guides, propagates projection window staleness
 into worker operations health, and makes CPAMP adapter/collector health gate worker
 readiness. The same locked suite remains green at **307 tests, zero skips**.
 
-## 2026-10-27 — Operations/deployment acceptance continuation
+## 2026-10-27 — Remaining Phase 1 live acceptance
 
-### Scope and decision
+### Scope and decisions
 
-Completed the remaining operations acceptance work from clean integration tip
-`d794a02`. The worker now distinguishes authenticated CPAMP collector readiness from
-the optional CPAMP history reader: with the live correlation/durable-history proof
-gate disabled, `history_state` and projection state are explicitly `disabled`, no
-history success timestamp is fabricated, and a healthy collector can still bring the
-worker ready. Once the reviewed proof gate is enabled, the history adapter remains a
-readiness requirement. This avoids a startup deadlock while preserving fail-closed
-tenant usage.
+The isolated loopback runtime exercised the actual pinned CPA v8.0.40 and CPAMP
+v1.14.9 path through ProxyLens using two synthetic Keycloak groups/applications
+and the existing single Codex OAuth credential. The harness is
+`scripts/live-acceptance.py`; setup/ownership/evidence limits are in
+`docs/live-acceptance.md`. It reads CPAMP only through authenticated analytics
+HTTP and never accesses the CPA usage queue.
 
-The populated PostgreSQL recovery seam now includes final-schema projection source
-records/checkpoints and an in-flight exporter lease. Restored records and fingerprints
-are compared in a new database; an expired lease becomes `UNCERTAIN` and cannot be
-claimed for an automatic resend. A synthetic CPAMP read failure preserves the prior
-projection and checkpoint, and replay does not duplicate the projection.
+The actual CPA v8 configuration and credential model registry were attested
+privately before dispatch: one enabled Codex credential, no configured model
+alias or alternate provider route, no credential routing override, zero retry
+rounds/bootstrap retries, and no quota model switching. The operator-attested
+gateway route was then limited to the exact returned model. No route or proof
+gate was guessed from a public model listing.
 
-### Validation performed
+### Live evidence achieved
 
-- Locked suite: **309 passed, zero skipped** against fresh PostgreSQL databases.
-- Ruff check/format passed for changed Python files.
-- Standalone Compose v5.6.1 configuration validation passed with `/dev/null` env.
-- New isolated Podman Compose project built the pinned app and Keycloak images and
-  started PostgreSQL, Keycloak, CPA, CPAMP, API, gateway, and worker. With proof files
-  absent, all roles reached expected readiness; worker health reported collector
-  `available`, history `disabled`, projection `disabled`, and queue coverage `unknown`.
-- Private recovery drill seeded only synthetic resources, lineage, gateway lifecycle,
-  projection, and exporter rows. It exercised dependency outage/restart transitions,
-  populated logical backup/restore, and cold five-store backup/restore into new
-  labeled volumes. Raw logs, secrets, tokens, and private identifiers remain under
-  `/data/tmp/opencode/proxylens-phase1/operations-acceptance-runtime`.
+Non-streaming, streaming, function-tool, and tiny synthetic image-input requests
+returned HTTP 200 with expected Responses behavior. Each preserved first-byte
+streaming semantics, produced a full native CPA UUID binding, yielded exactly one
+matching CPAMP event hash through the supported analytics read, retained separate
+alpha/beta group/application/key ownership, and became visible in about 1.0–1.1
+seconds. Repeated CPAMP reads returned the same event hashes. The worker exported
+one metadata-only Langfuse generation per case; v2 readback confirmed safe group,
+application, ProxyLens/native IDs, no human machine identity, no prompt/output,
+and no usage/cost while the proof gate was disabled.
 
-### Evidence boundaries and remaining gates
+Bounded cancellation returned HTTP 200 and a native binding, then recorded
+gateway `cancelled` with no CPAMP durable event. The harness records this as
+partial evidence and does not infer usage or ownership from timing/model/key
+similarity. A worker restart left readiness unavailable until a durable-history
+read was completed; this is now explicit in runtime health and documentation.
 
 The recovery and outage fixtures are synthetic and prove application/storage behavior;
 they do not prove provider OAuth validity, real provider request recovery, live CPA-to-
@@ -953,3 +953,18 @@ scan and claim.
   `python -m compileall -q src tests` passed; `git diff --check` passed.
 - No live service, provider credential, tracker, remote branch, or pull request was
   modified. The exact changed-file list and commit are in the handoff artifact.
+
+### Validation and remaining gates
+
+The new harness reservation seam and redaction failure seam pass, along with the
+operations-health regression suite. Ruff passes for the harness/runtime change.
+The production proof gate remains disabled: retry/failover attribution,
+live native-ID collision behavior, CPAMP outage/restart/retention completeness,
+and independently reviewed correlation/history artifacts remain outstanding.
+The current worker runtime also demonstrates the conservative post-restart
+readiness state until a normal projection read succeeds; no tenant-scoped usage
+claim is made.
+
+Private raw evidence and credentials remain under
+`/data/tmp/opencode/proxylens-phase1/live-acceptance-20261027/` and are not
+copied into the repository.

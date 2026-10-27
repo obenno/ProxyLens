@@ -284,6 +284,9 @@ def create_app(role: str, *, identity_transport: httpx.AsyncBaseTransport | None
 
             async with projection_worker_lifespan(projection_repository, adapter, gate=proof_gate):
                 stop = asyncio.Event()
+                # Establish the initial checkpoint before background tasks can
+                # compete for the same test/deployment database connection.
+                await checkpoint_status()
                 supervisor_task = asyncio.create_task(
                     supervisor.run(stop), name="operations-supervisor"
                 )

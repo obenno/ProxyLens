@@ -2,7 +2,7 @@
 
 ## Status and evidence
 
-**Source-supported; live correlation blocked. Tenant usage disabled.**
+**Live native correlation partially demonstrated; tenant usage disabled.**
 `docs/evidence/issue-3-correlation.json` records the gate, pins, provenance and
 remaining scenarios. It is an evidence record, not an operator-editable enable switch.
 `tenant_usage_gate()` cannot be enabled by environment variables, fixtures or a
@@ -17,12 +17,17 @@ Detailed source coordinates and the isolated synthetic HTTP experiment:
 acceptance scenarios: adjacent `acceptance.md`, especially 7.3, 7.8–7.9,
 10.1–10.4, 8.4–8.7 and the live-evidence matrix.
 
-The exact missing hop is **authorized Codex Responses execution → actual returned
-CPA header → actual CPAMP collector persistence**, including stream/nonstream,
-retry/failover, tools, multimodal, error, disconnect, missing/colliding-ID scenarios
-across two application/group identities using the intended shared credential.
-This workflow configured no provider OAuth and captured no such provider sample.
-Source inspection and synthetic CPAMP imports do not close that gate.
+The continuation harness has now exercised authorized Codex Responses execution
+through the actual gateway with two synthetic Keycloak groups and one shared
+CPA-managed Codex credential. Non-streaming, streaming, function-tool and
+synthetic-image requests each produced an exact native UUID → CPAMP event-hash
+join, separate immutable group/application ownership, and visibility within the
+60-second target. A bounded cancellation produced the native binding and a
+gateway `cancelled` lifecycle row but no CPAMP durable event; no usage was
+assigned. Retry/failover, native-ID collision, outage/restart/retention
+completeness and the full independently reviewed proof pair remain unproven.
+Tenant usage therefore stays disabled. Source inspection and synthetic CPAMP
+imports remain insufficient by themselves.
 
 ## Identity and lifecycle
 
