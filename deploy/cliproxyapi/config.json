@@ -1,6 +1,6 @@
 {
   "config-version": 8,
-  "server": {"host": "0.0.0.0", "port": 8317},
+  "server": {"host": "0.0.0.0", "port": 8317, "commercial-mode": true},
   "management": {
     "allow-remote": true,
     "disable-control-panel": true,

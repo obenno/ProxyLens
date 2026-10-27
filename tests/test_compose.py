@@ -6,6 +6,13 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_readme_local_commands_match_published_service_ports():
+    readme = (ROOT / "README.md").read_text()
+    assert "python -m proxylens api --port 8001" in readme
+    assert "python -m proxylens gateway --port 8000" in readme
+    assert "python -m proxylens worker --port 8002" in readme
+
+
 def test_management_stays_private_and_cpamp_is_the_only_queue_consumer():
     stack = yaml.safe_load((ROOT / "compose.yaml").read_text())
     services = stack["services"]

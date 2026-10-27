@@ -11,6 +11,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_bootstrap_is_repeatable_and_preserves_existing_secrets_and_cpa_config(tmp_path):
+    template = json.loads((ROOT / "deploy/cliproxyapi/config.json").read_text())
+    assert template["server"]["commercial-mode"] is True
+    assert template["observability"]["logs"] == {
+        "debug": False,
+        "logging-to-file": False,
+        "request-log": False,
+    }
     secret_dir = tmp_path / "secrets"
     command = [sys.executable, str(ROOT / "scripts/init-secrets.py"), str(secret_dir)]
     subprocess.run(command, check=True, capture_output=True)
@@ -35,12 +42,63 @@ def test_bootstrap_is_repeatable_and_preserves_existing_secrets_and_cpa_config(t
     config = json.loads((config_dir / "config.yaml").read_text())
     assert config["management"]["secret-key"] == original["cpa_management_key"].decode().strip()
     assert config["access"]["api-keys"] == [original["cpa_client_key"].decode().strip()]
+    assert config["server"]["commercial-mode"] is True
+    assert config["observability"]["logs"] == {
+        "debug": False,
+        "logging-to-file": False,
+        "request-log": False,
+    }
     assert config["observability"]["logs"]["request-log"] is False
     assert original["cpa_management_key"].strip() not in result.stdout + result.stderr
     # An operator may change settings through CPA, which rewrites this as YAML.
-    (config_dir / "config.yaml").write_text("config-version: 8\n# operator change\n")
+    safe_existing = """config-version: 8
+server:
+  host: 0.0.0.0
+  port: 8317
+  commercial-mode: true
+observability:
+  logs:
+    debug: false
+    logging-to-file: false
+    request-log: false
+# operator change
+"""
+    (config_dir / "config.yaml").write_text(safe_existing)
     subprocess.run(command, env=env, check=True, capture_output=True)
-    assert (config_dir / "config.yaml").read_text() == "config-version: 8\n# operator change\n"
+    assert (config_dir / "config.yaml").read_text() == safe_existing
+
+
+def test_cpa_initialization_rejects_existing_config_without_raw_logging_guard(tmp_path):
+    secret_dir = tmp_path / "secrets"
+    secret_dir.mkdir()
+    (secret_dir / "cpa_management_key").write_text("management-key\n")
+    (secret_dir / "cpa_client_key").write_text("client-key\n")
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    unsafe_existing = """config-version: 8
+server:
+  host: 0.0.0.0
+  port: 8317
+observability:
+  logs:
+    request-log: false
+"""
+    target = config_dir / "config.yaml"
+    target.write_text(unsafe_existing)
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "deploy/cliproxyapi/init.py")],
+        env={
+            **os.environ,
+            "SECRETS_DIR": str(secret_dir),
+            "CPA_CONFIG_DIR": str(config_dir),
+            "CPA_TEMPLATE": str(ROOT / "deploy/cliproxyapi/config.json"),
+        },
+        capture_output=True,
+    )
+    assert result.returncode != 0
+    assert target.read_text() == unsafe_existing
+    assert b"management-key" not in result.stdout + result.stderr
+    assert b"client-key" not in result.stdout + result.stderr
 
 
 @pytest.mark.parametrize("value", [None, "\n"])

@@ -881,6 +881,34 @@ row becomes terminal, supervisor checkpoints preserve typed diagnostic state, an
 the unrequested CLIProxyAPI commercial-mode change was removed. The locked suite
 remains green at **306 tests, zero skips**.
 
+## 2026-10-27 — Final review: CPA raw-content logging guard and local port contract
+
+### Scope and decisions
+
+The final signoff correction restores the pinned CLIProxyAPI v8.0.40
+`server.commercial-mode: true` setting in the shipped template. The pinned source
+shows that this setting omits the request-body logging middleware; setting
+`observability.logs.request-log` to false alone still permits bounded error-path
+body capture. Debug logging, file logging, and request logging remain false.
+
+The CPA initializer now treats the persistent `cpa_config` volume as a safety
+boundary. First boot writes the safe template and mounted credentials atomically.
+Later boots preserve an existing config byte-for-byte only after validating the
+four required logging settings. A missing or unsafe setting fails initialization
+without overwriting the config or printing credentials; operators must back up
+the volume and apply the pinned v8.0.40 config migration before CPA accepts
+traffic. OAuth state remains in its separate persistent volume.
+
+The README's local commands now match the reference listeners: gateway 8000,
+ProxyLens API 8001, and worker health 8002.
+
+### Validation performed
+
+Added bootstrap coverage for the generated safe template, safe persistent-config
+preservation, unsafe legacy-config rejection, and the README/Compose port
+contract. Targeted and locked suite results for this correction are recorded in
+the final-review handoff artifact.
+
 The final documentation/freshness pass updates the runtime scope and locked-suite
 prerequisites in the user-facing guides, propagates projection window staleness
 into worker operations health, and makes CPAMP adapter/collector health gate worker

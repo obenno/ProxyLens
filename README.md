@@ -11,8 +11,8 @@ in `docs/dependency-pins.md`; implementation decisions are in `DEVELOPMENT.md`.
 Issue #2 provides a Compose stack and Python 3.12 service entrypoints:
 
 ```sh
-PYTHONPATH=src .venv/bin/python -m proxylens api
-PYTHONPATH=src .venv/bin/python -m proxylens gateway --port 8001
+PYTHONPATH=src .venv/bin/python -m proxylens api --port 8001
+PYTHONPATH=src .venv/bin/python -m proxylens gateway --port 8000
 PYTHONPATH=src .venv/bin/python -m proxylens worker --port 8002
 ```
 
