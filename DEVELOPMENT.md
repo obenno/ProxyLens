@@ -1,5 +1,40 @@
 # Development Notes
 
+## 2026-10-29 — Issue #1 candidate setup-scope tranche
+
+### Scope and decisions
+
+Based `impl/litellm-issue1-scope` on `integration/litellm-native-poc` at `414ccc9`;
+confirmed the integration branch is an ancestor. Added
+`docs/candidate/decisions.md` as the durable setup/evidence status record for #1.
+The shared POC spec and live issues remain the scope/work authorities.
+
+Decision: record the owner's required OpenCode client, isolated local community
+edition, native ordinary personal users/Usage, conservative native rate limits,
+and existing authorized CPA/Langfuse test resources where available. Reason:
+unblock native-first configuration without treating selected defaults as observed
+capabilities. Consequence: #2 selects verified pins/model from authorized local
+evidence and records exact settings; #8 configures native telemetry; #7 owns the
+single A1–A6 evidence pass. #3 remains optional/unselected and #10 deferred.
+
+This is partial #1 setup work. A1–A6 remain unperformed; owner candidate acceptance,
+architecture adoption and production cutover remain later explicit decisions.
+Existing specs, archives, ADR statuses and historical runtime evidence retain
+their contracts. No model, price, exact native role or numeric rate is inferred
+from an unverified release. The setup record identifies who must resolve each.
+
+### Validation and follow-up
+
+Loaded the TDD skill before editing; this documentation-only tranche needs no
+artificial tests. Read AGENTS.md, glossary, POC spec, proposed ADR 0002, rebaseline
+and live `gh issue view 1` (open; updated `2026-10-29T07:11:34Z`). Python 3 document
+checks passed: all five relative links/anchors resolve, A1–A6 each explicitly
+unperformed, six protected spec/ADR/rebaseline/archive files byte-identical to
+`414ccc9`, and prior development notes preserved. `git diff --check` passed.
+No candidate runtime acceptance is claimed. Future updates should link #2/#8
+exact configuration and #7 sanitized results, preserving the distinction between
+choices and evidence.
+
 ## 2026-10-29 — Personal-usage architecture and issue revision
 
 ### Scope and decisions
