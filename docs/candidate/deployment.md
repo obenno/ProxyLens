@@ -151,7 +151,15 @@ Do not copy tokens/screenshots with credentials into repository evidence.
 
 ## Current logging settings and #8 target
 
-**Current checked-in setup, not the approved tracing target:**
+**#8 configuration update:** [native Langfuse setup](langfuse.md) now records the
+separate project, exact dependency pins, demonstrated narrow mapping/credential
+gap, callback and telemetry Compose overlay. Checked-in message capture is enabled
+for that single native path; spend-log content remains off. Use both Compose/env
+files from that runbook for candidate startup. Runtime activation/shared A5 status
+is recorded there; the following is preserved **#2 startup history**, not the
+effective #8 target:
+
+**Original #2 setup, not the approved tracing target:**
 `turn_off_message_logging=true`, `global_disable_no_log_param=true`,
 `store_prompts_in_spend_logs=false`,
 `disable_spend_logs=false`, `disable_error_logs=true`, no debug/verbose mode,
@@ -179,7 +187,7 @@ prevents caller `no-log` from opting out of configured logging. This does not
 establish trusted attribution, credential masking or debugging-content coverage
 on every callback outcome.
 
-No callback is enabled by #2. `secret_env.py` supports
+No callback was enabled by #2. `secret_env.py` supports
 `LANGFUSE_PUBLIC_KEY_FILE` / `LANGFUSE_SECRET_KEY_FILE`; #8 can mount Compose secrets,
 set their file paths plus native destination, attach the selected Langfuse network
 and configure **one** native integration in the candidate config/overlay. #8 owns

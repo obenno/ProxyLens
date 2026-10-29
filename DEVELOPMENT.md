@@ -1592,3 +1592,79 @@ Validation completed: the isolated locked suite passed **335 tests** with zero
 skips; Ruff check and format check passed; Python compilation and `git diff --check`
 passed. The dedicated PostgreSQL databases were created and removed by the locked
 suite harness.
+## 2026-10-29 — #8 native content-rich tracing and narrow trusted callback seam
+
+Scope: isolated candidate only, active #8 after native tracing/retry revisions;
+integration ancestry116821f confirmed and41e9d92 merged. Native configuration
+first; installed LiteLLM1.106.6/Langfuse4.15.2/OTel1.45.1 inspected and external
+official docs checked. Existing runtime/exporter and shared CPA/Langfuse history
+retain their contracts.
+
+Native synthetic serialization demonstrated concrete gaps: native userId
+uses caller/customer identity instead of key owner, caller headers/metadata can
+override session/user, and credential-like error text is emitted.
+Native proxy preparation was also exercised: authenticated owner stamping works,
+but trace controls remain. **Correction after full deployed auth smoke:** native
+auth already rejects caller destination credentials401 under selected settings;
+the preparation-only probe bypassed that earlier gate. No deployed redirect gap
+is claimed. Reported exact gap/public seam to
+coordinator before implementing the selected minimal callback. OTelv2 also reads
+caller trace controls; switching alone does not solve them.
+
+Decision: one `CustomLogger` delegates to fixed `LangFuseLogger` and its native
+OTLP construction/batching/delivery. Callback-local copies bind trusted stamped
+key owner, labeled deployment/owner request-session fallback, fresh trace IDs and
+targeted credential masking while preserving debugging content. No transport,
+outbox, inference replay, client modification or cost-normalization code. Owner
+identity is analysis, not reader authorization. Missing owner is unattributed;
+no raw caller identity fallback. Native error/stream coverage limits remain.
+
+New native OSS organization/project created via native signup/login/UI APIs on
+authorized local Langfuse4.69.0. New non-admin OWNER only; A/B have no membership.
+Project retentionDays=null, so no automatic deletion selected. Private operator/
+project credentials retained0700/0600; setup command verifies exact project and
+stages secrets without rotation. #6 owns reader/retention/recovery follow-up.
+
+Validation: TDD public setup seam red (missing command; malformed project payload)
+then green8tests. Callback serialized-native seam red (missing module, missing
+failure/masking, invalid redacted JSON), green6tests in pinned image/network-none.
+Covers A/A2/B, forged controls, canaries, unchanged inputs, native Responses
+dispatch and completed-stream tool/image content. Direct native live readback
+retained synthetic source/tools/output/timing/cost in new project, no provider
+calls. Bypassing dispatcher initially exposed Responses usage0/0; actual native
+dispatch converts correctly to80/cache20/output40/total140, without our fix.
+Native callback lacks separate reasoning bucket. #7 must verify deployed A5.
+
+Files: `deploy/candidate/{native_langfuse.py,langfuse.compose.yaml,config.yaml,
+compose.yaml}`, `scripts/candidate.py`, `tests/{test_candidate_bootstrap.py,
+candidate_native_contract.py}`, `.github/workflows/ci.yml`,
+`docs/candidate/langfuse.md`. Callback contract CI runs inside exact deployment
+image, separate from old-runtime dependencies. Effective capture/spend/error
+settings, native queue/retry/truncation limits, project access and reproduction
+are documented in the new candidate runbook. No A5/pass or issue completion claim.
+
+Activation completed after commitd52f4b1 and coordinator handoff: only candidate
+LiteLLM recreated/mounts relocated issue2→issue8; DB and shared CPA/Langfuse IDs/
+start times unchanged. Candidate healthy, native config callback readback exactly
+one instance, DB no logging overrides, process log no errors/configured secrets.
+Actual native401 caller-destination denial was unattributed;403 A/nonexistent-model
+denial read back trusted A/request-fallback and useful error, forged controls/key
+absent. No provider dispatch for these denies. #7 released for bounded shared cases.
+Recovery of this config must archive the new callback/overlay and disable callback
+registration in the **offline copy**; prior no-callback recovery remains historical.
+
+Activation follow-up: corrected all current destination-gap claims and documented
+the exact container-only test invocation/CI job, private fixture and evidence
+paths. Preserved the preliminary smoke summary (it read the earlier401 before403
+ingestion) and verified both final observations separately. Normalized private
+probe/source/log artifact modes to0700/0600; runtime key files were already0600.
+#7 now owns candidate route/restart/fault coordination during the bounded run;
+this follow-up changes documentation only, not live-mounted callback/config.
+Validation repeated: six serialized-native seam tests pass in the exact digest
+with network disabled; eight bootstrap tests pass; repo-wide Ruff lint/format,
+three runbook local links/anchors and `git diff --check` pass. Test review confirms
+the hook checks observe native serialized output, input immutability and installed
+proxy stamping/dispatch rather than mock the logger or duplicate upstream suites.
+Merged integrationb0326db (#7 initial60eb4c4) before final handoff, preserving both
+development records. Resolved the shared decisions-table conflict by retaining
+#7's bounded A1 evidence and #8's activated setup; shared A5 remains pending.

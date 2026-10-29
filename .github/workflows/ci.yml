@@ -10,6 +10,18 @@ permissions:
   contents: read
 
 jobs:
+  candidate-native-tracing:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Pinned native callback contract (synthetic, network isolated)
+        run: >-
+          docker run --rm --network none
+          -v "$PWD:/work:ro" --workdir /work --entrypoint python
+          ghcr.io/berriai/litellm:v1.106.6@sha256:c09a77d998058dd78835a45a985eae747d257f2b183db06852fba536f3d1113c
+          -m unittest discover -s tests -p candidate_native_contract.py
+
   checks:
     runs-on: ubuntu-24.04
     timeout-minutes: 15

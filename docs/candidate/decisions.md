@@ -55,13 +55,13 @@ native project readers/roles and content retention/deletion without a bespoke
 UI/access project. Native fields may be missing or truncated; #7 records those
 limits and the owner reviews any required debugging gap.
 
-**Current versus target:** the [#2 deployment record](deployment.md#current-logging-settings-and-8-target)
-and checked-in configuration still have message capture and detailed error logs
-disabled, spend-log prompt storage off, and no Langfuse callback. The owner choice
-authorizes the future #8 setup objective; this documentation change enables no
-capture and supplies no A5 evidence. #8 must record the effective settings and
-native coverage; #7 must verify them. Prior setup/research findings remain dated
-inputs, not a requirement to implement the discarded blanket filtering design.
+**Current versus target:** original #2 setup disabled capture/callbacks. The
+[#8 configuration record](langfuse.md) now selects content capture through one
+native logger with the demonstrated narrow mapping/credential seam; spend-log
+content/error-table persistence remain off. That record owns runtime activation
+status. Shared A5 is still pending #7; configuration is not acceptance. Prior
+setup/research findings remain dated inputs, not a requirement to implement the
+discarded blanket filtering design.
 
 The coordinator published the matching #1/#2/#6/#7/#8 revisions and verified
 readback on October 29; [before/after snapshots and publication details](../planning/architecture-rebaseline-2026-10-29.md#native-tracing-objective-clarification-october-29-2026)
@@ -129,8 +129,8 @@ preserve the change; publication supplies no runtime acceptance evidence.
 |---|---|---|
 | #1 setup and coordination | Owner defaults recorded; **partial**, not full issue completion. | #2 exact choices, #7 results and limitations, then explicit owner candidate decision. |
 | #2 stack/native configuration | Configuration/startup tranche recorded in [deployment](deployment.md); shared acceptance pending. | #7 verifies actual-client, ownership/usage and controls; #8 implements the revised tracing objective. |
-| #8 native Langfuse | Required; callback/content capture still disabled in checked-in setup. | Configure the native debugging objective after #2; share A5 evidence through #7. |
-| #7 acceptance | [Initial read-only checkpoint](acceptance.md): bounded A1 passed; A6 topology/empty UI partial; A2–A5 pending. | Coordinator's #8-ready signal, then the shared bounded provider/usage/telemetry sample. |
+| #8 native Langfuse | [Configuration tranche](langfuse.md): separate project/native logger plus demonstrated narrow mapping/credential seam; A5 pending. | Verify deployed shared A5 through #7. |
+| #7 acceptance | [Initial read-only checkpoint](acceptance.md): bounded A1 passed; A6 topology/empty UI partial; A2–A5 pending. #8 ready handoff delivered. | Shared bounded provider/usage/telemetry sample; #7 owns runtime coordination. |
 | #6 production readiness | [Partial same-pin recovery evidence](recovery.md) for native account/key/policy state; production cutover not authorized. | Populated request-history restore, external recovery, native project access/content retention, upgrade/rollback, candidate acceptance and separate cutover approval. |
 | #3 diagnostics | **Optional, unselected.** | Select only for a concrete operator diagnostic need; never gates personal totals. |
 | #10 reporting extension | **Deferred, unselected.** | Use native UI in A6, identify a gap and obtain explicit feature selection. |
@@ -153,8 +153,9 @@ These are setup/document checks, not runtime evidence.
 The [shared A1–A6 definitions](../specs/litellm-poc.md#bounded-integration-acceptance-7)
 remain authoritative. The original setup-scope tranche above performed no candidate
 requests, native UI walkthrough or telemetry acceptance. The later
-[#7 read-only checkpoint](acceptance.md) verifies A1 below; provider/telemetry
-execution still awaits the coordinator's #8-ready signal.
+[#7 read-only checkpoint](acceptance.md) verifies A1 below. The subsequent
+[#8 activation](langfuse.md) delivered readiness and the coordinator authorized
+the bounded shared run; provider/telemetry results remain pending #7 evidence.
 
 | Check | Status | Required evidence still outstanding (#7) |
 |---|---|---|

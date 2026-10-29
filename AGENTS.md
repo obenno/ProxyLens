@@ -17,8 +17,9 @@ ProxyLens is a Docker Compose stack for exposing authorized AI subscription acce
   selected mapping/credential gap. No mandatory adapter/exporter/outbox or blanket
   content stripping. `userId` is analysis, not authorization; #6 records native
   project access/retention. The owner-approved target supersedes candidate
-  metadata-only guidance, but current capture/callback settings remain disabled
-  pending #8 setup and #7 evidence. CPAMP is
+  metadata-only guidance. The original disabled capture/callback settings are
+  historical; #8 now configures the selected native callback, pending #7 evidence.
+  CPAMP is
   optional operator diagnostics; personal ownership and totals come from verified
   LiteLLM facts. Configure native features in #2/#8; use #7's shared A1–A6
   integration checks. Custom work addresses demonstrated reporting/integration
