@@ -1,5 +1,48 @@
 # Development Notes
 
+## 2026-10-29 — Owner-approved client/gateway retry boundaries
+
+Started `impl/litellm-retry-boundary` at `116821f`; confirmed the integration tip
+was its ancestor. Loaded TDD, writing-for-agents and domain-modeling guidance.
+Documentation-only clarification; no artificial tests or runtime acceptance run.
+
+Decision: the owner accepted the proposal with “good, I will accept that”. Preserve
+native client retries; the gateway must not silently restart an interrupted
+generation within the same response stream. Reason: new client submissions and
+gateway/provider attempts serving an admitted request are different boundaries.
+The shared spec now owns per-layer retry/fallback documentation and native retained
+accounting for observed admitted requests. No strict one-user-action / one-request,
+lossless accounting, custom anti-retry/dedup mechanism or OpenCode change is selected.
+Usage/telemetry failure or repair must never trigger inference replay; native
+telemetry-delivery retries remain separate from provider execution.
+
+The candidate decision record preserves a sanitized client-only preflight summary:
+OpenCode 2.2.1 observed 1 normal / 5 disconnect (capped) / 4 timeout POSTs, with
+the original limits. The owner's clarification supersedes the former compatibility
+blocker classification, including the historical #6 entry below; it does not pass
+deployed A2. Updated A2/A5, recovery gates, deployment retry=0 explanation, planning
+and issue-tracker pointer. Clarified only the glossary's Client request definition
+to distinguish a new client submission from gateway/provider attempts. Native
+records remain the accounting source; missing/unknown usage remains explicit.
+
+The coordinator published #1/#7/#8, verified exact body readback and supplied
+`docs/planning/archive/issues-{before,after}-retry-boundary-2026-10-29.json`.
+Titles/states/labels and unchecked acceptance criteria are preserved; this tranche
+performed no GitHub writes. Earlier archives/research and all prior development
+entries remain unchanged. Runtime/config/tests and configured LiteLLM/router zero
+retries are unchanged; gateway settings do not prevent client retries.
+
+Validation passed: 73 local links/anchors across 13 Markdown documents,
+A1–A6/P1–P13 consistency, snapshot metadata/unchecked-criteria comparison and
+changed-file/private-path review. All 126 other tracked files are byte-identical
+to `116821f`; prior development entries are preserved verbatim. `git diff --check`
+passed. No provider requests or preflight rerun were needed.
+Future changes: inspect `docs/specs/litellm-poc.md`, `docs/candidate/{decisions,
+deployment,recovery}.md`, the rebaseline, issue-tracker guidance and glossary
+together. #7 still owes deployed retry-boundary/native-usage evidence; #8/A5 owes
+telemetry outage evidence, #1 candidate/adoption decisions, #6 readiness and
+separately approved cutover. Coordinator owns private handoff reclassification.
+
 ## 2026-10-29 — Tracing objective integration synchronization
 
 Merged integration `ce60c29576be42441622b981df702dbff62a51f5` after objective commit

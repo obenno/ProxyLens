@@ -103,8 +103,8 @@ _Avoid_: Correlation, proof of human presence.
 ## Candidate: request accounting
 
 **Client request**:
-One client-originated model invocation, regardless of retries made to execute it.
-_Avoid_: Provider attempt, HTTP attempt.
+One model invocation submitted by a client to the gateway, distinct from gateway/provider attempts made to execute it. A client retry submitted as a new request is a separate client request; one user action may produce several.
+_Avoid_: User action, provider attempt, gateway attempt.
 
 **Gateway attempt**:
 One execution attempt made by the client-facing gateway for a client request.

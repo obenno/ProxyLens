@@ -134,6 +134,10 @@ Do not copy tokens/screenshots with credentials into repository evidence.
   UI session budget/expiry, limit algorithms and DB write batching retain native
   defaults. No strict never-overspend or lossless accounting claim. Zero retries
   configured in LiteLLM/router; CPA's existing execution policy is separate.
+  These gateway settings do not prevent native client retries. #7 records effective
+  client/LiteLLM/CPA retry/fallback behavior under the
+  [owner-approved retry boundaries](../specs/litellm-poc.md#retry-boundaries);
+  zero configured retries alone is not deployed A2 evidence.
 - Explicit standard API-equivalent USD per million tokens: input **0.20**, cache
   read **0.02**, cache write **0.25**, output **1.20**. Above 272k input: **0.40**,
   **0.04**, **0.50**, **1.80**. Config uses per-token units. Verified against

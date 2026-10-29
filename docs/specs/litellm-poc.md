@@ -115,6 +115,34 @@ the owner selects it as necessary. Wrong ownership, credential exposure,
 unauthorized access or broken required client protocol is an integration blocker,
 not optional polish.
 
+## Retry boundaries
+
+The owner's [October 29 clarification](../candidate/decisions.md#owner-approved-retry-boundaries-october-29-2026)
+preserves native client retry behavior. **The gateway must not silently restart an
+interrupted generation within the same response stream.** Apply that boundary
+through LiteLLM and CPA; distinguish a new client submission from gateway/provider
+attempts serving an already admitted request.
+
+| Layer | Configuration and evidence to record in A2 |
+|---|---|
+| Client / SDK / OpenCode | Preserve native retries, including new submissions after visible output. Record version, transport, timeouts, retry/fallback settings and observed submissions. Client retries alone are not a compatibility blocker. |
+| LiteLLM / router | Record effective retry/fallback settings and observed dispatches, distinguishing pre-output attempts from interruptions after output starts. No silent generation restart within the same response stream. Current configured zero retries does not prevent client retries or establish CPA policy. |
+| CPA / provider execution | Record the selected CPA retry/fallback policy separately and correlate visible attempts where available. Preserve the same-stream boundary; hidden provider attempts remain unknown rather than inferred from LiteLLM settings or client POST counts. |
+
+Account for **observed admitted client requests** using native retained request
+identities, owner attribution, outcomes and supplied usage. A client retry that is
+admitted as a new request belongs to that request's native facts; gateway/provider
+attempts remain separate views, not additive consumption. Keep missing records,
+usage and unobserved attempts explicit. No strict end-to-end one-user-action /
+one-request, lossless accounting or custom user-action deduplication is promised.
+
+Never replay inference to repair usage or telemetry. Sink failure, missing usage
+or usage/telemetry recovery must not trigger a new generation; retrying delivery of
+an existing telemetry payload follows documented native delivery semantics.
+No custom anti-retry/dedup mechanism or OpenCode modification is selected. #7
+records the deployed behavior; the [local preflight summary](../candidate/decisions.md#local-client-preflight-reclassification)
+is client-only evidence, not an A2 pass.
+
 ## Native debugging traces
 
 Langfuse should support application debugging through **one native LiteLLM
@@ -147,7 +175,8 @@ path with A5. The selected objective is:
   attribution/session-mapping or credential-masking gap can justify a minimal
   hook with focused regression tests. No mandatory adapter, replacement exporter,
   outbox or blanket content-stripping hook is selected. Record native asynchronous
-  delivery limitations; sink failures must not trigger provider replay.
+  delivery limitations; usage/telemetry failures must not trigger inference replay
+  under the [retry boundaries](#retry-boundaries).
 
 The checked-in disabled capture/callback settings are setup evidence, not the
 target behavior; see [deployment status](../candidate/deployment.md#current-logging-settings-and-8-target).
@@ -165,10 +194,10 @@ synthetic cases across the checks below and reuse their request/usage evidence.
 | Check | Minimum evidence |
 |---|---|
 | A1 Native access configuration | A/B log in and see their own keys/usage. One representative direct request for B's detail/history as A is denied; do not grant admin access to make personal views work. |
-| A2 Actual-client compatibility | Nonstreaming and streaming Responses, tool call/result continuation, plus image/history/ancillary routes actually used by the selected client. Check one upstream error and interrupted stream; no replay of partial output. |
+| A2 Actual-client compatibility | Nonstreaming and streaming Responses, tool call/result continuation, plus image/history/ancillary routes actually used by the selected client. Check one upstream error and interrupted stream: the gateway must not silently restart an interrupted generation within the same response stream. Preserve native client retries; record client/LiteLLM/CPA retry/fallback settings and observed submissions/dispatches, and reconcile observed admitted requests with native retained facts under [Retry boundaries](#retry-boundaries). |
 | A3 Ownership and usage | A's two keys aggregate to A; B stays separate. Compare the sample's returned numeric usage with native retained details/totals, including supplied cache/reasoning fields. Missing usage/prices remain explicit; do not double-count subsets. Confirm a completed request remains after restart. |
 | A4 Configured controls | One revoked-key denial and one model restriction denial, with no forbidden CPA dispatch; exercise one configured budget/rate limit. Record native enforcement/propagation semantics rather than promise immediate or strict behavior. Test more policies only if actually enabled. |
-| A5 Langfuse integration | Inspect actual native payload/readback for the shared sample: prompts including transmitted source code, AI outputs, visible tool names/arguments/results, useful errors, model/timing/tokens/estimated cost, with explicit native coverage, missing/truncated fields and image handling. Verify trusted owner/session IDs; forged metadata cannot override them or redirect the configured destination. Use selected tool/image/error cases and synthetic auth-header/API/OAuth/provider/management-key markers to verify the declared targeted masking coverage. Record native project access; `userId` filtering is not authorization. With the sink unavailable, inference remains usable and provider work is not replayed. |
+| A5 Langfuse integration | Inspect actual native payload/readback for the shared sample: prompts including transmitted source code, AI outputs, visible tool names/arguments/results, useful errors, model/timing/tokens/estimated cost, with explicit native coverage, missing/truncated fields and image handling. Verify trusted owner/session IDs; forged metadata cannot override them or redirect the configured destination. Use selected tool/image/error cases and synthetic auth-header/API/OAuth/provider/management-key markers to verify the declared targeted masking coverage. Record native project access; `userId` filtering is not authorization. With the sink unavailable, inference remains usable; usage/telemetry failure must not trigger inference replay. Native client retries remain permitted under [Retry boundaries](#retry-boundaries). |
 | A6 Optional dependencies and usability | Native Usage and healthy inference work without CPAMP. Walk through native history/filters once, record observed reporting lag and missing panels, and obtain acceptance of the baseline or a specific gap decision. |
 
 Record versions/digests/config, schema, client and route once for the shared run;
