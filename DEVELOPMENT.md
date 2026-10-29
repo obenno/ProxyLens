@@ -1,5 +1,72 @@
 # Development Notes
 
+## 2026-10-29 — Issue #7 initial A1 checkpoint and shared runbook
+
+### Scope and decisions
+
+Started `impl/litellm-issue7-acceptance` at integration `41e9d92`; ancestor check
+passed. Read live open issue #7 (updated `2026-10-29T10:36:29Z`), candidate spec,
+deployment/decisions/recovery, ADR/glossary and private acceptance/native-tracing/
+client-preflight/exploration handoffs. Loaded TDD, webapp-testing and OpenCode
+skills. Owner-confirmed seams remain public setup, selected conditional telemetry
+glue and recovery. Chose a shared runbook/private one-shot observations rather
+than a committed native-feature harness or duplicate upstream tests.
+
+Decision: perform existing-account login and reads before #8 readiness; reserve
+provider/telemetry/control/restart cases until coordinator follow-up. Reason: one
+shared sample must exercise the final native content-rich integration and preserve
+the shared running resources. No key/user/limit changes, provider request,
+telemetry delivery, candidate/shared-service restart or CPA queue read occurred.
+Native login refresh does create UI-session rows. No OpenCode patch/dedup or
+anti-client-retry behavior is selected.
+
+### Observed behavior and implementation notes
+
+- A/B browser login and native own-key/Usage rendering passed as nonpremium
+  `internal_user`; exact personal key sets/owners A=2/B=1 match. Valid own aggregate
+  reads returned 200; A requesting B's aggregate history returned **403**.
+- A→B `/spend/logs/v2` returned empty200 while B's own history is empty. This is
+  inconclusive for populated-row isolation, not a leak or denial proof. Reuse B's
+  eventual native sample for detail isolation rather than inventing request facts.
+- Recorded actual read endpoint shapes. Aggregate metadata includes cache-read/
+  creation and timing fields; populated details/reasoning remain unobserved.
+  `timezone` is integer minutes (0 for UTC). The initial string query returned422;
+  the corrected query controls distinguish denial from malformed input.
+- Fixed a private browser-script redirect race after a selector timeout: wait for
+  final `/ui/`, not a wildcard also matching `/ui/login`. These preparation errors
+  are retained; they are not native defects. UI ancillary401/404 observations did
+  not prevent personal Usage/keys; no broader native access defect confirmed.
+- Candidate mounted config matches the tracked file; LiteLLM1.106.6 and
+  OpenCode2.2.1/hash verified. Candidate containers' start times stayed unchanged.
+  CPA config lacks explicit retry/fallback policy, request/file logs disabled.
+  Pinned effective defaults and attributable dispatch observation are still needed;
+  shared unscoped counters cannot prove no forbidden dispatch.
+- Runbook defines a maximum22 client-submission reservation across reused A/A2/B,
+  tools/image/actual OpenCode/error/interruption/outage/control cases. A private
+  observing/capping relay is conditional on coordination, never a fake successful
+  provider or replacement runtime. Native retries remain distinct admitted requests;
+  usage/telemetry recovery never dispatches inference. CPAMP stays running as sole
+  shared queue consumer; topology alone is not A6 inference evidence.
+
+### Evidence and validation
+
+Added `docs/candidate/acceptance-runbook.md`, `acceptance.md` and sanitized
+`evidence/2026-10-29-initial.json`; linked from deployment and updated the current
+decision status. Private raw artifacts/scripts/cookies/screenshots/configs are
+under `/data/tmp/opencode/proxylens-litellm-20261029/issue7-acceptance-20261029`.
+Permissions verified0700/0600, exact owner/key assertions passed, browser guards
+observed no additional same-origin mutations. No artificial unit test for docs;
+the public native UI/API observations supply the meaningful verification.
+Validation passed:34 local Markdown links/anchors, sanitized JSON parsing,
+private-script syntax and modes, changed-file credential/hash scan,22-submission
+case-ceiling arithmetic and `git diff --check`.
+
+Follow-up: coordinator's #8-ready signal and effective configuration, CPA observation
+and retry defaults, bounded shared provider sample, #6 populated-history/restart
+coordination, then #1 baseline/gap decision. A1 passed only at the bounded initial
+scope; A2–A5 remain blocked, A6 partial. PR #12, issue #7, architecture adoption
+and production cutover are not completed by this checkpoint.
+
 ## 2026-10-29 — Owner-approved client/gateway retry boundaries
 
 Started `impl/litellm-retry-boundary` at `116821f`; confirmed the integration tip

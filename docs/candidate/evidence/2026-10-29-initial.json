@@ -1,0 +1,112 @@
+{
+  "schema": "proxylens-candidate-checkpoint-v1",
+  "date": "2026-10-29",
+  "scope": "initial read-only A1 checkpoint",
+  "issue": 7,
+  "issue_updated_at": "2026-10-29T10:36:29Z",
+  "base_commit": "41e9d92e46facbb6125de837d3033a6cce263829",
+  "ancestor_confirmed": true,
+  "versions": {
+    "litellm": "1.106.6",
+    "opencode": "2.2.1",
+    "opencode_binary_sha256": "32e95ec126d416ab833094447cf590290e17dd028a68b122b94d3539795c0dae",
+    "playwright": "1.64.1",
+    "chromium": "156.0.8078.4"
+  },
+  "config": {
+    "mounted_config_matches_checkout": true,
+    "mounted_config_sha256": "e0b81392f40655845da43bc14f285f1a6232f87a322e12b3054354483ab2247b",
+    "langfuse_callback_configured": false,
+    "effective_post_issue8_config_verified": false,
+    "cpa_explicit_retry_policy_found": false,
+    "cpa_effective_retry_defaults_verified": false,
+    "cpa_request_logging": false,
+    "cpa_file_logging": false
+  },
+  "status": {
+    "A1": "passed-bounded-empty-history-check",
+    "A2": "blocked-awaiting-coordinator-issue8-ready",
+    "A3": "blocked-no-provider-sample",
+    "A4": "blocked-controls-unchanged",
+    "A5": "blocked-callback-disabled-at-checkpoint",
+    "A6": "partial-topology-and-empty-ui"
+  },
+  "A1": {
+    "browser_run_started_at": "2026-10-29T10:58:50.724576Z",
+    "direct_reads_started_at": "2026-10-29T10:59:56.470665Z",
+    "users": {
+      "A": {
+        "login_http_status": 200,
+        "native_role": "internal_user",
+        "premium_user": false,
+        "personal_usage_visible": true,
+        "own_key_aliases_visible": ["A", "A2"],
+        "other_owner_aliases_visible": false,
+        "own_user_read_status": 200,
+        "exact_personal_key_set_matches": true,
+        "personal_key_owners_match": true,
+        "own_history_status": 200,
+        "own_history_total": 0,
+        "own_aggregate_status": 200
+      },
+      "B": {
+        "login_http_status": 200,
+        "native_role": "internal_user",
+        "premium_user": false,
+        "personal_usage_visible": true,
+        "own_key_aliases_visible": ["B"],
+        "other_owner_aliases_visible": false,
+        "own_user_read_status": 200,
+        "exact_personal_key_set_matches": true,
+        "personal_key_owners_match": true,
+        "own_history_status": 200,
+        "own_history_total": 0,
+        "own_aggregate_status": 200
+      }
+    },
+    "cross_user": {
+      "actor": "A",
+      "requested_owner": "B",
+      "aggregate_path": "/user/daily/activity/aggregated",
+      "aggregate_http_status": 403,
+      "valid_query_own_owner_controls_http_status": [200, 200],
+      "timezone_minutes": 0,
+      "history_path": "/spend/logs/v2",
+      "history_http_status": 200,
+      "history_total": 0,
+      "history_result": "inconclusive-empty-target-history",
+      "populated_detail_isolation_verified": false
+    },
+    "native_ui_ancillary_observations": [
+      {"path": "/health/license", "http_status": 401},
+      {"path": "/api/plugins", "http_status": 401},
+      {"path": "/health/readiness/details", "http_status": 401},
+      {"path": "/ui.txt", "http_status": 404}
+    ],
+    "preparation_corrections": [
+      "waited-for-final-login-redirect-after-initial-selector-timeout",
+      "used-integer-timezone-after-string-query-http422"
+    ]
+  },
+  "operations": {
+    "provider_inference_submissions": 0,
+    "telemetry_delivery_submissions": 0,
+    "personal_key_user_or_limit_mutations": 0,
+    "native_login_refresh_performed": true,
+    "candidate_start_times_unchanged": true,
+    "shared_service_restarts": 0,
+    "cpa_queue_reads": 0,
+    "cpamp_stopped": false,
+    "private_directory_mode": "0700",
+    "private_file_mode": "0600",
+    "private_permission_errors": 0
+  },
+  "limitations": [
+    "No assembled provider, usage or telemetry acceptance in this tranche.",
+    "Native aggregate authorization denial does not certify all endpoints or populated detail isolation.",
+    "Client-only preflight is accepted behavior, not deployed A2 evidence.",
+    "CPA defaults and candidate-scoped dispatch observation require resolution before live cases.",
+    "CPAMP topology observation alone does not complete A6.",
+    "Candidate acceptance, architecture adoption and production cutover remain unapproved."
+  ]
+}
