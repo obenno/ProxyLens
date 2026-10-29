@@ -89,7 +89,7 @@ completed by the objective revision.
 | #2 stack/native configuration | Configuration/startup tranche recorded in [deployment](deployment.md); shared acceptance pending. | #7 verifies actual-client, ownership/usage and controls; #8 implements the revised tracing objective. |
 | #8 native Langfuse | Required; callback/content capture still disabled in checked-in setup. | Configure the native debugging objective after #2; share A5 evidence through #7. |
 | #7 acceptance | **A1–A6 unperformed.** | Assembled #2/#8 candidate and one shared fixture. |
-| #6 production readiness | Later deployment-specific work; production cutover not authorized. | Restore/rollback, native project access and content retention, key issuance/history plan, candidate acceptance and separate cutover approval. |
+| #6 production readiness | [Partial same-pin recovery evidence](recovery.md) for native account/key/policy state; production cutover not authorized. | Populated request-history restore, external recovery, native project access/content retention, upgrade/rollback, candidate acceptance and separate cutover approval. |
 | #3 diagnostics | **Optional, unselected.** | Select only for a concrete operator diagnostic need; never gates personal totals. |
 | #10 reporting extension | **Deferred, unselected.** | Use native UI in A6, identify a gap and obtain explicit feature selection. |
 
