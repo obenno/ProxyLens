@@ -1,0 +1,23 @@
+# Project credentials/network only. Callback selection belongs in config.yaml
+# after the trusted attribution/credential gap is resolved; see candidate/langfuse.md.
+services:
+  litellm:
+    environment:
+      LANGFUSE_PUBLIC_KEY_FILE: /run/secrets/langfuse_public_key
+      LANGFUSE_SECRET_KEY_FILE: /run/secrets/langfuse_secret_key
+      LANGFUSE_HOST: ${LANGFUSE_HOST:?Set the authorized candidate Langfuse origin}
+      LANGFUSE_TRACING_ENVIRONMENT: candidate
+      LANGFUSE_DEBUG: "False"
+    secrets: [langfuse_public_key, langfuse_secret_key]
+    networks: [observability]
+
+networks:
+  observability:
+    external: true
+    name: ${LANGFUSE_NETWORK:?Set the authorized Langfuse test network}
+
+secrets:
+  langfuse_public_key:
+    file: ${LANGFUSE_SECRETS_DIR:?Run candidate.py langfuse first}/public_key
+  langfuse_secret_key:
+    file: ${LANGFUSE_SECRETS_DIR}/secret_key

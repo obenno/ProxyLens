@@ -37,10 +37,13 @@ services:
       STORE_MODEL_IN_DB: "False"
       LITELLM_DISABLE_ACCESS_LOG_PATHS: /onboarding/get_token,/health/readiness,/health/liveliness
       PROXY_BASE_URL: http://127.0.0.1:${CANDIDATE_PORT:-14000}
+      PYTHONPATH: /candidate
+      PROXYLENS_TRACE_DEPLOYMENT: proxylens-candidate
     secrets: [postgres_password, master_key, salt_key, ui_password, cpa_api_key]
     volumes:
       - ./secret_env.py:/candidate/secret_env.py:ro
       - ./config.yaml:/candidate/config.yaml:ro
+      - ./native_langfuse.py:/candidate/native_langfuse.py:ro
     ports: ["127.0.0.1:${CANDIDATE_PORT:-14000}:4000"]
     networks: [database, provider]
     depends_on:

@@ -152,6 +152,62 @@ def provision(args):
     print(f"Private fixture: {target}")
 
 
+def configure_langfuse(args):
+    """Verify an operator-created project before copying its server-side keys."""
+    private = args.private_dir.resolve()
+    if private.is_relative_to(ROOT) or private.stat().st_mode & 0o077:
+        raise SystemExit("private-dir must be outside the repository with mode 0700")
+    target = private / "langfuse"
+    if target.exists():
+        raise SystemExit("Langfuse setup exists; reuse it rather than rotate credentials")
+    base = urlsplit(args.base_url)
+    if base.scheme != "http" or base.hostname not in ("127.0.0.1", "localhost"):
+        raise SystemExit("Langfuse setup accepts only the isolated loopback HTTP POC")
+    container = urlsplit(args.container_base)
+    if container.scheme not in ("http", "https") or not container.hostname or container.username:
+        raise SystemExit("container-base must be an HTTP(S) origin without credentials")
+    if any(c in str(target) + args.container_base + args.network for c in "\r\n$'\""):
+        raise SystemExit("unsupported Compose environment characters")
+    public = args.public_key_file.read_text().strip()
+    secret = args.secret_key_file.read_text().strip()
+    if any(not value or any(c in value for c in "\r\n\x00:") for value in (public, secret)):
+        raise SystemExit("invalid Langfuse project key files")
+    auth = base64.b64encode(f"{public}:{secret}".encode()).decode()
+    request = Request(
+        args.base_url.rstrip("/") + "/api/public/projects",
+        headers={"Authorization": "Basic " + auth},
+    )
+    try:
+        with urlopen(request, timeout=20) as response:
+            projects = json.load(response)["data"]
+    except HTTPError as error:
+        raise SystemExit(f"Langfuse project verification returned HTTP {error.code}") from None
+    except (ValueError, KeyError, TypeError):
+        raise SystemExit("invalid Langfuse project verification response") from None
+    if (
+        not isinstance(projects, list)
+        or len(projects) != 1
+        or not isinstance(projects[0], dict)
+        or projects[0].get("id") != args.project_id
+    ):
+        raise SystemExit("keys must resolve to exactly the expected candidate project")
+    target.mkdir(mode=0o700)
+    save(target / "public_key", public + "\n")
+    save(target / "secret_key", secret + "\n")
+    save(
+        target / "project.json",
+        json.dumps({"project_id": args.project_id, "base_url": args.base_url}),
+    )
+    save(
+        target / "langfuse.env",
+        f"LANGFUSE_SECRETS_DIR={target}\nLANGFUSE_HOST={args.container_base.rstrip('/')}\n"
+        f"LANGFUSE_NETWORK={args.network}\n",
+    )
+    print(
+        "Verified candidate Langfuse project; private setup saved. Callback activation is separate."
+    )
+
+
 def main():
     os.umask(0o077)
     parser = argparse.ArgumentParser(description=__doc__)
@@ -165,9 +221,21 @@ def main():
     fixture = sub.add_parser("fixture", help="native onboarding and A/A2/B keys on a fresh POC")
     fixture.add_argument("--private-dir", type=Path, required=True)
     fixture.add_argument("--base-url", default="http://127.0.0.1:14000")
+    langfuse = sub.add_parser(
+        "langfuse", help="verify and stage keys for a separate native project"
+    )
+    langfuse.add_argument("--private-dir", type=Path, required=True)
+    langfuse.add_argument("--public-key-file", type=Path, required=True)
+    langfuse.add_argument("--secret-key-file", type=Path, required=True)
+    langfuse.add_argument("--base-url", required=True)
+    langfuse.add_argument("--container-base", required=True)
+    langfuse.add_argument("--network", required=True)
+    langfuse.add_argument("--project-id", required=True)
     args = parser.parse_args()
     try:
-        (initialize if args.command == "init" else provision)(args)
+        {"init": initialize, "fixture": provision, "langfuse": configure_langfuse}[args.command](
+            args
+        )
     except OSError as error:
         print(f"candidate setup failed ({type(error).__name__}); state preserved", file=sys.stderr)
         raise SystemExit(1) from None

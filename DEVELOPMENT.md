@@ -1484,3 +1484,56 @@ Validation completed: the isolated locked suite passed **335 tests** with zero
 skips; Ruff check and format check passed; Python compilation and `git diff --check`
 passed. The dedicated PostgreSQL databases were created and removed by the locked
 suite harness.
+## 2026-10-29 — #8 native content-rich tracing and narrow trusted callback seam
+
+Scope: isolated candidate only, active #8 after native tracing/retry revisions;
+integration ancestry116821f confirmed and41e9d92 merged. Native configuration
+first; installed LiteLLM1.106.6/Langfuse4.15.2/OTel1.45.1 inspected and external
+official docs checked. Existing runtime/exporter and shared CPA/Langfuse history
+retain their contracts.
+
+Native synthetic serialization demonstrated three concrete gaps: native userId
+uses caller/customer identity instead of key owner, caller headers/metadata can
+override session/user/destination, and credential-like error text is emitted.
+Native proxy preparation was also exercised: authenticated owner stamping works,
+but the trace/destination controls remain. Reported exact gap/public seam to
+coordinator before implementing the selected minimal callback. OTelv2 also reads
+caller trace controls; switching alone does not solve them.
+
+Decision: one `CustomLogger` delegates to fixed `LangFuseLogger` and its native
+OTLP construction/batching/delivery. Callback-local copies bind trusted stamped
+key owner, labeled deployment/owner request-session fallback, fresh trace IDs and
+targeted credential masking while preserving debugging content. No transport,
+outbox, inference replay, client modification or cost-normalization code. Owner
+identity is analysis, not reader authorization. Missing owner is unattributed;
+no raw caller identity fallback. Native error/stream coverage limits remain.
+
+New native OSS organization/project created via native signup/login/UI APIs on
+authorized local Langfuse4.69.0. New non-admin OWNER only; A/B have no membership.
+Project retentionDays=null, so no automatic deletion selected. Private operator/
+project credentials retained0700/0600; setup command verifies exact project and
+stages secrets without rotation. #6 owns reader/retention/recovery follow-up.
+
+Validation: TDD public setup seam red (missing command; malformed project payload)
+then green8tests. Callback serialized-native seam red (missing module, missing
+failure/masking, invalid redacted JSON), green6tests in pinned image/network-none.
+Covers A/A2/B, forged controls, canaries, unchanged inputs, native Responses
+dispatch and completed-stream tool/image content. Direct native live readback
+retained synthetic source/tools/output/timing/cost in new project, no provider
+calls. Bypassing dispatcher initially exposed Responses usage0/0; actual native
+dispatch converts correctly to80/cache20/output40/total140, without our fix.
+Native callback lacks separate reasoning bucket. #7 must verify deployed A5.
+
+Files: `deploy/candidate/{native_langfuse.py,langfuse.compose.yaml,config.yaml,
+compose.yaml}`, `scripts/candidate.py`, `tests/{test_candidate_bootstrap.py,
+candidate_native_contract.py}`, `.github/workflows/ci.yml`,
+`docs/candidate/langfuse.md`. Callback contract CI runs inside exact deployment
+image, separate from old-runtime dependencies. Effective capture/spend/error
+settings, native queue/retry/truncation limits, project access and reproduction
+are documented in the new candidate runbook. No A5/pass or issue completion claim.
+
+Activation pending at this checkpoint: commit mounted source, coordinate #7,
+recreate only candidate LiteLLM with telemetry overlay, record effective settings
+and smoke before releasing shared provider cases. Current issue2 mounts untouched.
+Recovery of this config must archive the new callback/overlay and disable callback
+registration in the **offline copy**; prior no-callback recovery remains historical.
