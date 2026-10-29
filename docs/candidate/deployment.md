@@ -52,6 +52,11 @@ separate. PostgreSQL holds native users/password hashes, hashed virtual keys,
 usage and native configuration. Retain it together with master/salt secrets;
 #6 owns backup/restore and migration policy.
 
+The [candidate recovery runbook](recovery.md) records actual retention, state/secret
+ownership and a populated account/key/policy restore on this pin. Retained request
+history and production acceptance remain pending; use its standalone offline
+restore Compose rather than the existing-runtime `scripts/recovery.py` package.
+
 Reuse the authorized CPA test service on external network
 `plcodex-live-645179fc_provider`, DNS `cliproxyapi:8317`. Inference base is
 `http://cliproxyapi:8317/v1`. Host health is `http://127.0.0.1:35635/healthz`.

@@ -1,5 +1,89 @@
 # Development Notes
 
+## 2026-10-29 — Issue #6 native recovery preparation (partial)
+
+### Scope and decisions
+
+Started `impl/litellm-issue6-readiness` at `ef2057f`, confirmed ancestor against
+`integration/litellm-native-poc`, read live open issue #6 (updated
+`2026-10-29T07:11:48Z`), candidate contracts, setup docs and private operations
+handoff. Invoked TDD skill; user-approved seam was public recovery commands **if
+custom glue was needed**. Chose supported `pg_dump`/`pg_restore` plus native HTTP
+readback, with no new recovery framework or duplicate upstream unit suite.
+`scripts/recovery.py` retains old-runtime artifact/volume assumptions.
+
+Added `docs/candidate/recovery.md` (inventory, actual installed retention defaults,
+matching-set backup/restore, health distinctions, upgrade/rollback and gated cutover)
+and standalone `deploy/candidate/restore.compose.yaml`. Restore uses identical
+LiteLLM 1.106.6/PostgreSQL 17.11 amd64 pins, new DB/volume, copied matching
+DB/master/salt/UI secrets, one internal network, dummy CPA URL/credential, loopback
+14006. No live candidate/external service stop, secret rotation, provider inference,
+destructive retention or production mutation. Source commit/config archived with
+DB; recovery includes native migration state rather than old Python requirements.
+
+Owner clarified then approved content-rich native Langfuse tracing during this
+work: prompts/source code, model output, gateway-visible tool arguments/results,
+useful errors and metrics; selective credential masking/trusted attribution remain.
+Recorded that objective and pending trace access/content retention ownership while
+leaving actual callback disabled. No telemetry activation/delivery evidence here.
+
+### Validation and evidence
+
+- Snapshot held in `BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY`; native
+  `pg_export_snapshot()` fed `pg_dump --format=custom --snapshot=... --no-owner
+  --no-acl --lock-wait-timeout=5s`. Same transaction produced sorted per-table row
+  fingerprints. Backup **269,979 bytes**, no warnings, **98 tables / 232 rows**.
+- New dedicated restore cluster initialized only `postgres`, then `createdb
+  --template=template0 litellm`; `pg_restore --single-transaction --exit-on-error
+  --no-owner --no-acl`. All table counts/fingerprints equal before app startup.
+  Users3, key/session rows12, invitations2, config1, heartbeat1, migrations213.
+- Matching binary startup healthy. Installed Prisma schema SHA256
+  `1ed6fbff070ed7cdf2fa86f667d7b6eedd6a0be2d7036250a54cfe360de183db` unchanged;
+  normalized database schema identical after startup. A/B native login remained
+  `internal_user`, nonpremium; own user/history reads200. Original A/A2/B keys
+  authenticated `/key/info` and `/v1/models` with correct owners/models/10RPM/
+  20,000TPM. Original UI-session max_budget1/spend0/expiry retained; personal
+  max_budget/expiry/reset fields NULL and spend0 retained. Login creates new
+  session rows only on restore; original fixture was not rerun or overwritten.
+- History empty (zero spend/daily-user rows); no separate BudgetTable/PolicyTable
+  rows. Selected policies are on native user/key records. No monetary budget
+  consumption/reset, persisted provider history or restored inference proved.
+- Installed source + live `/config/list`/config/env/DB show retention periods
+  unset, no age cleanup selected; session duration24h, session cleanup disabled.
+  Documented exact inactive cleanup bounds, DB batching and budget scheduler
+  defaults. No 90/365/90 assumption. Host journal/external-store/production expiry
+  remains explicitly unverified/unapproved.
+- Restore network internal and sole attachment; no IPv4 default route, no real
+  CPA secret mount. Known fixture/secret values absent from restore logs. Source
+  candidate start times unchanged and both containers remained healthy.
+- Compose `config --quiet`, documented shell blocks `bash -n`, local Markdown
+  links and `git diff --check` passed. Exercised the documented second-session
+  snapshot-import fingerprint query: identical to exporter across all98 tables.
+  Changed-file credential scan and private-set 0700/0600 permissions passed.
+
+Private artifacts/results (0700 directories/0600 files):
+`/data/tmp/opencode/proxylens-litellm-20261029/issue6-recovery-20261029`, including
+`manifest.json`, `postgres.dump`, `fingerprint.json`, `restore-result.json`,
+`native-readback.json`, matching secrets/source and schema files. Restore project
+`proxylens-candidate-restore` containers/network removed after validation; volume
+`proxylens-candidate-restore_restore_db` and private set retained. No raw rows,
+credentials, credential hashes or content committed.
+
+### Remaining gates / maintenance
+
+Keep #6 open. #7 has not started; actual-client preflight replay blocker remains.
+Repeat populated **request-history** restore using #7 retained facts and obtain
+separate authorization for any live restored request. External CPA/Langfuse
+recovery, content retention/access, protected off-host backup/cadence/RPO/RTO,
+candidate acceptance and production cutover approvals remain pending. Native
+zero/null budget state is all the currently selected fixture can prove. No
+cross-version upgrade, binary downgrade, PITR or production switchover performed.
+
+For future changes inspect both candidate Compose files, archived config and
+secret loader, deployment/recovery docs and exact installed schema together.
+The offline restore file is tested against the no-callback #2 configuration;
+review any #8 content-capture changes before using it with a newer backup.
+
 ## 2026-10-29 — Issue #2 isolated native LiteLLM configuration
 
 ### Scope and decisions
