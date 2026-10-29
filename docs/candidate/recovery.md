@@ -147,6 +147,15 @@ against the matching set above. If #8/config/secrets changed, capture and review
 the new set and revise the offline configuration before restoring it. The supplied
 restore Compose is tested only with the no-callback #2 configuration.
 
+For the subsequent [#8 configuration](langfuse.md), also archive
+`native_langfuse.py`, `langfuse.compose.yaml` and the private `langfuse/` credentials
+with matching checksums. Before using the standalone offline restore, remove
+`litellm_settings.callbacks` in a **separate offline config copy**; retain the
+original archived config and record that deliberate difference. Do not attach
+the restored process to shared Langfuse or re-emit historical content. The prior
+no-callback rehearsal does not prove this updated matching-set recovery; #6 must
+repeat it with populated history.
+
 For fingerprints tied to the dump, open terminal A (same `SOURCE_DB`):
 
 ```sh
