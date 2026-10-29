@@ -13,6 +13,51 @@ acceptance pass. Custom development requires a demonstrated selected gap.
 [ADR 0002](../adr/0002-litellm-personal-usage.md) remains proposed; ADR 0001 governs
 the existing runtime. Deferred handoff scenarios are not recorded as passed.
 
+## Native tracing objective clarification: October 29, 2026
+
+**Owner-approved objective; published and verified by the coordinator on October 29, 2026.**
+After clarifying the desired application-debugging visibility, the owner said:
+“yes, please modify our recorded objective, use native langfuse integration”.
+The [live candidate contract](../specs/litellm-poc.md#native-debugging-traces) and
+[decision record](../candidate/decisions.md#owner-approved-tracing-objective-october-29-2026)
+now select one native asynchronous LiteLLM Langfuse integration with prompts
+(including source code sent in requests), AI outputs, visible tool names/arguments/
+results, useful errors and model/timing/tokens/estimated cost.
+
+This supersedes the candidate metadata-only/no-content requirement, the original
+P9 no-content expectation and the proposed blanket filtering adapter. Native
+configuration comes first; only a demonstrated, narrowly selected mapping or
+credential-masking gap justifies a minimal hook. No replacement exporter/outbox,
+preplanned content-stripping hook or bespoke UI/access project is selected.
+Targeted auth-header/API/provider-key masking and verified owner/session mapping
+remain required. Native fields may be missing/truncated; there is no automatic
+all-secret-removal guarantee or visibility into unsent files/local tool execution.
+`userId` is an analysis dimension, not authorization; #6 records native Langfuse
+project readers/roles and content retention/deletion. #7's revised A5 supplies
+shared evidence, including outage isolation without provider replay.
+
+The coordinator published issue #1/#2/#6/#7/#8 revisions. The new #8 title is
+**Configure native Langfuse: content-rich debugging traces and attribution**.
+Readback verified exact proposed titles/bodies, unchanged states/labels and no
+completed acceptance checkboxes. The coordinator supplied exact public-issue
+[before](archive/issues-before-native-tracing-2026-10-29.json) and
+[after](archive/issues-after-native-tracing-2026-10-29.json) snapshots for this
+revision. The original snapshots remain immutable. The map below reflects the
+published clarification; publication is not runtime acceptance.
+
+**Runtime status:** capture/callbacks remain disabled as recorded in
+[candidate deployment](../candidate/deployment.md#current-logging-settings-and-8-target).
+This is a documentation-only objective revision, not #8 activation, A5 evidence,
+architecture adoption or cutover. ADR 0002 stays proposed.
+
+**Historical research:** the [architecture handoff](../research/architecture-handoff-2026-10-29.md),
+[stack comparison](../research/new-api-stack-comparison.md),
+[original stack research](../research/proxy-stack-research.md) and prior telemetry
+research/development notes retain their dated content. Their metadata-only defaults
+and blanket filtering proposals are not the live candidate objective. Follow the
+linked candidate contract for new work. ADR 0001, old-runtime exporter/test
+contracts and old evidence retain their original scope; research is not rewritten.
+
 ## Published issue map
 
 | Issue | Disposition | Revised responsibility | Dependency |
@@ -22,9 +67,9 @@ the existing runtime. Deferred handoff scenarios are not recorded as passed.
 | #3 | Optional | CPA/CPAMP operator diagnostics and joins, only if needed | #2/#7; never a personal-usage blocker. |
 | #4 | Closed; consolidated into #7 | CPA usage sample reconciliation in integration acceptance | Preserve original CPAMP adapter history; no new accounting project. |
 | #5 | Closed; consolidated into #2 | Native account/role setup | No custom identity implementation. |
-| #6 | Active production readiness | Deployment restore/rollback, retention and controlled cutover | Prepare after #2; cutover after #1 acceptance and approval. |
+| #6 | Active production readiness | Deployment restore/rollback, native Langfuse project access/content retention and controlled cutover | Prepare after #2; cutover after #1 acceptance and approval. |
 | #7 | Active integration acceptance | Actual client, personal attribution/access, native usage, controls and telemetry | #2/#8; absorbs #4 and shared feature checks. |
-| #8 | Active configuration/integration | Native Langfuse, trusted mapping and redaction | #2; joint verification in #7. |
+| #8 | Active configuration/integration | One native Langfuse integration, content-rich debugging traces, trusted mapping and targeted credential masking | #2; joint verification in #7. |
 | #9 | Closed; consolidated into #2 | Native personal keys and configured limits | No custom key/policy engine. |
 | #10 | Deferred gap work | Extra reporting only after native UI use identifies a selected gap | #7 findings and explicit feature selection. |
 

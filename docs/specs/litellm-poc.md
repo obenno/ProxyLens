@@ -2,20 +2,29 @@
 
 **Date:** 2026-10-29  
 **Status:** owner-approved backlog revision; GitHub issues published October 29, 2026. Candidate runtime acceptance remains pending.  
+**Objective update:** native Langfuse debugging traces approved and issue revisions published October 29, 2026; configuration and shared acceptance remain pending.
+
 **Tracker:** [revision map](../planning/architecture-rebaseline-2026-10-29.md).
 GitHub Issues own executable work; this document owns the shared scope.
 
 ## Outcome and responsibility
 
 Deploy **LiteLLM → CLIProxyAPI (CPA)** for authorized subscription-backed access,
-native personal accounts/keys/Usage, and native asynchronous Langfuse. Use upstream
-features as delivered. ProxyLens owns deployment, configuration and integration;
+native personal accounts/keys/Usage, and native asynchronous Langfuse debugging
+traces with request/response content. Use upstream features as delivered.
+ProxyLens owns deployment, configuration and integration;
 custom code addresses only a demonstrated gap in an agreed requirement.
 
 The owner selected in-place ticket revision and native-first personal Usage, then
 requested consolidation because the first draft duplicated native LiteLLM work.
 This revision removes separate account, key, accounting and dashboard implementation
 projects, and replaces broad upstream revalidation with bounded integration checks.
+
+The owner's later October 29 choice, “yes, please modify our recorded objective,
+use native langfuse integration”, selects the [debugging trace objective](#native-debugging-traces).
+It supersedes the candidate's metadata-only/no-content requirement and the proposed
+blanket filtering adapter. The [decision record](../candidate/decisions.md#owner-approved-tracing-objective-october-29-2026)
+distinguishes this target from the currently disabled integration.
 
 [ADR 0001](../adr/0001-architecture-boundaries.md) still governs the current
 implementation; [ADR 0002](../adr/0002-litellm-personal-usage.md) is proposed. The
@@ -42,7 +51,7 @@ CPA usage queue --> CPAMP (optional operator diagnostics; sole queue consumer)
 | Personal keys, restrictions, budgets/rates | Use LiteLLM | Configure native policy in #2; representative checks in #7. |
 | Spend/history and personal Usage | Use LiteLLM database and UI | Enable/configure in #2; reconcile a small CPA sample in #7. |
 | Provider OAuth and execution | Keep CPA | Configure route in #2; actual-client checks in #7. |
-| Langfuse transport | Use a native integration | Configure in #8; add a narrow trusted mapping hook only if needed. |
+| Langfuse debugging traces | Use one native asynchronous integration | Configure content capture and trusted mapping in #8; a minimal hook requires a demonstrated, selected mapping/credential gap. |
 | Extra personal charts or missing retained fields | Deferred, gap-driven | #10 starts only after the native UI is used and a gap selected. |
 | Provider-account diagnostics | Optional | #3; no dependency for personal totals. |
 | Recovery and migration | Deployment-specific | #6 before production cutover. |
@@ -62,13 +71,15 @@ Five active tickets, including the coordinator:
    decisions only where configuration needs them, and evidence/limitations summary.
 2. **#2 Configure the stack:** pinned Compose, database, CPA route/secret, native
    account roles, user-owned keys, model/limit settings, native logs and Usage.
-3. **#8 Configure Langfuse:** native callback, trusted owner/session mapping and
-   metadata-only redaction. Configuration first; no preplanned replacement exporter.
+3. **#8 Configure Langfuse:** one native integration for content-bearing debugging
+   traces, trusted owner/session mapping and targeted credential masking.
+   Configuration first; no replacement exporter, outbox or preplanned content-stripping hook.
 4. **#7 Integration acceptance:** one shared small fixture exercises the assembled
    client → gateway → CPA → native Usage/Langfuse path. Avoid repeated tests in
    each feature ticket.
 5. **#6 Production readiness and cutover:** actual backup/restore, state ownership,
-   retention, upgrade/rollback and migration for this deployment.
+   native Langfuse project access and content retention, upgrade/rollback and
+   migration for this deployment.
 
 Original #5 and #9 are consolidated into #2; #4 into #7. They were closed with
 GitHub reason `not_planned` and explicit consolidation comments on October 29,
@@ -100,8 +111,49 @@ lossless accounting or exactly-once telemetry guarantee is part of this baseline
 Dedicated reasoning/cache trends, latency percentiles, heatmaps, measured RPM/TPM,
 broad exports, a separate reporting UI, plugin embedding and provider-account UI
 are follow-up scope. A missing field/panel only becomes a custom build task after
-the owner selects it as necessary. A wrong owner, privacy failure or broken required
-client protocol is an integration blocker, not optional polish.
+the owner selects it as necessary. Wrong ownership, credential exposure,
+unauthorized access or broken required client protocol is an integration blocker,
+not optional polish.
+
+## Native debugging traces
+
+Langfuse should support application debugging through **one native LiteLLM
+Langfuse integration/configuration**. #8 configures it; #7 verifies the deployed
+path with A5. The selected objective is:
+
+- Expose prompts, including source code transmitted in requests, AI outputs,
+  tool names/arguments/results visible to the integration, useful error details,
+  model, original request timing, tokens and estimated cost. Native fields may be missing or
+  truncated; record those limits and unknown/unsupported measurements explicitly.
+  Reuse A2's success, streaming, tool-continuation and error/interruption samples
+  to record actual native coverage and gaps.
+- Observe only what reaches the integration. A local tool result can be observed
+  only if sent back in a request; the gateway does not observe local tool execution
+  or files never transmitted. This objective does not promise a complete local-agent trace.
+- Apply targeted credential masking to authorization headers, API/OAuth/provider/
+  management credentials, including any surfaced in diagnostic fields. Keep useful debugging
+  content. This is not a guarantee of automatic removal of every secret embedded
+  in arbitrary prompts, source code or tool content.
+- Verify stable key-owner `userId` and owner/deployment-scoped `sessionId` mapping
+  from trusted state. Caller `user`/trace/session metadata cannot impersonate
+  another owner or override trusted attribution. Unverified conversation IDs need
+  an owner-scoped, labeled fallback. The destination/project stays server-controlled;
+  caller metadata cannot redirect it. `userId` is an analysis dimension,
+  not access authorization. #8 records the trusted destination/project and mapping;
+  #6 records native project membership/roles, who may read traces, and content
+  retention/deletion using capabilities available in the selected edition.
+  No additional bespoke UI/access project is selected.
+- Start with native configuration. Only a narrowly selected, demonstrated
+  attribution/session-mapping or credential-masking gap can justify a minimal
+  hook with focused regression tests. No mandatory adapter, replacement exporter,
+  outbox or blanket content-stripping hook is selected. Record native asynchronous
+  delivery limitations; sink failures must not trigger provider replay.
+
+The checked-in disabled capture/callback settings are setup evidence, not the
+target behavior; see [deployment status](../candidate/deployment.md#current-logging-settings-and-8-target).
+Content capture in Langfuse does not itself require duplicating prompts in native
+spend logs or enabling verbose process logs. #8 records the exact effective native
+settings and their scope when implementing this objective.
 
 ## Bounded integration acceptance (#7)
 
@@ -116,13 +168,15 @@ synthetic cases across the checks below and reuse their request/usage evidence.
 | A2 Actual-client compatibility | Nonstreaming and streaming Responses, tool call/result continuation, plus image/history/ancillary routes actually used by the selected client. Check one upstream error and interrupted stream; no replay of partial output. |
 | A3 Ownership and usage | A's two keys aggregate to A; B stays separate. Compare the sample's returned numeric usage with native retained details/totals, including supplied cache/reasoning fields. Missing usage/prices remain explicit; do not double-count subsets. Confirm a completed request remains after restart. |
 | A4 Configured controls | One revoked-key denial and one model restriction denial, with no forbidden CPA dispatch; exercise one configured budget/rate limit. Record native enforcement/propagation semantics rather than promise immediate or strict behavior. Test more policies only if actually enabled. |
-| A5 Langfuse integration | The same sample has trusted owner/session IDs and no prompt/output/tool/image/credential content. One forged owner/session metadata case cannot change trusted attribution. With the sink unavailable, inference remains usable and provider work is not replayed. |
+| A5 Langfuse integration | Inspect actual native payload/readback for the shared sample: prompts including transmitted source code, AI outputs, visible tool names/arguments/results, useful errors, model/timing/tokens/estimated cost, with explicit native coverage, missing/truncated fields and image handling. Verify trusted owner/session IDs; forged metadata cannot override them or redirect the configured destination. Use selected tool/image/error cases and synthetic auth-header/API/OAuth/provider/management-key markers to verify the declared targeted masking coverage. Record native project access; `userId` filtering is not authorization. With the sink unavailable, inference remains usable and provider work is not replayed. |
 | A6 Optional dependencies and usability | Native Usage and healthy inference work without CPAMP. Walk through native history/filters once, record observed reporting lag and missing panels, and obtain acceptance of the baseline or a specific gap decision. |
 
 Record versions/digests/config, schema, client and route once for the shared run;
-record case results, observed lag and limitations. Keep credentials and content out
-of committed evidence. Evidence may be a reproducible runbook and sanitized results;
-new automated harness code is needed only where it earns ongoing regression value.
+record case results, observed lag and limitations. Use synthetic debugging content
+and credential markers; keep real credentials and private prompt/code/output/tool
+content out of committed evidence. Evidence may be a reproducible runbook and
+sanitized results; new automated harness code is needed only where it earns ongoing
+regression value.
 
 ### What happened to P1–P13?
 
@@ -139,7 +193,7 @@ as a native-feature certification project:
 | P6 dashboard | A6 native walkthrough and gap list. |
 | P7 rebuild | No custom projection/read adapter in baseline. Activate for #10 if one becomes necessary. Native backup/restore remains in #6. |
 | P8 crash accounting | One persisted-record restart check in A3 and deployment recovery in #6; detailed crash-loss injection deferred unless a stronger durability requirement is selected. |
-| P9 attribution/redaction | A5; extend focused tests if a custom mapping hook is introduced. |
+| P9 attribution/redaction | A5 under the owner-approved content-bearing debugging objective: verify trusted mapping, useful visible content and targeted credential masking. The handoff's no-content expectation is superseded; focused hook tests apply only to a demonstrated, selected mapping/credential gap. |
 | P10 delivery | A5 sink outage; native delivery semantics documented. Durable outbox/ambiguous-ack experiments deferred unless required. |
 | P11 login/edition | Configuration check in #2 and A1; external sessions/plugins deferred with #10. |
 | P12 CPAMP independence | A6; diagnostic joins tested only when #3 is selected. |
@@ -167,18 +221,18 @@ deferred durability, performance, replay or strict-limit scenarios pass.
 - Keep estimated API-equivalent cost, internal allowance and subscription expenditure
   distinct. Select explicit prices for CPA aliases if native pricing cannot resolve
   them; unknown prices cannot be treated as credible zero spend.
-- Prefer one native Langfuse integration with owner/deployment-scoped IDs, original
-  timing, numeric usage and bounded metadata. A caller's `user` or trace/session
-  fields cannot override trusted attribution. Default content capture stays off.
+- Use the [native debugging trace contract](#native-debugging-traces) for candidate
+  content, trusted attribution and targeted credential masking. Native project
+  access governs trace readers; analysis filters do not establish personal isolation.
 
 ## Decisions at the point of use
 
 | When | Decision owner | Decision |
 |---|---|---|
 | Setup | #1/#2 | Actual client/model, selected image/edition, deployment endpoints and CPA isolation; native role, enabled model/limit settings and prices. Record upstream defaults deliberately where acceptable. |
-| Telemetry setup | #8 | Compatible native integration/destination, trusted owner/session mapping and acceptance of documented native delivery semantics. |
+| Telemetry setup | #8 | One compatible native integration/destination, content capture, targeted credential masking, trusted owner/session mapping and documented native delivery semantics; record actual settings and any demonstrated selected gap. |
 | Candidate acceptance | #1/#7 | Accept native UI/metrics and observed integration behavior, or identify a concrete blocker/gap. No empty quantitative threshold is called passed. |
-| Production use | #6 | Retention, backup/restore, key issuance, old-history handling and rollback. Any stricter budget, loss, freshness or capacity requirement needs its own measured acceptance. |
+| Production use | #6 | Native Langfuse project access/roles and content retention/deletion, backup/restore, key issuance, old-history handling and rollback. Any stricter budget, loss, freshness or capacity requirement needs its own measured acceptance. |
 | Custom extension | #10 | Required panel/field, supported read interface, ordinary-user session and retained-data/replay boundary. Decide only if the extension is selected. |
 
 The earlier 60-second freshness and 90/365/90-day retention figures remain proposed

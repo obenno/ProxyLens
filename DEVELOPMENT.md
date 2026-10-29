@@ -1,5 +1,90 @@
 # Development Notes
 
+## 2026-10-29 — Tracing objective integration synchronization
+
+Merged integration `ce60c29576be42441622b981df702dbff62a51f5` after objective commit
+`1031a857eb89668670922c453770f2e498eaf69f`. Preserved both development entries
+verbatim when resolving the sole conflict. Deployment merged its recovery pointer
+and approved content-rich tracing objective together. The recovery guide and
+standalone restore Compose are inherited unchanged from #6; no additional runtime,
+configuration or test edits. Updated candidate status to link partial recovery
+evidence while retaining pending request-history, telemetry and production gates.
+
+Validation passed: active candidate consistency and 55 local links/anchors across
+12 Markdown documents, including both recovery pointers; both parent development
+entries and all historical records preserved verbatim; recovery guide/restore
+Compose byte-identical to integration; `git diff --check`. No runtime acceptance
+or push.
+
+## 2026-10-29 — Owner-approved native Langfuse debugging objective
+
+### Scope, decision and rationale
+
+Started `impl/litellm-native-tracing-objective` in the dedicated `tracing-objective`
+worktree at `ef2057f`; confirmed `integration/litellm-native-poc` ancestry. Loaded
+TDD, writing-for-agents and domain-modeling guidance. This tranche changes the
+recorded objective and active candidate instructions only.
+
+After clarifying the debugging expectation, the owner said: “yes, please modify
+our recorded objective, use native langfuse integration”. Decision: use one native
+asynchronous LiteLLM Langfuse integration/configuration for prompts (including
+transmitted source code), AI outputs, visible tool names/arguments/results, useful
+errors and model/timing/tokens/estimated cost. Reason: application diagnosis needs
+useful request/response content. The candidate metadata-only/no-content requirement
+and proposed blanket filtering adapter are superseded, including P9's old exclusion
+criterion. The shared spec owns the revised objective and A5 acceptance.
+
+### Consequences and boundaries
+
+- #8 configures native capture first; #7 verifies actual payload/readback, trusted
+  owner/session mapping, server-controlled destination, targeted credential
+  masking and sink-outage isolation using the shared fixture. A minimal hook needs
+  a demonstrated, narrowly selected mapping/credential gap and focused regression
+  tests. No mandatory adapter, replacement exporter/outbox or preplanned
+  content-stripping hook is selected.
+- Mask auth headers and API/OAuth/provider/management credentials without claiming
+  universal secret detection in arbitrary code/text. Record missing/truncated
+  native fields and useful-error coverage. The gateway cannot observe local tool
+  execution or files never sent. Unknown usage/cost stays explicit.
+- `userId`/session attribution is analysis, not reader authorization. #6 records
+  native project access/roles, content retention/deletion and recovery ownership;
+  no bespoke UI/access project is added. Candidate acceptance, architecture
+  adoption and production cutover remain separate decisions; ADR 0002 is proposed.
+- Checked-in message capture, spend-log prompt storage and detailed error logs
+  remain disabled; no callback is enabled. Deployment docs distinguish those
+  current settings from the future #8 target. This tranche changes no runtime,
+  configuration, tests or service state and claims no A1–A6 completion.
+- Prior development entries, owner research, ADR 0001, old-runtime exporter/test
+  docs and original issue snapshots retain their historical content/contracts.
+  The new planning clarification points readers to the superseding candidate scope.
+
+### Tracker publication and validation
+
+The coordinator published #1/#2/#6/#7/#8 revisions and reported exact title/body
+readback matches, unchanged states/labels and no completed acceptance checkboxes.
+The new #8 title is “Configure native Langfuse: content-rich debugging traces and
+attribution”. Coordinator-generated exact public-issue snapshots are included at
+`docs/planning/archive/issues-before-native-tracing-2026-10-29.json` and
+`docs/planning/archive/issues-after-native-tracing-2026-10-29.json`; this tranche
+performed no GitHub writes. Earlier snapshots remain immutable.
+
+Validation passed: 49 local links/anchors across 11 changed Markdown documents;
+active-instruction consistency and A1–A6/P1–P13 coverage; both coordinator snapshot
+checksums and all five issues' state/label/unchecked-criteria consistency;
+`git diff --check`. All 119 other tracked files remain byte-identical to `ef2057f`,
+including runtime/config/tests, research, ADR 0001 and original archives. Prior
+development entries, original glossary and current-runtime AGENTS sections are
+preserved. Documentation-only: no artificial tests or runtime acceptance run.
+Integration tip remained `ef2057f` at validation.
+
+Affected files: `AGENTS.md`, `GLOSSARY.md`, `README.md`, this log,
+`docs/specs/litellm-poc.md`, `docs/candidate/{decisions,deployment}.md`,
+`docs/adr/0002-litellm-personal-usage.md`, `docs/agents/{domain,issue-tracker}.md`,
+`docs/planning/architecture-rebaseline-2026-10-29.md` and the two new snapshots.
+Follow-up: #8 native setup and bounded #7 evidence, #1 candidate/adoption decision,
+then #6 readiness/native project access/content retention and separately approved
+cutover. Historical metadata-only tests are not revised-candidate evidence.
+
 ## 2026-10-29 — Issue #6 native recovery preparation (partial)
 
 ### Scope and decisions

@@ -16,6 +16,13 @@ open/deferred. Original implementation evidence belongs to the old scopes.
 Distinguish superseded work from completed runtime criteria; the consolidated
 issues were closed as `not_planned`, not completed implementation.
 
+The later October 29 [native tracing clarification](../planning/architecture-rebaseline-2026-10-29.md#native-tracing-objective-clarification-october-29-2026)
+supersedes candidate metadata-only guidance. #8 configures one native integration
+for content-rich debugging traces; #7 owns revised A5; #6 records native project
+access and content retention. The coordinator published and verified the matching
+#1/#2/#6/#7/#8 revisions; snapshots preserve both revisions as immutable history.
+States/labels are unchanged and no acceptance checkbox was completed.
+
 ## Required issue structure
 
 Each implementation issue should include:
@@ -42,8 +49,13 @@ Each implementation issue should include:
   regression tests. Stronger guarantees require explicit scope and evidence.
 - Native-first delivery and deferred advanced reporting are explicit scopes. Keep optional
   plugins, SSO and diagnostics from becoming accidental baseline dependencies.
-- Keep management/provider credentials server-side; metadata-only observability,
-  unknown-data semantics and no provider replay apply to the candidate.
+- Keep management/provider credentials server-side. Follow the shared spec's
+  [debugging trace contract](../specs/litellm-poc.md#native-debugging-traces): native
+  content capture, targeted credential masking and verified owner/session mapping;
+  preserve unknown/truncated coverage and prohibit provider replay for telemetry.
+  `userId` is analysis, not authorization. Use native project access/retention,
+  without adding a bespoke UI/access project. A minimal hook requires a demonstrated,
+  selected mapping/credential gap, not a preplanned blanket filtering adapter.
 - Existing runtime: ADR 0001 continues to govern Keycloak/group identity, custom
   authorization and CPAMP-derived proof-gated projections until accepted cutover.
   Proposed ADR 0002 does not silently supersede it.

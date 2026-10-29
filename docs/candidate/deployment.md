@@ -145,14 +145,20 @@ Do not copy tokens/screenshots with credentials into repository evidence.
   provider usage cannot become a credible zero. #7 reconciles the sample's native
   retained usage/cost rather than implementing new accounting.
 
-## Privacy and #8 seam
+## Current logging settings and #8 target
 
+**Current checked-in setup, not the approved tracing target:**
 `turn_off_message_logging=true`, `global_disable_no_log_param=true`,
 `store_prompts_in_spend_logs=false`,
 `disable_spend_logs=false`, `disable_error_logs=true`, no debug/verbose mode,
 ERROR log level. Detailed error-table persistence is disabled because exceptions
-may include content; document the resulting diagnostics limit. Admin UI overrides
-can change native logging settings, so do not enable content capture there.
+may include content; this limits current diagnostics. These settings are unchanged
+by the October 29 objective revision. #8 will configure native Langfuse content
+capture and useful errors under the [approved debugging objective](../specs/litellm-poc.md#native-debugging-traces).
+Admin UI overrides can change native logging settings; #8 must record the effective
+configuration, including any overrides, rather than assume the file alone proves it.
+Langfuse content capture does not itself require spend-log prompt storage or
+verbose process logging.
 Onboarding-token query paths and health paths are excluded from access logs using
 the verified `LITELLM_DISABLE_ACCESS_LOG_PATHS` setting. Do not use the nonexistent
 `DISABLE_ACCESS_LOGS` setting. No credential values found in current candidate
@@ -163,23 +169,39 @@ avoid HIBP hash-prefix egress; other native password policy checks remain enable
 Backend telemetry and remote price-map fetch are disabled. The browser home page
 may still load upstream news; this is not an offline deployment.
 
-`general_settings.user_header_mappings` stays unset. The installed 1.106.6
+`general_settings.user_header_mappings` is currently unset. The installed 1.106.6
 `litellm_logging.py` consumes `global_disable_no_log_param`; setting it explicitly
 prevents caller `no-log` from opting out of configured logging. This does not
-establish trusted attribution or content redaction on every callback outcome.
+establish trusted attribution, credential masking or debugging-content coverage
+on every callback outcome.
 
 No callback is enabled by #2. `secret_env.py` supports
 `LANGFUSE_PUBLIC_KEY_FILE` / `LANGFUSE_SECRET_KEY_FILE`; #8 can mount Compose secrets,
 set their file paths plus native destination, attach the selected Langfuse network
-and configure **one** native callback in the candidate config/overlay. It owns a
-separate Langfuse project, trusted identity/session mapping and redaction. If a
-narrow mapping hook is necessary, mount it read-only with its focused tests.
-Do not point at the old Langfuse fixture project or add a second exporter. #8's
-pinned-source research found success-only logging hooks insufficient for failures
-and dynamic callback destination selection occurring before pre-call sanitation.
-The coordinator owns selection of the narrow callback-local adapter gap; real
-delivery waits for its all-outcome attribution/redaction evidence. Research
-handoff: `/data/tmp/opencode/proxylens-litellm-20261029/telemetry-research.md`.
+and configure **one** native integration in the candidate config/overlay. #8 owns
+the separate test project/destination, native content settings, trusted
+identity/session mapping and targeted credential masking. #7 verifies A5 using
+shared synthetic content, including source code and visible tool interactions,
+plus error and outage cases. #6 records native project access/roles and content
+retention/deletion; `userId` is an analysis dimension, not reader authorization.
+
+Start with native configuration. Only a demonstrated, narrowly selected
+mapping/credential gap justifies a minimal read-only-mounted hook and focused
+regression tests. No replacement exporter/outbox or blanket content-stripping
+adapter is planned. Credential masking does not promise removal of every embedded
+secret; traces cannot show local tool execution or files never sent to the gateway.
+
+Earlier pinned-source research raised success-only hook coverage and caller-selected
+callback destinations as verification concerns. Reassess those concerns against the
+selected native configuration; they do not mandate a callback-local adapter.
+The metadata-only target and blanket filtering proposal in that research are
+superseded by the [owner decision](decisions.md#owner-approved-tracing-objective-october-29-2026).
+Research handoff (historical input):
+`/data/tmp/opencode/proxylens-litellm-20261029/telemetry-research.md`.
+Native delivery, content, attribution and credential checks remain unperformed;
+the existing smoke does not prove them. #7 records missing/truncated native fields
+and other coverage limits for owner review. Native project configuration in #6
+does not introduce a separate UI/access implementation project.
 
 ## Stop, restart and rollback
 

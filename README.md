@@ -6,12 +6,27 @@ usage visibility, and observability.
 ## Architecture transition
 
 The revised candidate is **LiteLLM → CLIProxyAPI**, with native personal accounts,
-user-owned keys and Usage, plus asynchronous Langfuse. CPAMP becomes optional
+user-owned keys and Usage, plus one native asynchronous Langfuse integration for
+content-rich debugging traces. CPAMP becomes optional
 operator diagnostics. Start with the [POC contract](docs/specs/litellm-poc.md) and
 [issue revision record](docs/planning/architecture-rebaseline-2026-10-29.md).
 Work is configuration-first: native setup, Langfuse configuration, one shared
 integration acceptance pass, then deployment recovery/cutover. Advanced personal
 charts and custom implementations require a demonstrated selected gap.
+
+The [owner-approved tracing objective](docs/specs/litellm-poc.md#native-debugging-traces)
+includes prompts/source code sent in requests, AI outputs, visible tool
+names/arguments/results, useful errors and model/timing/tokens/estimated cost.
+Use native configuration first, with targeted credential masking and verified
+owner/session attribution. Native project access and retention govern trace
+readers; `userId` filtering is analysis, not authorization. Unsent files/local
+tool execution are outside gateway visibility; native fields may be missing or
+truncated, and automatic removal of all embedded secrets is not promised.
+
+The [candidate deployment record](docs/candidate/deployment.md#current-logging-settings-and-8-target)
+still records disabled capture and no callback. #8 setup and #7 acceptance must
+establish the target; this objective revision does not enable tracing. See
+[setup decisions](docs/candidate/decisions.md) for evidence status.
 
 [ADR 0002](docs/adr/0002-litellm-personal-usage.md) is **proposed**. The checked-in
 runtime still implements [ADR 0001](docs/adr/0001-architecture-boundaries.md):

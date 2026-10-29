@@ -137,3 +137,13 @@ _Avoid_: Per-request token estimate.
 **Accounting epoch**:
 A period whose usage shares a defined ownership and accounting contract.
 _Avoid_: Budget reset period.
+
+## Candidate: debugging observability
+
+**Debugging trace**:
+Request/session observations containing available transmitted prompts/code, AI outputs, visible tool interactions, errors and execution measurements for application diagnosis. It is not a record of local execution or files never transmitted.
+_Avoid_: Complete local-agent record, authoritative usage ledger.
+
+**Trace attribution**:
+Association of observations with an owner and session for analysis; it does not grant permission to read those observations.
+_Avoid_: Trace access authorization, proof of interactive actor.
