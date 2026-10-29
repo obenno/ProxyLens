@@ -1,6 +1,6 @@
 # Candidate acceptance evidence (#7)
 
-**October 29, 2026 — initial read-only checkpoint, not candidate acceptance.**
+**October 29, 2026 — bounded follow-up evidence; candidate acceptance remains open.**
 Source: live issue #7 (open; updated `2026-10-29T10:36:29Z`), the
 [shared contract](../specs/litellm-poc.md#bounded-integration-acceptance-7) and
 [execution runbook](acceptance-runbook.md). Branch
@@ -8,20 +8,23 @@ Source: live issue #7 (open; updated `2026-10-29T10:36:29Z`), the
 
 ## Status
 
-| Check | Checkpoint result | Remaining evidence |
+| Check | Follow-up status | Remaining evidence / limitation |
 |---|---|---|
-| A1 | **Passed, bounded empty-history configuration check.** | Populated B detail isolation will supplement the already denied aggregate-history read after the shared sample. |
-| A2 | **Blocked on coordinator's #8-ready signal.** | Actual OpenCode/CPA route, success/tools/image/history, upstream error/interruption and per-layer dispatch/retry evidence. |
-| A3 | **Blocked; no provider sample.** | Returned versus retained usage/ownership/totals and completed-record restart. |
-| A4 | **Blocked; controls unchanged.** | Disposable revoked/rate key setup, model denial, observable forbidden-dispatch absence. |
-| A5 | **Blocked; native callback disabled at checkpoint.** | #8 effective setup, actual native payload/readback, mapping/masking and candidate-only sink outage. |
-| A6 | **Partial topology and empty UI only.** | Healthy real inference, populated native history/filter walkthrough, measured lag and owner baseline/gap decision. |
+| A1 | **Partial: bounded access/isolation evidence passed.** | A/B own histories are populated and cross-user aggregate reads return 403. Cross-user `/spend/logs/v2` returns empty 200 rather than a denial, so populated detail isolation remains inconclusive. |
+| A2 | **Partial: actual route and OpenCode compatibility observed.** | O-A read/image continuation completed; tools, image and streaming paths worked. E-B was candidate-side 403 before provider dispatch, not proven upstream. X-A recorded client-visible interruption and native resubmissions but ended incomplete. S-A2 exposed downstream CPA-route `metadata` incompatibility. |
+| A3 | **Partial: populated ownership and numeric reconciliation.** | A/B totals and retained rows reconcile for the completed interval. No candidate restart/readback was performed, so restart persistence remains pending. |
+| A4 | **Partial: revoked-key and model denials passed.** | C-rate is failed/unperformed: the disposable key was revoked before both requests, producing 401/401. No existing A/A2/B key or limit was mutated. |
+| A5 | **Partial: native payload/readback, attribution and targeted masking observed.** | Success/tool/result/image/error payloads reached the candidate Langfuse project; forged owner/session controls did not replace trusted key-owner attribution. L-A inference succeeded, but the asynchronous sink-outage rejection was not observed, so outage isolation is inconclusive. |
+| A6 | **Partial: candidate topology and populated native Usage observed.** | Candidate has no CPAMP endpoint/credential dependency and healthy inference completed while CPAMP remained the shared queue consumer. Populated UI/filter walkthrough, candidate restart and owner baseline/gap decision remain pending. |
 
-No provider inference, telemetry delivery, key/user/policy mutation, service
-restart or queue access was performed. Native login refresh created UI sessions.
-This tranche does not complete PR #12 or issue #7; readiness/adoption/cutover
-remain gated. Earlier local OpenCode preflight is accepted client behavior,
-**not deployed A2 evidence**; no OpenCode patch or deduplication was selected.
+The bounded run admitted 20 client submissions in total: 16 observed through the
+candidate relay and four native control calls made directly to the candidate. It
+stayed below the hard 22-submission ceiling. No existing A/A2/B key, user or
+limit was mutated; one disposable control key was created and revoked. The
+candidate, observer and candidate PostgreSQL remained healthy; no shared service
+restart, CPA queue read or inference replay was performed. This tranche does not
+complete PR #12 or issue #7; readiness/adoption/cutover remain gated. No OpenCode
+patch or deduplication was selected.
 
 ## A1 observations
 
