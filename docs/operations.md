@@ -108,14 +108,19 @@ discarded. Langfuse health does not gate gateway forwarding.
 
 After a worker restart, CPAMP readiness requires one successful authenticated
 durable-history read when the reviewed live proof gate permits history polling;
-collector health alone is not sufficient in that mode. When the proof gate is
-disabled, the worker does not read history, and collector health is the readiness
-contract. CPAMP `history_state` and projection state explicitly report `disabled`,
-with no invented history-success timestamp. An intentionally disabled history
-reader must not prevent first startup. Projection becomes stale at **age >= 60
-seconds** or adapter failure; a reported source gap remains degraded even after a
-successful recent poll. Unknown counts remain null. Collector failures still fail
-readiness.
+collector health alone is not sufficient in that mode. The operations supervisor
+repeats that authenticated fixed-window read on every tick, so the same adapter's
+history freshness is renewed only by a successful traversal. A status read cannot
+renew it. Each supervisor history attempt is audited once; the projection task
+uses its separate adapter and audit boundary. A failed read or audit failure
+keeps readiness fail-closed and cannot replace the last-good history timestamp.
+When the proof gate is disabled, the worker does not read history at all, and
+collector health is the readiness contract. CPAMP `history_state` and projection
+state explicitly report `disabled`, with no invented history-success timestamp.
+An intentionally disabled history reader must not prevent first startup.
+Projection becomes stale at **age >= 60 seconds** or adapter failure; a reported
+source gap remains degraded even after a successful recent poll. Unknown counts
+remain null. Collector failures still fail readiness.
 Projection freshness and Langfuse delivery remain diagnostic and do not gate
 provider forwarding. Gateway readiness depends on PostgreSQL, Keycloak and CPA,
 not remote observation delivery. Health is diagnostic and never substitutes for

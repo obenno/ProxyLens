@@ -2,15 +2,51 @@
 
 import json
 import os
+import re
 from pathlib import Path
 
 
-def _yaml_safety_values(text: str) -> dict[tuple[str, ...], str]:
-    """Read only the scalar mapping paths required for the logging guard."""
+class _DuplicateJSONKey(ValueError):
+    pass
 
+
+def _reject_duplicate_json_keys(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise _DuplicateJSONKey
+        result[key] = value
+    return result
+
+
+def _line_quotes_are_balanced(line: str) -> bool:
+    quote: str | None = None
+    escaped = False
+    for character in line:
+        if quote:
+            if character == quote and not escaped:
+                quote = None
+            escaped = character == "\\" and not escaped
+            if character != "\\":
+                escaped = False
+        elif character in ('"', "'"):
+            quote = character
+    return quote is None
+
+
+def _yaml_safety_values(text: str) -> dict[tuple[str, ...], str]:
+    """Read a deliberately small, fail-closed YAML mapping subset."""
+
+    # The networkless initializer has no YAML dependency. Block scalar contents
+    # cannot be interpreted as mapping entries by this conservative reader.
+    if re.search(r":\s*[|>]", text):
+        return {}
     values: dict[tuple[str, ...], str] = {}
+    seen: set[tuple[str, ...]] = set()
     parents: list[tuple[int, tuple[str, ...]]] = []
     for raw_line in text.splitlines():
+        if not _line_quotes_are_balanced(raw_line):
+            return {}
         line = raw_line.split("#", 1)[0].rstrip()
         if not line.strip() or line.lstrip().startswith("-"):
             continue
@@ -24,9 +60,19 @@ def _yaml_safety_values(text: str) -> dict[tuple[str, ...], str]:
         while parents and indent <= parents[-1][0]:
             parents.pop()
         path = (parents[-1][1] if parents else ()) + (key,)
+        if path in seen:
+            return {}
+        seen.add(path)
         value = value.strip()
         if value:
-            values[path] = value.strip("'\"")
+            if value not in {"true", "false"} and path in {
+                ("server", "commercial-mode"),
+                ("observability", "logs", "debug"),
+                ("observability", "logs", "logging-to-file"),
+                ("observability", "logs", "request-log"),
+            }:
+                return {}
+            values[path] = value
         else:
             parents.append((indent, path))
     return values
@@ -37,7 +83,9 @@ def _has_safe_logging_guard(target: Path) -> bool:
 
     text = target.read_text()
     try:
-        config = json.loads(text)
+        config = json.loads(text, object_pairs_hook=_reject_duplicate_json_keys)
+    except _DuplicateJSONKey:
+        return False
     except json.JSONDecodeError:
         values = _yaml_safety_values(text)
         return all(
