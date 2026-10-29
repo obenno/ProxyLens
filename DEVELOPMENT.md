@@ -314,8 +314,8 @@ DB; recovery includes native migration state rather than old Python requirements
 Owner clarified then approved content-rich native Langfuse tracing during this
 work: prompts/source code, model output, gateway-visible tool arguments/results,
 useful errors and metrics; selective credential masking/trusted attribution remain.
-Recorded that objective and pending trace access/content retention ownership while
-leaving actual callback disabled. No telemetry activation/delivery evidence here.
+The active callback/configuration and bounded #7 evidence are recorded separately;
+this historical subsection documents the preparation state before activation.
 
 ### Validation and evidence
 
@@ -361,8 +361,9 @@ credentials, credential hashes or content committed.
 
 ### Remaining gates / maintenance
 
-Keep #6 open. #7 has not started; actual-client preflight replay blocker remains.
-Repeat populated **request-history** restore using #7 retained facts and obtain
+Keep #6 open. #7's bounded follow-up is now recorded with partial A1–A6 results;
+the actual-client preflight replay blocker classification remains superseded by the
+owner-approved retry boundary. Repeat populated **request-history** restore using #7 retained facts and obtain
 separate authorization for any live restored request. External CPA/Langfuse
 recovery, content retention/access, protected off-host backup/cadence/RPO/RTO,
 candidate acceptance and production cutover approvals remain pending. Native

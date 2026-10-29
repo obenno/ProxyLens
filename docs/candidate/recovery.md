@@ -5,10 +5,12 @@ Uses the [candidate deployment](deployment.md), [shared contract](../specs/litel
 and proposed [ADR 0002](../adr/0002-litellm-personal-usage.md). This rehearsal restored
 the settled native request-history subset plus account/key/policy state from
 `checkpoint-1793273530`. The prior October 29 rehearsal restored account/key/policy
-state only and remains historical evidence. Deployed #7 acceptance has not started.
+state only and remains historical evidence. The bounded #7 follow-up is recorded in
+[acceptance.md](acceptance.md), with candidate acceptance still open.
 The owner subsequently accepted native client
 retries; the [local preflight's former blocker classification is superseded](decisions.md#local-client-preflight-reclassification).
-A1–A6, owner candidate acceptance and production cutover remain pending. Leave #6 open.
+A1–A6 have partial results; owner candidate acceptance and production cutover remain
+pending. Leave #6 open.
 
 The owner subsequently approved **native Langfuse content-rich tracing**: prompts
 (including source code), model output, gateway-visible tool arguments/results,
@@ -390,11 +392,13 @@ requests require explicit handling as a separate accounting interval, not replay
 **Health is three separate observations:** `/health/readiness` confirmed app/DB
 availability; own history API confirmed readable native history (the populated
 checkpoint subset is documented above).
-Neither implies inference readiness. Actual-client/provider readiness awaits
-deployed #7 evidence under the clarified retry contract; accepted native client
-retries are not a blocker requiring correction. Telemetry is **disabled/unverified**;
-eventual sink readiness and delivery/content/attribution evidence belong to #8/A5. Reuse
-#7 restart/optional-dependency evidence when available; no duplicate fault matrix.
+Neither implies complete inference acceptance. The bounded #7 run observed actual
+client/provider and native tracing behavior, but its A2–A6 results remain partial
+under the clarified retry contract. Accepted native client retries are not a blocker
+requiring correction. Native telemetry is configured and bounded content/readback,
+attribution and masking evidence was observed; sink-outage isolation, durable
+delivery and restart behavior remain unproven. Reuse #7 restart/optional-dependency
+evidence when available; no duplicate fault matrix.
 
 **Production sequence, not authorization to execute:**
 

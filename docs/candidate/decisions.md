@@ -130,7 +130,7 @@ preserve the change; publication supplies no runtime acceptance evidence.
 | #1 setup and coordination | Owner defaults recorded; **partial**, not full issue completion. | #2 exact choices, #7 results and limitations, then explicit owner candidate decision. |
 | #2 stack/native configuration | Configuration/startup tranche recorded in [deployment](deployment.md); shared acceptance pending. | #7 verifies actual-client, ownership/usage and controls; #8 implements the revised tracing objective. |
 | #8 native Langfuse | [Configuration tranche](langfuse.md): separate project/native logger plus demonstrated narrow mapping/credential seam; A5 pending. | Verify deployed shared A5 through #7. |
-| #7 acceptance | [Initial read-only checkpoint](acceptance.md): bounded A1 passed; A6 topology/empty UI partial; A2–A5 pending. #8 ready handoff delivered. | Shared bounded provider/usage/telemetry sample; #7 owns runtime coordination. |
+| #7 acceptance | [Bounded follow-up](acceptance.md): A1–A6 have partial results, including populated usage/readback and native tracing. Candidate acceptance remains open. | Close the documented isolation, upstream-error/interruption, restart, rate-limit, sink-outage, UI/filter and owner-decision gaps. |
 | #6 production readiness | [Same-pin populated recovery evidence](recovery.md) now covers the authorized `checkpoint-1793273530` request-history subset plus native account/key/policy state; production cutover not authorized. | External CPA/Langfuse recovery, approved retention/custody and off-host backup, upgrade/rollback/PITR, candidate acceptance and separate cutover approval. |
 | #3 diagnostics | **Optional, unselected.** | Select only for a concrete operator diagnostic need; never gates personal totals. |
 | #10 reporting extension | **Deferred, unselected.** | Use native UI in A6, identify a gap and obtain explicit feature selection. |
@@ -173,19 +173,19 @@ These are setup/document checks, not runtime evidence.
 
 The [shared A1–A6 definitions](../specs/litellm-poc.md#bounded-integration-acceptance-7)
 remain authoritative. The original setup-scope tranche above performed no candidate
-requests, native UI walkthrough or telemetry acceptance. The later
-[#7 read-only checkpoint](acceptance.md) verifies A1 below. The subsequent
-[#8 activation](langfuse.md) delivered readiness and the coordinator authorized
-the bounded shared run; provider/telemetry results remain pending #7 evidence.
+requests, native UI walkthrough or telemetry acceptance. The later #7 bounded
+follow-up records populated provider, usage and native tracing observations with
+explicit partial classifications. The [#8 activation](langfuse.md) delivered the
+native configuration used by that run.
 
 | Check | Status | Required evidence still outstanding (#7) |
 |---|---|---|
-| A1 Native access | **Passed, bounded initial check; #6 populated restore supplement recorded** | A/B ordinary login and own keys/Usage passed; isolated restored checkpoint detail remained owner-scoped; A→B aggregate read denied 403. This supplement does not close shared #7 acceptance. |
-| A2 Actual client | **Unperformed** | OpenCode protocol cases on the selected route, upstream error and interrupted stream under the shared retry contract: native client retries preserved, no silent gateway restart within the same response stream, per-layer settings/dispatches and native retained-request reconciliation. Local preflight above is not deployed A2 evidence. |
-| A3 Ownership/usage | **Unperformed** | A's keys aggregate separately from B; numeric usage reconciliation including supplied subsets/unknowns; completed record survives restart. |
-| A4 Controls | **Unperformed** | Revoked-key and model denials without forbidden CPA dispatch; configured rate-limit exercise and native propagation semantics. |
-| A5 Langfuse | **Unperformed** | Content-bearing debugging trace readback, targeted credential masking, trusted owner/session and forged-metadata check, project access boundary and sink outage without usage/telemetry-triggered inference replay; native client retries remain permitted. See shared A5 for the sample. |
-| A6 Independence/usability | **Partial topology / empty UI** | Populated inference/Usage without CPAMP dependency; history/filter walkthrough, observed lag/gaps and owner baseline/gap decision. |
+| A1 Native access | **Partial: bounded access plus populated restore supplement** | Cross-user aggregate reads deny 403, but populated `/spend/logs/v2` isolation remains inconclusive because filtered responses were empty 200s. |
+| A2 Actual client | **Partial** | OpenCode route/tool/image/history cases worked; upstream-error provenance and complete interruption evidence remain incomplete, with the observed CPA-route metadata incompatibility documented. |
+| A3 Ownership/usage | **Partial** | A/B ownership and numeric reconciliation passed for the completed interval; candidate restart persistence remains untested. |
+| A4 Controls | **Partial** | Revoked-key and model denials passed without provider dispatch; the disposable rate-limit fixture was invalid and requires a fresh valid setup. |
+| A5 Langfuse | **Partial** | Native content/readback, trusted attribution and targeted masking were observed; sink-outage isolation and durable delivery/restart behavior remain unproven. |
+| A6 Independence/usability | **Partial topology and populated Usage** | Candidate independence and populated Usage were observed; populated UI/filter walkthrough and owner baseline/gap decision remain pending. |
 
 #2 records exact versions/digests, edition/schema, model/route, role, policies,
 pricing, sanitized configuration and reproduction steps once; #8 adds destination
@@ -200,8 +200,9 @@ in repository evidence with their source and limits.
 ## Remaining #1 decisions
 
 - #2's [recorded model/configuration choices](deployment.md) are setup evidence;
-  runtime acceptance still awaits #8/#7 evidence. The revised tracing objective
-  remains a target, not an observed capability.
+  runtime acceptance is partial after the #7 follow-up. The revised tracing
+  objective is configured and observed in bounded native readback, with the limits
+  recorded in [langfuse.md](langfuse.md) and [acceptance.md](acceptance.md).
 - Review A1–A6 and native UI limitations before accepting or rejecting the candidate.
   Wrong ownership, credential exposure, unauthorized access or broken required
   OpenCode behavior blocks acceptance. Additional custom work requires a
