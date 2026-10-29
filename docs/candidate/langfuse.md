@@ -26,19 +26,22 @@ OTLP probes demonstrated:
 1. `user_api_key_user_id` is retained as metadata but native `user.id` defaults to
    customer/end-user identity. Caller `trace_user_id` and `langfuse_trace_user_id`
    override it; session controls are similarly caller-controlled.
-2. Caller Langfuse host/public/secret parameters survive native proxy preparation
-   and dynamic callback initialization. `LangFuseHandler` selects a logger from
-   those values. Host override disables environment-key fallback; this is a
-   destination-control gap, not evidence of environment-secret exfiltration.
-3. Native auth-header exclusion worked in the synthetic probe; a synthetic
+2. Native auth-header exclusion worked in the synthetic probe; a synthetic
    credential in error text survived in observation output/status message.
+
+**Important probe correction:** request preparation/dynamic initialization alone
+accept caller Langfuse host/public/secret parameters, but the deployed auth layer
+rejects them first (401). `allow_client_side_credentials` is unset and no model
+opts in. Installed `proxy/auth/auth_utils.py:299–371,451–495` covers both metadata
+slots. The preparation-only probe bypassed that gate: it does **not** demonstrate
+a deployed destination-control vulnerability. Retain native credential rejection;
+the wrapper also uses a fixed server-side logger rather than dynamic selection.
 
 The coordinator was given the exact gap and minimal public seam before proceeding
 under the selected targeted-mapping/credential requirement. OTel v2 was considered:
-its `TraceControls` also deliberately accepts caller user/session controls and its
-destination handling accepts dynamic credentials. Changing integration alone does
-not resolve these demonstrated requirements. Native `langfuse` has the smaller
-callback-local boundary for this deployment.
+its `TraceControls` also deliberately accepts caller user/session controls.
+Changing integration alone does not resolve these demonstrated requirements.
+Native `langfuse` has the smaller callback-local boundary for this deployment.
 
 ## Narrow hook contract
 
@@ -132,7 +135,8 @@ state rather than rotating or overwriting keys. It does not activate tracing.
 
 Use both Compose files/env files after coordinating #7 and committing the mounted
 source. Recreate **only candidate LiteLLM**, retaining PostgreSQL, existing keys
-and fixture. Do not edit the issue2 worktree's running mounts.
+and fixture. The active mounts now come from issue8; coordinate any mounted-source
+change or recreation with #7, which owns runtime coordination during acceptance.
 
 ```sh
 export DOCKER_HOST=unix:///data/tmp/opencode/proxylens-litellm-20261029/podman.sock
@@ -146,7 +150,7 @@ export COMPOSE=/data/tmp/opencode/docker-compose-v5.6.1
   up -d --no-deps --force-recreate --wait --wait-timeout 240 litellm
 ```
 
-Effective intended settings: `turn_off_message_logging=false`,
+Activated settings: `turn_off_message_logging=false`,
 `global_disable_no_log_param=true`, single callback above;
 `store_prompts_in_spend_logs=false`, `disable_spend_logs=false`,
 `disable_error_logs=true`, ERROR process log level, no verbose/debug mode,
@@ -160,7 +164,8 @@ is separate. Administrator DB/UI overrides must be checked at deployment.
 **Performed without provider inference:**
 
 - Installed native proxy preparation retains trusted key owner while leaving
-  forged trace controls and dynamic destination intact: confirms the narrow gap.
+  forged trace controls intact: confirms the attribution gap. Destination controls
+  were tested separately through deployed auth and rejected before preparation.
 - Native logger → serialized OTLP capture, in pinned image with `--network none`.
   Six focused project-hook checks pass: A/A2/B owner/fallback sessions; forged
   controls/destination; unchanged inputs; credential canaries in content/tool/
@@ -178,6 +183,26 @@ is separate. Administrator DB/UI overrides must be checked at deployment.
   malformed response and no credential rotation. CI runs the six native seam
   checks in the exact deployment image separately from old-runtime tests.
 
+### Repeat the focused checks
+
+The six serializer/dispatch checks require the pinned LiteLLM runtime dependencies;
+they are intentionally separate from the repository's ordinary pytest discovery.
+From the repository root, use Docker (as in CI) or substitute `podman`:
+
+```sh
+docker run --rm --network none \
+  -v "$PWD:/work:ro" --workdir /work --entrypoint python \
+  ghcr.io/berriai/litellm:v1.106.6@sha256:c09a77d998058dd78835a45a985eae747d257f2b183db06852fba536f3d1113c \
+  -m unittest discover -s tests -p candidate_native_contract.py
+python -m pytest tests/test_candidate_bootstrap.py -q
+```
+
+The container uses only a synthetic loopback OTLP receiver, without live secrets
+or provider access. `.github/workflows/ci.yml` job `candidate-native-tracing`
+executes the first command; the ordinary checks job includes the bootstrap tests.
+
+### Delivery and content limits
+
 Native limits from installed source: in-memory queue100,000, batch512,
 flush interval1s, sampling1, HTTP timeout20s, three delivery retries after initial
 attempt by default. Connect/read failures and HTTP408/429/5xx are retried by native
@@ -194,11 +219,54 @@ can bypass normal failure callbacks and partial content may be absent. No custom
 interruption recorder is selected. Missing usage/pricing is not credible zero;
 native coercions and absent reasoning decomposition must be recorded in A5.
 
-**Runtime status:** prepared; candidate recreation and post-activation smoke are
-pending. #7 owns shared real-provider A2/A5 content/error/forgery/readback/outage
+**Runtime status:** activated from commit `d52f4b1`, source mounts relocated from
+issue2 to issue8 using the command above. Only candidate LiteLLM was recreated;
+candidate PostgreSQL and shared CPA/Langfuse web/worker IDs/start times unchanged.
+Health passed; native `/get/config/callbacks` reports only this single configured
+success/failure callback. `LiteLLM_Config` contains only
+`auto_router_tuning_baseline_v3`, no logging override. Mounted config/loader/hook
+match the committed source. Startup process logs contain no error or configured
+credential value. Pin/dependency versions unchanged.
+
+Two deployed denial smokes required no provider: caller destination metadata was
+rejected401 before authenticated attribution (trace explicitly unattributed);
+valid A key with nonexistent model and forged user/session metadata was rejected403
+and produced an ERROR observation with trusted A owner/request-fallback session.
+The latter trace is `866bc30c480544e786de7dfdfb6ad85a`; forged controls and personal
+key absent from readback. Project includes these denied requests plus the direct
+synthetic sample; it is not an empty counting fixture. This is auth/callback setup
+evidence, not real-provider error or A5 outage evidence.
+
+#7 owns shared real-provider A2/A5 content/error/forgery/readback/outage
 evidence. Sink failure must not replay inference; native client retries remain
 accepted under [Retry boundaries](../specs/litellm-poc.md#retry-boundaries).
 Do not close #8 before A5 evidence is linked.
+
+### Exact activation evidence and shared fixture
+
+Paths below are relative to
+`/data/tmp/opencode/proxylens-litellm-20261029/`, outside Git:
+
+| Artifact | Purpose |
+|---|---|
+| `issue8-gap-handoff.md` | Coordinator readiness, gap correction and shared-case handoff |
+| `private/fixture.json` | Existing A/A2/B keys, owners and candidate endpoint; reuse without rotation |
+| `private/candidate.env` | Base Compose environment |
+| `private/langfuse/langfuse.env`, `public_key`, `secret_key` | Telemetry overlay environment and separate-project credentials |
+| `issue8-private/langfuse-project.json` | Native operator login/project creation and access state |
+| `issue8-private/{native_probe.py,payloads.json,result.json}` | Original serialized native attribution/error-credential gap |
+| `issue8-private/{native_readback.py,native-live-readback.json}` | Direct synthetic native delivery/readback |
+| `issue8-private/{before-recreate.json,startup.log,effective-callbacks.json}` | Activation snapshot, startup log and native callback configuration |
+| `issue8-private/gate-smoke-readback.json` | Both actual denied-request observations, including trusted A trace above |
+| `issue8-private/activation-summary.json` | Verified saved-readback summary and artifact references |
+
+The first `gate-smoke-summary.json` captured an earlier401 observation while the
+subsequent403 was still ingesting; it is preliminary, not the final ownership
+result. The final readback contains both trace IDs. `deployed_gate_smoke.py` is a
+historical one-shot probe, not a fresh-run counting harness; #7 uses its shared
+runbook and exact request correlation. Private artifact directories/files are
+0700/0600. No additional configuration decision is blocking #7; shared A5 and
+production access/retention decisions remain with #7/#6 respectively.
 
 ## Sources checked October 29, 2026
 
