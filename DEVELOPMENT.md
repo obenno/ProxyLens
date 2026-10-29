@@ -1,5 +1,65 @@
 # Development Notes
 
+## 2026-10-29 — Issue #2 isolated native LiteLLM configuration
+
+### Scope and decisions
+
+Started `impl/litellm-issue2-stack` at approved `414ccc9`; incorporated issue #1
+setup selections through integration `8c3253b`. Added separate
+`deploy/candidate/compose.yaml` with official verified LiteLLM 1.106.6 and
+PostgreSQL 17.11 amd64 digest pins, persistent private DB, loopback ingress, native
+healthchecks and authorized external CPA test-network route. Existing Compose and
+runtime retain ADR 0001 ownership. No accounting, identity, key CRUD or dashboard
+backend was added. Detailed pins, source commit/schema, commands, price provenance,
+privacy settings and state ownership live in `docs/candidate/deployment.md`.
+
+Selected `internal_user` A/B with explicit A/A2/B key ownership and native user/key
+10 RPM / 20,000 TPM; one worker, no Redis, no monetary budgets. CPA advertises
+`gpt-5.6-luna`; candidate alias `cpa-gpt-5.6-luna` uses `openai/gpt-5.6-luna`.
+Explicit standard input/cache/output rates match official OpenAI pricing and the
+pinned bundled LiteLLM map; remote map fetching disabled. These are API-equivalent
+estimates, not subscription spend. Rate/revocation semantics remain #7 evidence.
+
+### Implementation and boundary notes
+
+- `scripts/candidate.py` only orchestrates native setup HTTP calls and creates
+  private secret files. Files stay outside repo, dirs0700/files0600. Init refuses
+  existing state; fixture refuses duplicate issuance and preserves partial setup.
+- `secret_env.py` bridges Compose secret files to upstream environment without
+  shell expansion. Supports #8 Langfuse public/secret-key file seams; no callback
+  or replacement exporter selected here.
+- Fresh native invitation creation needs admin login first to establish its
+  foreign-key creator row. `/user/new` rejects passwords; native invitation claim
+  sets them. Both findings reproduced, then folded into fixture setup.
+- Initial Podman Compose argv healthcheck lost Python `-c` quoting and falsely
+  marked a ready service unhealthy. Quoted `CMD-SHELL` fixed it; focused regression
+  at the setup boundary protects this observed integration defect.
+- Metadata spend persistence stays enabled, content/error-detail logging disabled.
+  Native onboarding query-path access logging suppressed; no credential matches
+  in current container logs. HIBP hash-prefix egress disabled for synthetic local
+  passwords. None of this replaces #8/#7 inference privacy verification.
+
+### Validation and limitations
+
+TDD skill invoked before build; focused public setup tests observed red→green
+for secret loading/missing-file failure, private init/reissue refusal, and the
+Podman healthcheck correction. Four tests and scoped Ruff pass. Compose startup
+and native A/B JSON/browser login passed; both ordinary users see **Your Usage**,
+with `premium_user=false` and no license. No edition blocker in this smoke.
+Fresh secondary project reproduced documented init/start/fixture end-to-end;
+containers/network stopped and removed, persistent data retained. Main candidate
+left healthy on loopback14000 with private fixture for #8/#7/#6. Official release,
+tag/OCI revision, installed package/schema and registry manifests checked; no
+cosign verification claim. 213 native migrations completed. Candidate-to-CPA
+health and model discovery succeeded; no provider inference performed.
+
+Shared A1–A6, actual OpenCode protocol behavior, cross-user access denial, numeric
+usage reconciliation, control enforcement and callback privacy/delivery remain
+pending. #6 owns backup/restore/retention and approved cutover. Startup and empty
+native Usage do not mark the candidate accepted or close #2. Future changes should
+check `deploy/candidate/`, `scripts/candidate.py`, its focused tests, and the
+candidate deployment record together; preserve master/salt plus matching DB.
+
 ## 2026-10-29 — Issue #1 candidate setup-scope tranche
 
 ### Scope and decisions
