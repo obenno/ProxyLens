@@ -1,23 +1,25 @@
 # Candidate recovery and production-readiness preparation
 
-**October 29, 2026 — partial #6 evidence; no production approval or cutover.**
+**October 30, 2026 — populated #6 evidence; no production approval or cutover.**
 Uses the [candidate deployment](deployment.md), [shared contract](../specs/litellm-poc.md)
 and proposed [ADR 0002](../adr/0002-litellm-personal-usage.md). This rehearsal restored
-existing native account/key/policy state, not provider request history. Deployed
-#7 acceptance has not started. The owner subsequently accepted native client
+the settled native request-history subset plus account/key/policy state from
+`checkpoint-1793273530`. The prior October 29 rehearsal restored account/key/policy
+state only and remains historical evidence. Deployed #7 acceptance has not started.
+The owner subsequently accepted native client
 retries; the [local preflight's former blocker classification is superseded](decisions.md#local-client-preflight-reclassification).
-A1–A6 and owner candidate acceptance remain pending. Leave #6 open.
+A1–A6, owner candidate acceptance and production cutover remain pending. Leave #6 open.
 
 The owner subsequently approved **native Langfuse content-rich tracing**: prompts
 (including source code), model output, gateway-visible tool arguments/results,
 useful errors and metrics. Native integration/configuration comes first; selective
 credential masking and verified user/session attribution remain required. The
-earlier blanket metadata-only/filter-adapter objective is superseded. **Actual
-runtime at this rehearsal still has no callback**, message/prompt capture off and
-error-detail persistence off. This work neither activates telemetry nor proves
-delivery. Trace-project access, actual content retention and recovery ownership
-must be recorded for the selected #8 setup, then approved for production; do not
-derive them from the earlier metadata-only assumption.
+earlier blanket metadata-only/filter-adapter objective is superseded. The live
+source used the active #8 callback/configuration; the isolated restore intentionally
+used a separate callback-disabled config and attached neither the Langfuse overlay
+nor the callback module. No historical content was re-emitted. Trace-project
+access, actual content retention and recovery ownership remain production decisions;
+do not derive them from the restore or from the earlier metadata-only assumption.
 
 ## State, secrets and recovery owners
 
@@ -34,7 +36,7 @@ recovery objectives before production; these are not implicitly approved default
 | CPA inference `cpa_api_key`, route/network | CPA resource owner issues/rotates service credential; candidate operator backs up its matching copy | Archived privately, **not mounted in restore app**. No CPA management key in candidate. Restore uses dummy credential and loopback discard endpoint. |
 | CPA OAuth/auth/config and provider execution state | Existing authorized CPA operator | External service shared with other fixtures; not included in native DB dump. No stop, global backup, restore, rotation or recovery evidence in this tranche. |
 | Optional CPAMP DB/history/encryption/admin key | Existing CPAMP operator | Existing sole CPA queue consumer; not a candidate personal accounting dependency. External recovery/retention verification pending if selected. |
-| Langfuse project/API keys, memberships/access; service PostgreSQL, ClickHouse, object storage, Redis/queues and service encryption/auth secrets | #8 / trace-project operator owns project access/content retention; external Langfuse operator owns coordinated service recovery; #6 assembles evidence | No callback/project recovery exercised here. Old shared fixtures are not candidate evidence. Content-rich trace retention/deletion and backup copies need actual settings and ownership; no assumed 90-day policy. |
+| Langfuse project/API keys, memberships/access; service PostgreSQL, ClickHouse, object storage, Redis/queues and service encryption/auth secrets | #8 / trace-project operator owns project access/content retention; external Langfuse operator owns coordinated service recovery; #6 assembles evidence | Active #8 project inventory is recorded in [langfuse.md](langfuse.md): one non-instance-admin owner, no A/B membership, `retentionDays=null`. This restore archived the active overlay and credentials privately but did not recover or mutate external Langfuse state. Content-rich trace retention/deletion and backup copies need actual settings and ownership; no assumed 90-day policy. |
 | Exact image IDs/digests, schema/migrations, Compose/config/secret loader, price map | Candidate operator / #2/#6 | Preserve matching source/artifacts and secret set beside dump; mirror/save image blobs before upgrade if registry availability is required for recovery. This rehearsal used locally cached pinned images, not an air-gapped image-import test. |
 | In-memory request/rate counters and pending native writes | Candidate operator records limits; #7 verifies selected behavior | No Redis selected. Volatile state is not in `pg_dump`; do not claim uninterrupted limits or lossless accounting. |
 | Container/journal logs and private backup/evidence files | Host operator / #6 | Podman reports `journald`, no Compose rotation override (`Size=-1B`). Host journal expiry not verified. This local 0700/0600 rehearsal set has no scheduled expiry/off-host encrypted copy; production custody and expiry remain pending. |
@@ -55,9 +57,9 @@ reported spend/health/tag retention as `null`, source `unset`.
 | Cleanup schedule, if a retention period is later selected | `maximum_spend_logs_retention_interval` defaults **`1d` plus random 0–60 seconds**. Optional cron takes precedence. No cleanup job is selected with all four periods unset. |
 | Cleanup work bounds, currently inactive | **1,000 rows/batch**, **500 batches/table/run**, **300 seconds/run**, **30 seconds/batch timeout**; partitioning off. These are processing bounds, not retention horizons. |
 | Daily user/team/global usage, users, personal-key records, budget state | No age-expiry job selected for these records. Spend-detail cleanup is not a blanket retention policy for all tables; native budget resets are not history deletion. |
-| Personal A/A2/B credential expiration | `expires=NULL`; no automatic expiry override. User/key `max_budget`, `budget_duration`, `budget_reset_at` NULL; `spend=0`. 10 RPM/20,000 TPM on each user and personal key. |
+| Personal A/A2/B credential expiration | `expires=NULL`; no automatic expiry override. User/key `max_budget`, `budget_duration`, `budget_reset_at` NULL. The populated checkpoint preserved the selected limits and recorded spend separately; 10 RPM/20,000 TPM on each user and personal key. |
 | UI session keys | Native duration **24h**; each login's key `max_budget=1.0` (USD session allowance), `spend=0` in fixture. Distinct from personal-key policy. `LITELLM_EXPIRED_UI_SESSION_KEY_CLEANUP_ENABLED=false`; optional cleanup defaults 86,400-second interval / 1,000 keys, but is disabled. Expiration is not row deletion. |
-| Content / errors at snapshot | `disable_spend_logs=false`, `store_prompts_in_spend_logs=false`, `turn_off_message_logging=true`, `disable_error_logs=true`. Current metadata storage configuration only; approved content-rich telemetry objective above is not yet deployed. |
+| Content / errors at snapshot | Active #8 source: `disable_spend_logs=false`, `store_prompts_in_spend_logs=false`, `turn_off_message_logging=false`, `disable_error_logs=true`; content is sent only through the selected native callback. Offline restore: callback disabled in a separate config copy, with no Langfuse overlay or egress. |
 | Native DB batching / budget reset scheduler | `PROXY_BATCH_WRITE_AT=10` seconds; budget rescheduler bounds **597–605 seconds**. Timing defaults, not a measured loss/freshness/strict-budget guarantee. |
 
 Pinned source anchors (relative to installed `litellm/`, also source commit
@@ -82,8 +84,10 @@ The exercised set uses the exact [#2 pins](deployment.md#pins-and-source-verific
 - LiteLLM amd64 manifest `sha256:c09a77d998058dd78835a45a985eae747d257f2b183db06852fba536f3d1113c`, package `1.106.6`.
 - PostgreSQL amd64 manifest `sha256:0b81cec82228160abfa753aeaad0609b709eb26eeb950f2e404ad2326e1cc370`, server/client **17.11**.
 - Prisma schema SHA256 `1ed6fbff070ed7cdf2fa86f667d7b6eedd6a0be2d7036250a54cfe360de183db`; **213** completed migrations, latest `20261009000000_add_credential_display_name`.
-- Config, `secret_env.py`, both Compose files, matching secrets and private fixture;
-  source commit `ef2057f`. The restore Compose file is added by this tranche.
+- Active #8 config, `secret_env.py`, `native_langfuse.py`, Langfuse overlay, both
+  Compose files, matching secrets and private fixture; tracked integration tip
+  `01cc406`, active runtime source `d52f4b1`. The original callback-enabled config
+  is archived privately; the restore uses a separate callback-disabled copy.
 
 The live LiteLLM container reports the image-index digest
 `sha256:37e2dafb088a7723beb998590682957386dfc83ffea1848486f8e0e5cfac0b06`;
@@ -141,20 +145,20 @@ FROM pg_tables WHERE schemaname='public' ORDER BY tablename
 SQL
 ```
 
-Compare archived config/loader with `/candidate/config.yaml` and
-`/candidate/secret_env.py` in the running app; verify installed package/image/schema
-against the matching set above. If #8/config/secrets changed, capture and review
-the new set and revise the offline configuration before restoring it. The supplied
-restore Compose is tested only with the no-callback #2 configuration.
+Compare archived active config/loader/hook with the running app; verify installed
+package/image/schema against the matching set above. If #8/config/secrets change,
+capture and review the new set and revise the offline configuration before restoring
+it. The offline copy deliberately removes only `litellm_settings.callbacks`; retain
+the callback-enabled source config and Langfuse overlay as private recovery inputs.
 
-For the subsequent [#8 configuration](langfuse.md), also archive
+For the active [#8 configuration](langfuse.md), archive
 `native_langfuse.py`, `langfuse.compose.yaml` and the private `langfuse/` credentials
 with matching checksums. Before using the standalone offline restore, remove
 `litellm_settings.callbacks` in a **separate offline config copy**; retain the
 original archived config and record that deliberate difference. Do not attach
-the restored process to shared Langfuse or re-emit historical content. The prior
-no-callback rehearsal does not prove this updated matching-set recovery; #6 must
-repeat it with populated history.
+the restored process to shared Langfuse or re-emit historical content. This
+populated run is the matching-set recovery evidence; the prior no-callback
+rehearsal remains empty-history evidence only.
 
 For fingerprints tied to the dump, open terminal A (same `SOURCE_DB`):
 
@@ -217,7 +221,8 @@ repeat the checksum verification from inside the recovery directory.
 ### 2. Start a fresh, provider-disconnected database
 
 `deploy/candidate/restore.compose.yaml` is a **standalone file**, not an overlay
-for the live candidate. It uses one internal network, no CPA/Langfuse connection,
+for the live candidate. It mounts the separate callback-disabled config and uses
+one internal network, no CPA/Langfuse connection,
 no DB port, no real provider credential, dummy CPA URL `127.0.0.1:9`, no telemetry,
 and loopback app port 14006. Only matching DB/master/salt/UI secrets are mounted.
 
@@ -266,15 +271,19 @@ after startup; full-row equality belongs **before** startup.
 Using private fixture credentials in a local HTTP client, never shell argv/logs:
 
 1. `POST /v2/login` for A and B using `{username: email, password}`. Confirm
-   returned native role `internal_user`, `premium_user=false`; use its session
-   key for the following user reads. Decoding the native login JWT for this
-   client is not replacement token validation or a new authorization boundary.
+   returned native role `internal_user`, `premium_user=false`; use the original
+   fixture session key for the following user reads. Decoding the native login JWT
+   for this client is not replacement token validation or a new authorization
+   boundary.
 2. `GET /user/info?user_id=<own-id>`: verify own role, allowlist, RPM/TPM and
    budget/spend fields. `GET /spend/logs/v2?user_id=<own-id>&start_date=2026-10-29&end_date=2026-10-30`:
-   verify availability and the expected snapshot history. In this run: empty.
+   verify availability and the expected populated snapshot history. Compare the
+   exact checkpoint rows and numeric metrics privately; if the source contains later
+   activity, keep that later accounting interval separate rather than deleting or
+   replaying it.
 3. For each original A/A2/B key, use it as bearer for `GET /key/info` (no secret
    in URL) and `GET /v1/models`; check owner/alias, model allowlist, 10 RPM/20,000
-   TPM, null monetary budget/expiry and zero spend. Model listing is local
+   TPM, null monetary budget/expiry and the preserved spend state. Model listing is local
    authenticated readback, **not inference**.
 4. Check restored original UI-session budget/expiry through native key info if
    still valid; this run also used master-authorized key lookup before expiry.
@@ -301,7 +310,44 @@ PostgreSQL contracts used: `https://www.postgresql.org/docs/17/app-pgdump.html`
 and `https://www.postgresql.org/docs/17/app-pgrestore.html` (online consistent
 single-DB backup, exported snapshot, custom archive, transactional restore).
 
-## Observed results and limits
+## Observed results and limits — populated history, October 30
+
+Private set: `/data/tmp/opencode/proxylens-litellm-20261029/issue6-populated-recovery-20261030`
+(0700 directories/0600 files). The source snapshot was taken from a repeatable-read,
+read-only transaction using the settled `checkpoint-1793273530` handoff. The custom
+dump was **283,971 bytes**, had no warnings, and covered **98 table fingerprints**.
+The new restore project/volume matched every table fingerprint before LiteLLM
+startup; restored PostgreSQL schema matched after startup, with **213** migrations
+and latest migration `20261009000000_add_credential_display_name`.
+
+The source dump was obtained after seven later A-owned records had entered the
+source database. It therefore contains **12** spend-log rows: the authorized
+checkpoint subset is A **3** rows and B **2** rows, plus **7** later A rows. No
+source rows were deleted and no replacement requests were created. Private API
+readback matched all five checkpoint request-detail projections, owners, statuses,
+token counts and costs; checkpoint aggregates matched A input/output/total
+`1117/71/1188`, spend `0.0003086`, and B `633/36/669`, spend `0.0001698`.
+The restored API naturally reports the later A rows too, so its unfiltered A
+history/aggregate is not presented as the checkpoint-only total.
+
+Native readback passed on the restored process: A/B login HTTP **200**, role
+`internal_user`, `premium_user=false`; own user/history/aggregate reads **200**;
+original A/A2/B key reads and local model discovery **200**. Key owners, aliases,
+allowlisted model, 10 RPM / 20,000 TPM, null monetary budget and null expiry were
+preserved. A reading B's aggregate returned **403** and A's B-history read returned
+an empty authorized result. Request-detail rows exposed the expected 30 fields.
+
+The restore used LiteLLM **1.106.6** and PostgreSQL **17.11** with the selected
+amd64 digests and schema hash above. Its separate config has callbacks `[]`; the
+active callback-enabled config, hook, Langfuse overlay and selected credentials
+remain archived privately. The restore network is internal, has no default route,
+has no real CPA credential mount, uses dummy CPA URL `127.0.0.1:9`, and does not
+attach the Langfuse network. No provider call, inference replay, queue read,
+source/shared-service restart or telemetry mutation occurred.
+
+Sanitized evidence: [2026-10-30 populated recovery](evidence/2026-10-30-populated-recovery.json).
+
+## Observed results and limits — prior empty-history rehearsal, October 29
 
 Private set: `/data/tmp/opencode/proxylens-litellm-20261029/issue6-recovery-20261029`
 (0700 directories/0600 files). Project `proxylens-candidate-restore`, port 14006;
@@ -319,7 +365,7 @@ separate volume `proxylens-candidate-restore_restore_db`.
 - **Zero** spend logs/daily-user rows; no dedicated BudgetTable/PolicyTable rows.
   Policy exists on native user/key rows. Restored existing zero/null budget state,
   not a funded/consumed/reset-budget scenario. Monetary policy is not selected.
-- Installed schema hash unchanged; normalized DB schema equal after startup,
+- Installed schema hash unchanged; normalized database schema equal after startup,
   SHA256 `1cd7bcab6059ce3aa17eaa1f7dd40f7399ca82bd17aab80831669c3bb93648da`.
 - App attached only to an internal network; no IPv4 default route, real CPA key
   unmounted. No provider inference, shared service restart, original-secret change,
@@ -342,7 +388,8 @@ against migrated state. Keep old source volume/ingress recoverable; post-checkpo
 requests require explicit handling as a separate accounting interval, not replay.
 
 **Health is three separate observations:** `/health/readiness` confirmed app/DB
-availability; own history API confirmed readable native history (empty here).
+availability; own history API confirmed readable native history (the populated
+checkpoint subset is documented above).
 Neither implies inference readiness. Actual-client/provider readiness awaits
 deployed #7 evidence under the clarified retry contract; accepted native client
 retries are not a blocker requiring correction. Telemetry is **disabled/unverified**;

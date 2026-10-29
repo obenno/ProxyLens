@@ -131,7 +131,7 @@ preserve the change; publication supplies no runtime acceptance evidence.
 | #2 stack/native configuration | Configuration/startup tranche recorded in [deployment](deployment.md); shared acceptance pending. | #7 verifies actual-client, ownership/usage and controls; #8 implements the revised tracing objective. |
 | #8 native Langfuse | [Configuration tranche](langfuse.md): separate project/native logger plus demonstrated narrow mapping/credential seam; A5 pending. | Verify deployed shared A5 through #7. |
 | #7 acceptance | [Initial read-only checkpoint](acceptance.md): bounded A1 passed; A6 topology/empty UI partial; A2–A5 pending. #8 ready handoff delivered. | Shared bounded provider/usage/telemetry sample; #7 owns runtime coordination. |
-| #6 production readiness | [Partial same-pin recovery evidence](recovery.md) for native account/key/policy state; production cutover not authorized. | Populated request-history restore, external recovery, native project access/content retention, upgrade/rollback, candidate acceptance and separate cutover approval. |
+| #6 production readiness | [Same-pin populated recovery evidence](recovery.md) now covers the authorized `checkpoint-1793273530` request-history subset plus native account/key/policy state; production cutover not authorized. | External CPA/Langfuse recovery, approved retention/custody and off-host backup, upgrade/rollback/PITR, candidate acceptance and separate cutover approval. |
 | #3 diagnostics | **Optional, unselected.** | Select only for a concrete operator diagnostic need; never gates personal totals. |
 | #10 reporting extension | **Deferred, unselected.** | Use native UI in A6, identify a gap and obtain explicit feature selection. |
 
@@ -139,6 +139,27 @@ preserve the change; publication supplies no runtime acceptance evidence.
 candidate acceptance. CPAMP remains the sole CPA usage-queue consumer when enabled;
 the candidate must work without it. No new queue consumer or CPAMP-dependent
 personal ownership is selected.
+
+## #6 populated recovery supplement — October 30, 2026
+
+The isolated recovery used a repeatable-read read-only PostgreSQL snapshot and a
+new `pg_dump`/`pg_restore` project/volume. Full 98-table fingerprints matched before
+LiteLLM startup; the matching 1.106.6/17.11 schema and 213 migrations remained equal
+after startup. The active #8 callback-enabled config, hook, Langfuse overlay and
+selected private secrets were archived outside Git. The restore used a separate
+callback-disabled config, dummy CPA settings, an internal-only network and no
+Langfuse attachment.
+
+Private native readback verified A/B login and own reads, A/A2/B key ownership and
+limits, populated checkpoint request details, and numeric checkpoint metrics. The
+source dump also contained seven later A rows; those later rows remain a separate
+accounting interval and were excluded from the checkpoint comparison without
+deletion or replay. The sanitized evidence is
+[2026-10-30 populated recovery](evidence/2026-10-30-populated-recovery.json).
+
+This is same-pin native PostgreSQL recovery evidence. It does not establish external
+Langfuse recovery, production retention/custody, off-host backup retrieval,
+upgrade/rollback, PITR, queue replay, crash-loss behavior or cutover.
 
 ## Evidence register
 
@@ -159,7 +180,7 @@ the bounded shared run; provider/telemetry results remain pending #7 evidence.
 
 | Check | Status | Required evidence still outstanding (#7) |
 |---|---|---|
-| A1 Native access | **Passed, bounded empty-history configuration check** | A/B ordinary browser login and own keys/Usage passed; A→B aggregate-history read denied 403. Populated detail isolation remains a supplemental check after sample B; an empty list response is inconclusive. |
+| A1 Native access | **Passed, bounded initial check; #6 populated restore supplement recorded** | A/B ordinary login and own keys/Usage passed; isolated restored checkpoint detail remained owner-scoped; A→B aggregate read denied 403. This supplement does not close shared #7 acceptance. |
 | A2 Actual client | **Unperformed** | OpenCode protocol cases on the selected route, upstream error and interrupted stream under the shared retry contract: native client retries preserved, no silent gateway restart within the same response stream, per-layer settings/dispatches and native retained-request reconciliation. Local preflight above is not deployed A2 evidence. |
 | A3 Ownership/usage | **Unperformed** | A's keys aggregate separately from B; numeric usage reconciliation including supplied subsets/unknowns; completed record survives restart. |
 | A4 Controls | **Unperformed** | Revoked-key and model denials without forbidden CPA dispatch; configured rate-limit exercise and native propagation semantics. |
