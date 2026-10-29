@@ -23,6 +23,13 @@ access and content retention. The coordinator published and verified the matchin
 #1/#2/#6/#7/#8 revisions; snapshots preserve both revisions as immutable history.
 States/labels are unchanged and no acceptance checkbox was completed.
 
+For candidate retry behavior, A2 interruption checks or A5 sink outages, read the
+[retry boundaries](../specs/litellm-poc.md#retry-boundaries) and
+[October 29 publication record](../planning/architecture-rebaseline-2026-10-29.md#retry-boundary-clarification-october-29-2026).
+Preserve native client retries; distinguish them from same-stream gateway restart
+and usage/telemetry-triggered inference replay. The local preflight is client-only
+evidence, not a compatibility blocker or deployed A2 pass.
+
 ## Required issue structure
 
 Each implementation issue should include:

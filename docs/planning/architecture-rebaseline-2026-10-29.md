@@ -34,7 +34,7 @@ remain required. Native fields may be missing/truncated; there is no automatic
 all-secret-removal guarantee or visibility into unsent files/local tool execution.
 `userId` is an analysis dimension, not authorization; #6 records native Langfuse
 project readers/roles and content retention/deletion. #7's revised A5 supplies
-shared evidence, including outage isolation without provider replay.
+shared evidence, including outage isolation without telemetry-triggered inference replay.
 
 The coordinator published issue #1/#2/#6/#7/#8 revisions. The new #8 title is
 **Configure native Langfuse: content-rich debugging traces and attribution**.
@@ -57,6 +57,33 @@ research/development notes retain their dated content. Their metadata-only defau
 and blanket filtering proposals are not the live candidate objective. Follow the
 linked candidate contract for new work. ADR 0001, old-runtime exporter/test
 contracts and old evidence retain their original scope; research is not rewritten.
+
+## Retry-boundary clarification: October 29, 2026
+
+**Owner-approved and published by the coordinator on October 29, 2026.** The owner
+accepted the proposal with “good, I will accept that”. The
+[retry contract](../specs/litellm-poc.md#retry-boundaries) preserves native client
+retries while prohibiting silent gateway generation restart within the same
+response stream and inference replay to repair usage/telemetry. #7 records the
+client/LiteLLM/CPA retry/fallback boundaries and reconciles observed admitted
+requests using native retained facts. No strict one-user-action / one-request
+promise, custom anti-retry/dedup mechanism or OpenCode change is selected.
+
+The [sanitized preflight summary](../candidate/decisions.md#local-client-preflight-reclassification)
+preserves OpenCode 2.2.1's observed 1 normal / 5 disconnect (capped) / 4 timeout
+POSTs. Those are accepted client-only observations, not a compatibility blocker
+or deployed A2 pass. The owner decision supersedes the former blocker reading in
+recovery/private handoff notes; dated development and historical research remain
+intact. Current LiteLLM/router retry=0 is unchanged and cannot prevent client retries.
+
+The coordinator updated #1/#7/#8 and verified exact body readback, unchanged
+titles/states/labels and all acceptance criteria unchecked. Exact public-issue
+[before](archive/issues-before-retry-boundary-2026-10-29.json) and
+[after](archive/issues-after-retry-boundary-2026-10-29.json) snapshots preserve
+this revision; earlier archives remain immutable. A2 now distinguishes client
+submissions from same-stream gateway behavior; A5/#8 prohibit usage/telemetry-triggered
+inference replay without forbidding native client retries. Publication is complete;
+runtime A1–A6, candidate acceptance, adoption and cutover remain pending.
 
 ## Published issue map
 

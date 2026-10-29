@@ -3,9 +3,10 @@
 **October 29, 2026 — partial #6 evidence; no production approval or cutover.**
 Uses the [candidate deployment](deployment.md), [shared contract](../specs/litellm-poc.md)
 and proposed [ADR 0002](../adr/0002-litellm-personal-usage.md). This rehearsal restored
-existing native account/key/policy state, not provider request history. #7 has not
-started; actual-client preflight reported a replay blocker. A1–A6 and owner
-candidate acceptance remain pending. Leave #6 open.
+existing native account/key/policy state, not provider request history. Deployed
+#7 acceptance has not started. The owner subsequently accepted native client
+retries; the [local preflight's former blocker classification is superseded](decisions.md#local-client-preflight-reclassification).
+A1–A6 and owner candidate acceptance remain pending. Leave #6 open.
 
 The owner subsequently approved **native Langfuse content-rich tracing**: prompts
 (including source code), model output, gateway-visible tool arguments/results,
@@ -276,8 +277,9 @@ from files and retaining responses only privately. With #7's real retained sampl
 available, repeat snapshot/restore and compare request IDs, owner, numeric
 usage/cost and totals through native APIs/UI. A live request on a restored deployment
 requires separately authorized provider routing and a designated new test request;
-never replay old production requests. No history or provider request was fabricated
-to complete this gate.
+never replay inference to repair missing usage/telemetry or reconstruct history.
+Native client retries follow the [retry contract](../specs/litellm-poc.md#retry-boundaries).
+No history or provider request was fabricated to complete this gate.
 
 When finished, stop/remove **only the restore project** and retain its volume/set:
 
@@ -332,14 +334,15 @@ requests require explicit handling as a separate accounting interval, not replay
 
 **Health is three separate observations:** `/health/readiness` confirmed app/DB
 availability; own history API confirmed readable native history (empty here).
-Neither implies inference readiness. Actual-client/provider readiness is blocked
-pending replay correction and #7. Telemetry is **disabled/unverified**; eventual
-sink readiness and delivery/content/attribution evidence belong to #8/A5. Reuse
+Neither implies inference readiness. Actual-client/provider readiness awaits
+deployed #7 evidence under the clarified retry contract; accepted native client
+retries are not a blocker requiring correction. Telemetry is **disabled/unverified**;
+eventual sink readiness and delivery/content/attribution evidence belong to #8/A5. Reuse
 #7 restart/optional-dependency evidence when available; no duplicate fault matrix.
 
 **Production sequence, not authorization to execute:**
 
-1. Complete A1–A6 (including resolved replay blocker, persisted request history,
+1. Complete A1–A6 (including deployed retry-boundary evidence, persisted request history,
    selected controls, native content-rich telemetry and access), #1 owner acceptance,
    and coordinated ADR/glossary/guidance adoption. Record accepted native batching,
    volatility, limit propagation, missing fields and delivery limitations. No strict

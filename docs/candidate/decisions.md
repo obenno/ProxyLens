@@ -1,6 +1,6 @@
 # Candidate setup decisions and evidence status
 
-**Recorded:** October 29, 2026; updated for the owner's native tracing objective.
+**Recorded:** October 29, 2026; updated for the owner's native tracing objective and retry boundaries.
 **Status:** issue #1 setup-scope and objective decisions only;
 candidate acceptance and architecture adoption remain pending.
 
@@ -68,6 +68,48 @@ readback on October 29; [before/after snapshots and publication details](../plan
 preserve that change. States/labels are unchanged and no acceptance checkbox was
 completed by the objective revision.
 
+## Owner-approved retry boundaries: October 29, 2026
+
+The owner explicitly accepted the clarification proposal: **“good, I will accept
+that”.** Decision: preserve native client retries; the gateway must not silently
+restart an interrupted generation within the same response stream. The
+[shared retry contract](../specs/litellm-poc.md#retry-boundaries) owns the per-layer
+client/LiteLLM/CPA boundaries, native accounting for observed admitted requests and
+the prohibition on inference replay to repair usage or telemetry.
+
+Reason: a client issuing a new request is distinct from gateway work within an
+existing response stream. Consequence: client retries alone are accepted behavior,
+not a compatibility blocker. No strict one-user-action / one-request promise,
+custom anti-retry/dedup mechanism or OpenCode modification is selected. Current
+LiteLLM/router retry=0 stays configured; it does not control client retries.
+#7 still verifies deployed A2 and A5. Candidate acceptance/adoption and cutover
+remain pending.
+
+### Local client preflight reclassification
+
+Source: retained local transport-preflight report, stub POST counts and CLI-output
+observations, October 29, 2026. OpenCode **2.2.1** used native Responses over HTTP
+against a synthetic loopback stub, one fresh CLI invocation per case:
+
+| Case | Observed POSTs | Evidence limit |
+|---|---:|---|
+| Normal completion | **1** | One successful completion. |
+| Disconnect after visible output | **5** | Four responses started; the fifth POST received a synthetic HTTP 400 at the safety cap, then the invocation was terminated. Native retry maximum/exhaustion not established. |
+| Timeout after visible output | **4** | Three automatic retries, four visible text records, then natural client error exit; no cap intervention. |
+
+Faults followed a completed text item but preceded overall Responses completion;
+the first fault was gated on client-visible text. Request bodies were not retained
+or compared, so repeated POSTs do not prove byte-for-byte replay. No LiteLLM, CPA,
+Langfuse or real provider was called; no deployed accounting was exercised.
+These observations remain **client-only preflight evidence**, not a deployed A2
+pass. The prior replay-blocker classification is superseded by the owner decision;
+the observed counts and experimental limits are unchanged.
+
+The coordinator published and verified #1/#7/#8 revisions on October 29, with
+unchanged titles/states/labels and all acceptance criteria unchecked. The
+[publication record and exact snapshots](../planning/architecture-rebaseline-2026-10-29.md#retry-boundary-clarification-october-29-2026)
+preserve the change; publication supplies no runtime acceptance evidence.
+
 ## Dependency and status snapshot
 
 ```text
@@ -115,10 +157,10 @@ acceptance were performed by this tranche.
 | Check | Status | Required evidence still outstanding (#7) |
 |---|---|---|
 | A1 Native access | **Unperformed** | A/B ordinary login, own keys/usage and representative denied cross-user direct read. |
-| A2 Actual client | **Unperformed** | OpenCode protocol cases on the selected route, upstream error and interrupted stream without partial-output replay. |
+| A2 Actual client | **Unperformed** | OpenCode protocol cases on the selected route, upstream error and interrupted stream under the shared retry contract: native client retries preserved, no silent gateway restart within the same response stream, per-layer settings/dispatches and native retained-request reconciliation. Local preflight above is not deployed A2 evidence. |
 | A3 Ownership/usage | **Unperformed** | A's keys aggregate separately from B; numeric usage reconciliation including supplied subsets/unknowns; completed record survives restart. |
 | A4 Controls | **Unperformed** | Revoked-key and model denials without forbidden CPA dispatch; configured rate-limit exercise and native propagation semantics. |
-| A5 Langfuse | **Unperformed** | Content-bearing debugging trace readback, targeted credential masking, trusted owner/session and forged-metadata check, project access boundary and sink outage without replaying provider work; see shared A5 for the sample. |
+| A5 Langfuse | **Unperformed** | Content-bearing debugging trace readback, targeted credential masking, trusted owner/session and forged-metadata check, project access boundary and sink outage without usage/telemetry-triggered inference replay; native client retries remain permitted. See shared A5 for the sample. |
 | A6 Independence/usability | **Unperformed** | Inference and native Usage without CPAMP; history/filter walkthrough, observed lag/gaps and owner baseline/gap decision. |
 
 #2 records exact versions/digests, edition/schema, model/route, role, policies,
