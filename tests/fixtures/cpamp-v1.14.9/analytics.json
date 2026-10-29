@@ -1,0 +1,41 @@
+{
+  "generated_at_ms": 1792772909870,
+  "granularity": "hour",
+  "events": {
+    "items": [{
+      "request_id": "019a96c4-0c00-7000-8000-0123456789ac",
+      "event_hash": "aa2f4fa70b74a4b8851e3247959596141665da2a6bb16b4d52db4fc81653a707",
+      "timestamp_ms": 1792800000000,
+      "model": "model-demo",
+      "analytics_model": "model-demo",
+      "requested_model": "model-demo",
+      "resolved_model": "gpt-demo",
+      "endpoint": "POST /v1/responses",
+      "method": "",
+      "path": "",
+      "auth_index": "aaaaaaaaaaaaaaaa",
+      "source": "",
+      "source_hash": "",
+      "api_key_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "account_snapshot": "",
+      "auth_label_snapshot": "",
+      "auth_provider_snapshot": "codex",
+      "executor_type": "CodexExecutor",
+      "input_tokens": 100,
+      "output_tokens": 40,
+      "cached_tokens": 0,
+      "cache_read_tokens": 20,
+      "cache_creation_tokens": 0,
+      "reasoning_tokens": 10,
+      "total_tokens": 140,
+      "latency_ms": 500,
+      "ttft_ms": null,
+      "failed": false,
+      "fail_status_code": 200
+    }],
+    "next_before_ms": 1792800000000,
+    "next_before_id": 3,
+    "has_more": true,
+    "total_count": 3
+  }
+}

@@ -1,0 +1,254 @@
+name: proxylens
+
+x-health: &health
+  interval: 10s
+  timeout: 5s
+  retries: 6
+  start_period: 30s
+
+x-app: &app
+  image: proxylens:0.1.0
+  build:
+    context: .
+  restart: unless-stopped
+  init: true
+  read_only: true
+  tmpfs: [/tmp]
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  environment: &app-env
+    PROXYLENS_DB_HOST: postgres
+    PROXYLENS_DB_NAME: proxylens
+    PROXYLENS_DB_USER: proxylens
+    PROXYLENS_DB_PASSWORD_FILE: /run/secrets/postgres_password
+    PROXYLENS_KEYCLOAK_URL: http://keycloak:8080
+    PROXYLENS_KEYCLOAK_ISSUER: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8080}/realms/proxylens
+    PROXYLENS_CPA_URL: http://cliproxyapi:8317
+    PROXYLENS_CPAMP_URL: http://cpamp:18317
+    PROXYLENS_CPA_INSTANCE_ID: ${PROXYLENS_CPA_INSTANCE_ID:-primary}
+    PROXYLENS_CPAMP_INSTANCE_ID: ${PROXYLENS_CPAMP_INSTANCE_ID:-primary}
+    PROXYLENS_WORKER_INTERVAL_SECONDS: ${PROXYLENS_WORKER_INTERVAL_SECONDS:-5}
+    PROXYLENS_RETENTION_INTERVAL_SECONDS: ${PROXYLENS_RETENTION_INTERVAL_SECONDS:-3600}
+    PROXYLENS_GROUP_RECONCILE_INTERVAL_SECONDS: ${PROXYLENS_GROUP_RECONCILE_INTERVAL_SECONDS:-3600}
+    PROXYLENS_RETENTION_REQUEST_DAYS: ${PROXYLENS_RETENTION_REQUEST_DAYS:-90}
+    PROXYLENS_RETENTION_PROJECTION_DAYS: ${PROXYLENS_RETENTION_PROJECTION_DAYS:-90}
+    PROXYLENS_RETENTION_OUTBOX_DAYS: ${PROXYLENS_RETENTION_OUTBOX_DAYS:-90}
+    PROXYLENS_RETENTION_AUDIT_DAYS: ${PROXYLENS_RETENTION_AUDIT_DAYS:-365}
+  healthcheck:
+    <<: *health
+    test: [CMD, python, -m, proxylens, healthcheck]
+
+services:
+  postgres:
+    image: &postgres-image docker.io/library/postgres:17.11-bookworm@sha256:858bb5e98eed02eb8cafbcdc007f9a65d1b613972028944a8ec2133ccaf80d27
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: proxylens
+      POSTGRES_USER: proxylens
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets: [postgres_password]
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    networks: [backend]
+    healthcheck:
+      <<: *health
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+
+  keycloak-db:
+    image: *postgres-image
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD_FILE: /run/secrets/keycloak_db_password
+    secrets: [keycloak_db_password]
+    volumes: [keycloak_db_data:/var/lib/postgresql/data]
+    networks: [identity]
+    healthcheck:
+      <<: *health
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+
+  keycloak:
+    image: proxylens-keycloak:26.8.1-1
+    build:
+      context: ./deploy/keycloak
+    mem_limit: 2g
+    restart: unless-stopped
+    entrypoint: [/bin/bash, /opt/proxylens/keycloak-start.sh]
+    command: [start, --optimized, --import-realm]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8080}
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      PROXYLENS_REDIRECT_URI: ${PROXYLENS_REDIRECT_URI:-http://localhost:8001/oidc/callback}
+    secrets: [keycloak_db_password, keycloak_admin_password, keycloak_client_secret]
+    volumes:
+      - ./deploy/keycloak/start.sh:/opt/proxylens/keycloak-start.sh:ro
+      - ./deploy/keycloak/proxylens-realm.json:/opt/keycloak/data/import/proxylens-realm.json:ro
+    ports: ["127.0.0.1:${KEYCLOAK_PORT:-8080}:8080"]
+    networks: [backend, identity, edge]
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    healthcheck:
+      <<: *health
+      start_period: 90s
+      test: [CMD, /bin/bash, /opt/proxylens/keycloak-start.sh, healthcheck]
+
+  cpa-init:
+    image: docker.io/library/python:3.12.15-slim-bookworm@sha256:6a0e06f5ba0b373d051aabd3fffb9b873f27f9a2a3a14bcbe37dee6f0e3bbc70
+    restart: "no"
+    network_mode: none
+    entrypoint: [python, /bootstrap/init-cpa.py]
+    secrets: [cpa_management_key, cpa_client_key]
+    volumes:
+      - ./deploy/cliproxyapi/init.py:/bootstrap/init-cpa.py:ro
+      - ./deploy/cliproxyapi/config.json:/bootstrap/config.json:ro
+      - cpa_config:/config
+
+  cliproxyapi:
+    image: docker.io/eceasy/cli-proxy-api:v8.0.40@sha256:0a0ed62b20fa48ad9a5321cef1fbe98a6c02237827b04ee30ecceb8fb39b36e0
+    restart: unless-stopped
+    command: [/CLIProxyAPI/CLIProxyAPI, -config, /config/config.yaml]
+    volumes:
+      - cpa_config:/config
+      - cpa_auth:/root/.cli-proxy-api
+      - ./deploy/cliproxyapi/healthcheck.sh:/healthcheck.sh:ro
+    networks: [provider, egress]
+    depends_on:
+      cpa-init:
+        condition: service_completed_successfully
+    healthcheck:
+      <<: *health
+      test: [CMD, /bin/bash, /healthcheck.sh]
+
+  cpamp:
+    image: ghcr.io/seakee/cpa-manager-plus:v1.14.9@sha256:c1641f4b1bc334241a38c8e66c641e250b725031f309f8131dabc419f0438ac0
+    restart: unless-stopped
+    environment:
+      HTTP_ADDR: 0.0.0.0:18317
+      USAGE_DATA_DIR: /data
+      USAGE_DB_PATH: /data/usage.sqlite
+      CPA_UPSTREAM_URL: http://cliproxyapi:8317
+      CPA_MANAGEMENT_KEY_FILE: /run/secrets/cpa_management_key
+      CPA_MANAGER_ADMIN_KEY_FILE: /run/secrets/cpamp_admin_key
+      CPA_MANAGER_DATA_KEY_FILE: /run/secrets/cpamp_data_key
+      USAGE_COLLECTOR_MODE: http
+      USAGE_POLL_INTERVAL_MS: "500"
+      USAGE_BATCH_SIZE: "100"
+      USAGE_CORS_ORIGINS: http://localhost:18317
+      USAGE_QUOTA_COOLDOWN_ENABLED: "false"
+      USAGE_ACCOUNT_ACTIONS_ENABLED: "false"
+      USAGE_ACCOUNT_ACTIONS_AUTO_DISABLE: "false"
+    secrets: [cpa_management_key, cpamp_admin_key, cpamp_data_key]
+    volumes: [cpamp_data:/data]
+    networks: [provider, backend, egress]
+    depends_on:
+      cliproxyapi:
+        condition: service_healthy
+    healthcheck:
+      <<: *health
+      test: [CMD, wget, -qO-, http://127.0.0.1:18317/health]
+
+  api:
+    <<: *app
+    command: [api]
+    environment:
+      <<: *app-env
+      PROXYLENS_KEYCLOAK_CLIENT_SECRET_FILE: /run/secrets/keycloak_client_secret
+      PROXYLENS_REDIRECT_URI: ${PROXYLENS_REDIRECT_URI:-http://localhost:8001/oidc/callback}
+    secrets: [postgres_password, keycloak_client_secret]
+    networks: [backend, edge]
+    ports: ["127.0.0.1:${API_PORT:-8001}:8000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
+  gateway:
+    <<: *app
+    command: [gateway]
+    environment:
+      <<: *app-env
+      PROXYLENS_CPA_CLIENT_KEY_FILE: /run/secrets/cpa_client_key
+      PROXYLENS_KEYCLOAK_CLIENT_SECRET_FILE: /run/secrets/keycloak_client_secret
+      PROXYLENS_ROUTING_REGISTRY: /app/config/gateway-routes.json
+      PROXYLENS_CPA_INSTANCE_ID: ${PROXYLENS_CPA_INSTANCE_ID:-primary}
+      PROXYLENS_MAX_BODY_BYTES: ${PROXYLENS_MAX_BODY_BYTES:-4194304}
+      PROXYLENS_TOTAL_TIMEOUT: ${PROXYLENS_TOTAL_TIMEOUT:-120}
+      PROXYLENS_IDLE_TIMEOUT: ${PROXYLENS_IDLE_TIMEOUT:-30}
+    secrets: [postgres_password, cpa_client_key, keycloak_client_secret]
+    volumes:
+      - ./deploy/gateway/routes.json:/app/config/gateway-routes.json:ro
+    networks: [backend, provider, edge]
+    ports: ["127.0.0.1:${GATEWAY_PORT:-8000}:8000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      cliproxyapi:
+        condition: service_healthy
+
+  worker:
+    <<: *app
+    command: [worker]
+    environment:
+      <<: *app-env
+      PROXYLENS_CPAMP_ADMIN_KEY_FILE: /run/secrets/cpamp_admin_key
+      PROXYLENS_KEYCLOAK_CLIENT_SECRET_FILE: /run/secrets/keycloak_client_secret
+      PROXYLENS_LANGFUSE_URL: ${LANGFUSE_BASE_URL:-}
+      PROXYLENS_LANGFUSE_PUBLIC_KEY_FILE: /run/secrets/langfuse_public_key
+      PROXYLENS_LANGFUSE_SECRET_KEY_FILE: /run/secrets/langfuse_secret_key
+    secrets: [postgres_password, cpamp_admin_key, keycloak_client_secret, langfuse_public_key, langfuse_secret_key]
+    networks: [backend, provider, egress]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      cpamp:
+        condition: service_healthy
+
+networks:
+  backend:
+    internal: true
+  identity:
+    internal: true
+  provider:
+    internal: true
+  edge: {}
+  egress: {}
+
+volumes:
+  postgres_data: {}
+  keycloak_db_data: {}
+  cpa_config: {}
+  cpa_auth: {}
+  cpamp_data: {}
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password
+  keycloak_db_password:
+    file: ./secrets/keycloak_db_password
+  keycloak_admin_password:
+    file: ./secrets/keycloak_admin_password
+  keycloak_client_secret:
+    file: ./secrets/keycloak_client_secret
+  cpa_management_key:
+    file: ./secrets/cpa_management_key
+  cpa_client_key:
+    file: ./secrets/cpa_client_key
+  cpamp_admin_key:
+    file: ./secrets/cpamp_admin_key
+  cpamp_data_key:
+    file: ./secrets/cpamp_data_key
+  langfuse_public_key:
+    file: ./secrets/langfuse_public_key
+  langfuse_secret_key:
+    file: ./secrets/langfuse_secret_key

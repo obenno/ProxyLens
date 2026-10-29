@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "recorded_on": "2026-10-27",
+  "status": "partial",
+  "provenance": "live_deployment_partial",
+  "tenant_usage_enabled": false,
+  "queue_accessed_by_proxylens": false,
+  "sole_usage_queue_consumer": "CPAMP Full Mode",
+  "runtime": {
+    "cliproxyapi": "v8.0.40",
+    "cpamp": "v1.14.9",
+    "deployment": "isolated loopback-only acceptance runtime",
+    "groups": 2,
+    "applications": 2,
+    "shared_provider_credential": true
+  },
+  "successful_cases": {
+    "nonstreaming_responses": 1,
+    "streaming_responses": 1,
+    "function_tool_call": 1,
+    "multimodal_image_input": 1,
+    "http_200_expected_protocol": 4,
+    "exact_native_uuid_to_cpamp_event_hash_join": 4,
+    "separate_group_application_ownership": 4,
+    "first_byte_before_completion": 4,
+    "cpamp_visibility_ms_range": [1013, 1020],
+    "repeat_read_event_hash_stability": true,
+    "normalized_total_matches_response_usage": 4
+  },
+  "partial_cases": {
+    "bounded_cancellation": {
+      "http_status": 200,
+      "native_binding_observed": true,
+      "gateway_outcome": "cancelled",
+      "durable_cpamp_event": false,
+      "usage_attributed": false
+    },
+    "worker_outage": {
+      "provider_requests": 0,
+      "worker_ready": false
+    }
+  },
+  "langfuse_readback": {
+    "metadata_only_generations_verified": 5,
+    "single_generation_per_request": true,
+    "prompt_output_capture": false,
+    "unproven_usage_and_cost_published": false,
+    "machine_user_id_fabricated": false,
+    "async_delivery": true
+  },
+  "remaining_blockers": [
+    "retry_or_failover_attempt_attribution",
+    "live_native_id_collision_handling",
+    "cpamp_outage_restart_retention_completeness",
+    "independently_reviewed_correlation_proof_artifact",
+    "independently_reviewed_durable_history_proof_artifact"
+  ],
+  "evidence_boundary": "Aggregate facts only; private request, native, event, lineage and observation identifiers remain outside the repository."
+}

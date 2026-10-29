@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "issue": 3,
+  "recorded_on": "2026-10-24",
+  "status": "blocked",
+  "tenant_usage_enabled": false,
+  "correlation_method": "cpa-8.0.40-returned-trace-uuid-v1",
+  "versions": {
+    "cliproxyapi": "v8.0.40",
+    "cliproxyapi_source": "d946c4fba6fc9a5cfbca1f3d85184d62ad2fb683",
+    "cpamp": "v1.14.9",
+    "cpamp_source": "6d962db680085827cd19a778d2ff05a3d1315672"
+  },
+  "evidence": [
+    {"kind": "source_inspection", "location": "/data/tmp/opencode/proxylens-phase1/contracts.md", "sections": ["4", "6"]},
+    {"kind": "synthetic_cpamp_http", "location": "/data/tmp/opencode/proxylens-phase1/http-proof/results.json", "proves_live_correlation": false}
+  ],
+  "live_scenarios": [],
+  "blocker": "Authorized Codex Responses execution through pinned CLIProxyAPI to its returned X-CPA-TRACE-ID and actual CPAMP collector persistence has not been exercised. No provider OAuth was configured by this workflow.",
+  "required_scenarios": [
+    "two application/group owners sharing intended upstream credential",
+    "nonstreaming and streaming",
+    "retry and failover attempt hashes",
+    "tool calls and multimodal",
+    "provider failure",
+    "client disconnect/cancellation",
+    "missing and colliding native IDs",
+    "durable CPAMP reads and source-to-visible freshness within 60 seconds"
+  ]
+}

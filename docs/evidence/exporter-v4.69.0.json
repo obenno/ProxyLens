@@ -1,0 +1,18 @@
+{
+  "checked_at": "2026-10-26T00:53:29.447791+00:00",
+  "langfuse_version": "4.69.0",
+  "request_id": "5882c694-90f8-49f2-9543-984f98526ec8",
+  "trace_id": "32cecdbc17244c51b3a3306b9c036f29",
+  "generation_id": "5c2c28a81e764cab",
+  "outage_state": "RETRY_WAIT/connect_failed",
+  "restarted_state": "ACCEPTED",
+  "attempts": 2,
+  "visible_root_generations": 1,
+  "input": null,
+  "output": null,
+  "usage_state": "usage_unproven",
+  "provided_usage": false,
+  "provided_cost": false,
+  "late_enrichment_local_only": true,
+  "provider_requests": 0
+}
