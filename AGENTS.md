@@ -9,7 +9,16 @@ ProxyLens is a Docker Compose stack for exposing authorized AI subscription acce
 - **Candidate work and revised issues #1–#10:** read `docs/specs/litellm-poc.md`,
   proposed `docs/adr/0002-litellm-personal-usage.md`, and
   `docs/planning/architecture-rebaseline-2026-10-29.md`. Target LiteLLM → CLIProxyAPI,
-  native personal accounts/keys/Usage, and native asynchronous Langfuse. CPAMP is
+  native personal accounts/keys/Usage, and one native asynchronous Langfuse
+  integration for content-rich debugging traces. Follow the spec's
+  `Native debugging traces` contract: transmitted prompts/code, outputs, visible
+  tools and useful errors; targeted credential masking and verified attribution.
+  Native configuration comes first; a minimal hook requires a demonstrated,
+  selected mapping/credential gap. No mandatory adapter/exporter/outbox or blanket
+  content stripping. `userId` is analysis, not authorization; #6 records native
+  project access/retention. The owner-approved target supersedes candidate
+  metadata-only guidance, but current capture/callback settings remain disabled
+  pending #8 setup and #7 evidence. CPAMP is
   optional operator diagnostics; personal ownership and totals come from verified
   LiteLLM facts. Configure native features in #2/#8; use #7's shared A1–A6
   integration checks. Custom work addresses demonstrated reporting/integration
@@ -92,7 +101,7 @@ ProxyLens integration boundary
 
 ### Research and design references
 
-- `docs/research/architecture-handoff-2026-10-29.md` — candidate rationale and dated evidence; use the POC contract for revised scope and gates.
+- `docs/research/architecture-handoff-2026-10-29.md` — candidate rationale and dated evidence; use the POC contract for revised scope/gates and the rebaseline's tracing clarification for superseded metadata-only research.
 - `docs/research/proxy-stack-research.md` — verified capabilities, gaps, architecture, and source register.
 - `DEVELOPMENT.md` — implementation decisions, rationale, validation, and follow-up discipline.
 - Read `GLOSSARY.md` and the applicable ADR in `docs/adr/` when changing ownership, accounting, or identity contracts.

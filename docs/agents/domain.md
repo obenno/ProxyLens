@@ -15,6 +15,18 @@ interactive actor or customer label. These boundaries need POC acceptance before
 final adoption. See the shared plan for bounded A1–A6 integration acceptance;
 reuse native features and add custom domain/storage contracts only for selected gaps.
 
+For candidate observability, follow the spec's
+[native debugging trace contract](../specs/litellm-poc.md#native-debugging-traces)
+and [owner decision](../candidate/decisions.md#owner-approved-tracing-objective-october-29-2026).
+Transmitted prompts/code, outputs, visible tool interactions and useful errors
+belong in the native integration's debugging target, with targeted credential
+masking and verified owner/session mapping. Trace attribution (`userId`/session)
+is an analysis dimension, not access authorization; #6 records native project
+access and content retention. No bespoke UI/access project is selected. Local
+tool execution and unsent files are outside gateway visibility. Native coverage
+may be missing/truncated; no all-secret-removal guarantee is implied. A minimal
+hook requires a demonstrated, selected mapping/credential gap.
+
 ## Current implementation boundaries
 
 - **Keycloak** owns human identities, authentication, groups, memberships, and group administration.

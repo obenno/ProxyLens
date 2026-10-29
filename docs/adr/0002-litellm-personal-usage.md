@@ -9,9 +9,10 @@ The clarified product needs personal keys and usage rather than mandatory group
 administration. Propose LiteLLM for native accounts, user-owned virtual keys,
 admission, limits and client-request accounting, with CLIProxyAPI retained for
 provider OAuth and execution. Prefer native personal Usage and native asynchronous
-Langfuse integration; limit ProxyLens custom code to demonstrated reporting and
-integration gaps. This avoids reconstructing every personal owner from a CPAMP
-join while retaining the provider runtime already exercised by the project.
+Langfuse integration for content-bearing application debugging; limit ProxyLens
+custom code to demonstrated reporting and integration gaps. This avoids
+reconstructing every personal owner from a CPAMP join while retaining the provider
+runtime already exercised by the project.
 
 ## Status and adoption
 
@@ -39,10 +40,22 @@ titles or passing old-stack tests does not establish acceptance.
 - Native login and personal Usage are the initial UI. A separate reporting UI
   requires a supported authenticated session and server-side scoping. Plugin
   claims and admin-only routes do not supply ordinary-user authorization.
-- Langfuse receives trusted owner/session IDs and metadata-only observations via
-  one native integration checked with the shared fixture. Record native delivery
-  limitations; stronger guarantees or a durability extension require a demonstrated
-  selected gap rather than a preplanned exporter rewrite.
+- The owner's [October 29 tracing decision](../candidate/decisions.md#owner-approved-tracing-objective-october-29-2026)
+  selects one native asynchronous LiteLLM Langfuse integration for prompts
+  (including transmitted source code), AI outputs, visible tool names/arguments/
+  results, useful errors and model/timing/tokens/estimated cost. It supersedes the
+  candidate metadata-only requirement; [A5](../specs/litellm-poc.md#bounded-integration-acceptance-7)
+  verifies content, trusted owner/session mapping and targeted credential masking.
+  Native project access/roles and content retention belong to #6; `userId` is an
+  analysis dimension, not authorization. Unsent files/local tool execution are
+  outside gateway visibility; automatic removal of all embedded secrets is not
+  promised. Record native missing/truncated fields for owner review; use native
+  project controls without a bespoke UI/access project.
+- Configure the native integration first. Only a demonstrated, narrowly selected
+  mapping/credential gap justifies a minimal hook with focused regression tests.
+  No mandatory adapter, replacement exporter/outbox or preplanned content-stripping
+  hook is selected. Record native delivery limitations; stronger guarantees need
+  separately selected scope and evidence.
 - Keycloak, group-owned resources, the custom public gateway, CPAMP projections
   and custom exporter remain valid under their existing contracts until approved
   cutover. Preserve historical evidence; issue new keys where migration cannot
