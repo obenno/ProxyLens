@@ -24,9 +24,9 @@ tool execution are outside gateway visibility; native fields may be missing or
 truncated, and automatic removal of all embedded secrets is not promised.
 
 The [candidate deployment record](docs/candidate/deployment.md#current-logging-settings-and-8-target)
-still records disabled capture and no callback. #8 setup and #7 acceptance must
-establish the target; this objective revision does not enable tracing. See
-[setup decisions](docs/candidate/decisions.md) for evidence status.
+preserves the original disabled-capture setup as history and records the active
+#8 native callback configuration. Shared #7 A1–A6 acceptance remains the gate for
+candidate acceptance; see [setup decisions](docs/candidate/decisions.md) for status.
 
 [ADR 0002](docs/adr/0002-litellm-personal-usage.md) is **proposed**. The checked-in
 runtime still implements [ADR 0001](docs/adr/0001-architecture-boundaries.md):

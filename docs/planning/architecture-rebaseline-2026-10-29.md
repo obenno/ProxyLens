@@ -45,10 +45,11 @@ completed acceptance checkboxes. The coordinator supplied exact public-issue
 revision. The original snapshots remain immutable. The map below reflects the
 published clarification; publication is not runtime acceptance.
 
-**Runtime status:** capture/callbacks remain disabled as recorded in
-[candidate deployment](../candidate/deployment.md#current-logging-settings-and-8-target).
-This is a documentation-only objective revision, not #8 activation, A5 evidence,
-architecture adoption or cutover. ADR 0002 stays proposed.
+**Initial runtime status:** capture/callbacks were disabled in the original #2
+setup recorded in [candidate deployment](../candidate/deployment.md#current-logging-settings-and-8-target).
+#8 has since activated the selected native callback and documented its setup;
+shared A5 evidence is still pending. This does not establish architecture adoption
+or cutover. ADR 0002 stays proposed.
 
 **Historical research:** the [architecture handoff](../research/architecture-handoff-2026-10-29.md),
 [stack comparison](../research/new-api-stack-comparison.md),
