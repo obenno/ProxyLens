@@ -151,7 +151,8 @@ def worker_operations_ready(snapshot: dict | None) -> bool:
 async def checkpoint_worker_status(database, supervisor) -> None:
     """Persist the fixed, redacted supervisor diagnostic shape as JSONB."""
     async with database.transaction() as conn:
-        for component, state in supervisor.status.items():
+        # Runtime ticks replace/add entries while database writes yield control.
+        for component, state in tuple(supervisor.status.items()):
             observed_at = state.get("observed_at")
             if isinstance(observed_at, datetime):
                 observed_at = observed_at.isoformat()

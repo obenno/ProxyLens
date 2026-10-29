@@ -2,6 +2,7 @@ import asyncio
 from datetime import UTC, datetime, timedelta
 
 import httpx
+import psycopg
 
 from proxylens.app import worker_operations_ready
 from proxylens.cpamp import AdapterHealth, CollectorStatus, CPAMPAdapter
@@ -121,6 +122,89 @@ def test_checkpoint_status_persists_jsonb_details_on_real_postgres(ops_database)
             "state": "available",
             "observed_at": NOW.isoformat(),
         }
+
+    asyncio.run(scenario())
+
+
+def test_checkpoint_persists_a_stable_snapshot_during_status_updates(ops_database, monkeypatch):
+    from proxylens.app import checkpoint_worker_status
+
+    class Supervisor:
+        status = {
+            "completion_scan": {"state": "available", "observed_at": NOW},
+            "cpamp_status": {"state": "unavailable", "observed_at": NOW.isoformat()},
+        }
+
+    async def scenario():
+        supervisor = Supervisor()
+        first_write = asyncio.Event()
+        status_updated = asyncio.Event()
+        execute = psycopg.AsyncConnection.execute
+
+        async def pause_first_write(conn, query, *args, **kwargs):
+            result = await execute(conn, query, *args, **kwargs)
+            if query.startswith("INSERT INTO operations_status") and not first_write.is_set():
+                first_write.set()
+                await status_updated.wait()
+            return result
+
+        monkeypatch.setattr(psycopg.AsyncConnection, "execute", pause_first_write)
+
+        async def update_status():
+            await first_write.wait()
+            # Runtime ticks replace entries and add new components while writes await I/O.
+            supervisor.status["cpamp_status"] = {
+                "state": "available",
+                "observed_at": NOW.isoformat(),
+            }
+            supervisor.status["group_reconcile"] = {
+                "state": "degraded",
+                "observed_at": NOW,
+            }
+            status_updated.set()
+
+        async with asyncio.timeout(5), asyncio.TaskGroup() as tasks:
+            tasks.create_task(checkpoint_worker_status(ops_database, supervisor))
+            tasks.create_task(update_status())
+
+        async def persisted():
+            async with ops_database.transaction() as conn:
+                return await (
+                    await conn.execute(
+                        "SELECT component, state, details FROM operations_status ORDER BY component"
+                    )
+                ).fetchall()
+
+        assert await persisted() == [
+            {
+                "component": "completion_scan",
+                "state": "available",
+                "details": {"state": "available", "observed_at": NOW.isoformat()},
+            },
+            {
+                "component": "cpamp_status",
+                "state": "unavailable",
+                "details": {"state": "unavailable", "observed_at": NOW.isoformat()},
+            },
+        ]
+        await checkpoint_worker_status(ops_database, supervisor)
+        assert await persisted() == [
+            {
+                "component": "completion_scan",
+                "state": "available",
+                "details": {"state": "available", "observed_at": NOW.isoformat()},
+            },
+            {
+                "component": "cpamp_status",
+                "state": "available",
+                "details": {"state": "available", "observed_at": NOW.isoformat()},
+            },
+            {
+                "component": "group_reconcile",
+                "state": "degraded",
+                "details": {"state": "degraded", "observed_at": NOW.isoformat()},
+            },
+        ]
 
     asyncio.run(scenario())
 
