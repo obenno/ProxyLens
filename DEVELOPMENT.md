@@ -1,5 +1,46 @@
 # Development Notes
 
+## 2026-10-29 — PR12 runtime review corrections
+
+### Scope and decisions
+
+Confirmed `fix/pr12-runtime-review` at integration ancestor `b0326db`; the
+existing-runtime maintenance contract remains ADR 0001. Fixed two actionable
+review defects only. The CPA initializer now fails closed for the unsupported
+YAML constructs that its networkless standard-library parser cannot safely
+interpret: block scalars, quoted guard booleans, duplicate keys and unbalanced
+quoted lines. JSON duplicate keys are rejected with the same persisted-config
+preservation and no-credential-output behavior. No dependency or startup network
+install was added; the cpa-init image still uses the pinned Python image and
+mounted script/template.
+
+The operations supervisor now performs an authenticated fixed-window CPAMP
+history read on every proof-enabled tick using its own adapter, audits each
+result once, and only then reads status. Status cannot refresh history age;
+failed reads/audits remain fail-closed and cannot replace the adapter's last-good
+timestamp. Proof-disabled mode retains zero history reads. Projection polling
+keeps its separate adapter and audit boundary.
+
+### Validation performed
+
+Red regression: the prior parser returned success for persisted
+`server.commercial-mode: false` with a block-scalar `commercial-mode: true`; the
+new test failed before the fix and passed after it. Green focused checks:
+`tests/test_bootstrap.py` and `tests/test_runtime_health.py` passed 16 tests;
+including `tests/test_cpamp.py` passed 86 tests; Ruff passed for all changed
+Python files. The runtime regression uses a fake clock across the 60-second
+freshness threshold, a failed history read, and recovery; readiness returns
+available only after the recovered authenticated history read.
+
+### Affected files and follow-up discipline
+
+Changed `deploy/cliproxyapi/init.py`, `src/proxylens/runtime.py`,
+`tests/test_bootstrap.py`, `tests/test_runtime_health.py`,
+`docs/cpamp-contract.md`, and `docs/operations.md`. Preserve separate
+projection/supervisor adapters, one audit per owning read, the stale boundary,
+and the proof-disabled no-history-read gate in future runtime changes. The
+coordinator owns the final zero-skip PostgreSQL/native-image suite.
+
 ## 2026-10-29 — Issue #7 initial A1 checkpoint and shared runbook
 
 ### Scope and decisions

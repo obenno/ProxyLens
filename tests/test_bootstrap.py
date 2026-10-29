@@ -101,6 +101,56 @@ observability:
     assert b"client-key" not in result.stdout + result.stderr
 
 
+@pytest.mark.parametrize(
+    "server",
+    [
+        "  commercial-mode: false\n  notes: |\n    commercial-mode: true\n",
+        '  commercial-mode: "true"\n',
+        "  commercial-mode: false\n  commercial-mode: true\n",
+        '  notes: "multiline\n  commercial-mode: true\n  ignored: end"\n',
+        "  commercial-mode: true\nserver: {}\n",
+    ],
+    ids=["block-scalar", "quoted-boolean", "duplicate", "multiline-quote", "shadowed-parent"],
+)
+def test_cpa_initialization_rejects_ambiguous_logging_guard(tmp_path, server):
+    existing = """config-version: 8
+""" + server + """\
+observability:
+  logs:
+    debug: false
+    logging-to-file: false
+    request-log: false
+management:
+  secret-key: synthetic-persisted-secret
+"""
+    target = tmp_path / "config.yaml"
+    target.write_text(existing)
+    result = subprocess.run(
+        [sys.executable, "-S", str(ROOT / "deploy/cliproxyapi/init.py")],
+        env={**os.environ, "CPA_CONFIG_DIR": str(tmp_path)},
+        capture_output=True,
+    )
+    assert result.returncode != 0
+    assert target.read_text() == existing
+    assert b"synthetic-persisted-secret" not in result.stdout + result.stderr
+
+
+def test_cpa_initialization_rejects_duplicate_json_guard_without_echoing_config(tmp_path):
+    existing = '''{"server":{"commercial-mode":false,"commercial-mode":true},
+"observability":{"logs":{"debug":false,"logging-to-file":false,"request-log":false}},
+"management":{"secret-key":"synthetic-persisted-secret"}}'''
+    target = tmp_path / "config.yaml"
+    target.write_text(existing)
+    result = subprocess.run(
+        [sys.executable, "-S", str(ROOT / "deploy/cliproxyapi/init.py")],
+        env={**os.environ, "CPA_CONFIG_DIR": str(tmp_path)},
+        capture_output=True,
+    )
+    assert result.returncode != 0
+    assert target.read_text() == existing
+    assert b"synthetic-persisted-secret" not in result.stdout + result.stderr
+
+
 @pytest.mark.parametrize("value", [None, "\n"])
 def test_cpa_initialization_fails_closed_without_a_management_key(tmp_path, value):
     if value is not None:

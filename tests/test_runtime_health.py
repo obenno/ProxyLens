@@ -1,8 +1,10 @@
 import asyncio
 from datetime import UTC, datetime
 
+from proxylens.app import worker_operations_ready
 from proxylens.cpamp import AdapterHealth, CollectorStatus, ReadResult
 from proxylens.db import StorageUnavailable
+from proxylens.operations_health import ExportHealth, ProjectionHealth, operations_health
 from proxylens.runtime import OperationsSupervisor
 
 
@@ -27,6 +29,37 @@ class FakeAdapter:
             1 if self.last_success is not None else None,
             (),
         )
+
+
+class ClockedAdapter:
+    def __init__(self, results, clock):
+        self.results = list(results)
+        self.clock = clock
+        self.history_calls = 0
+        self.last_success_ms = None
+        self.state = "unavailable"
+        self.status_calls = 0
+
+    async def read_window(self, _window):
+        self.history_calls += 1
+        result = self.results.pop(0)
+        self.state = result.state
+        if result.state == "available" and result.traversal_complete:
+            self.last_success_ms = self.clock[0]
+        return result
+
+    async def read_status(self):
+        self.status_calls += 1
+        return CollectorStatus("available")
+
+    def health(self):
+        if self.state == "unavailable":
+            return AdapterHealth("unavailable", self.last_success_ms, ("history",))
+        if self.last_success_ms is None:
+            return AdapterHealth("unavailable", None, ("not_read",))
+        if self.clock[0] - self.last_success_ms > 60_000:
+            return AdapterHealth("stale", self.last_success_ms, ("poll_lag",))
+        return AdapterHealth("available", self.last_success_ms, ())
 
 
 class NoopExporter:
@@ -148,5 +181,72 @@ def test_worker_proof_disabled_uses_collector_without_history_read():
         assert worker.status["cpamp_status"]["state"] == "available"
         assert adapter.status_calls == 1
         assert adapter.last_success is None
+
+    asyncio.run(run())
+
+
+def test_worker_reprobes_history_after_stale_threshold_and_recovers_after_failure():
+    async def run():
+        clock = [0]
+        adapter = ClockedAdapter(
+            [
+                ReadResult((), "available", True),
+                ReadResult((), "unavailable", False, reasons=("transport",)),
+                ReadResult((), "available", True),
+            ],
+            clock,
+        )
+        worker = supervisor(adapter)
+        first = datetime(2026, 10, 27, tzinfo=UTC)
+        await worker.tick(now=first)
+        assert adapter.history_calls == 1
+        assert worker_operations_ready(
+            operations_health(
+                now=first,
+                postgres=True,
+                keycloak=True,
+                cliproxyapi=True,
+                adapter=adapter.health(),
+                collector=worker.collector,
+                projection=ProjectionHealth(True, first),
+                exporter=ExportHealth(False),
+            )
+        )
+
+        clock[0] = 60_001
+        second = first.replace(second=1)
+        await worker.tick(now=second)
+        assert adapter.history_calls == 2
+        assert worker.collector is None
+        assert not worker_operations_ready(
+            operations_health(
+                now=second,
+                postgres=True,
+                keycloak=True,
+                cliproxyapi=True,
+                adapter=adapter.health(),
+                collector=CollectorStatus("degraded"),
+                projection=ProjectionHealth(True, second),
+                exporter=ExportHealth(False),
+            )
+        )
+
+        clock[0] = 60_002
+        third = first.replace(second=2)
+        await worker.tick(now=third)
+        assert adapter.history_calls == 3
+        assert worker.collector.state == "available"
+        assert worker_operations_ready(
+            operations_health(
+                now=third,
+                postgres=True,
+                keycloak=True,
+                cliproxyapi=True,
+                adapter=adapter.health(),
+                collector=worker.collector,
+                projection=ProjectionHealth(True, third),
+                exporter=ExportHealth(False),
+            )
+        )
 
     asyncio.run(run())

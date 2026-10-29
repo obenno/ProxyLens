@@ -88,9 +88,15 @@ One adapter per polling task, sequential calls. Client ownership is scoped by
 `async with`; cancellation propagates and closes the response. No retries or
 background polling are hidden inside the adapter. In the worker integration,
 the projection polling task and operations supervisor each receive a separate
-adapter constructed from the same server-side key. The supervisor adapter owns
-readiness history/status state; the projection adapter owns projection polling
-state. Their HTTP reads are both read-only and neither consumes the CPA queue.
+adapter constructed from the same server-side key. The supervisor performs one
+authenticated fixed-window history read per operations tick while history proof
+is enabled, then reads collector status on that same adapter. The projection
+adapter owns only projection polling. Their HTTP reads are both read-only and
+neither consumes the CPA queue. Each supervisor history result, including an
+unavailable or failed read, is recorded once through the supervisor's bounded
+integration audit; the projection adapter's read is audited only by its own
+polling path. A status read does not refresh history freshness, and a failed
+history read never advances the last-good history timestamp.
 This module is not wired into tenant endpoints by this issue.
 
 ## HTTP contracts
