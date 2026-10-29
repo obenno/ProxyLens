@@ -18,6 +18,7 @@ model_list:
 
 litellm_settings:
   turn_off_message_logging: true
+  global_disable_no_log_param: true
   set_verbose: false
   json_logs: true
   num_retries: 0

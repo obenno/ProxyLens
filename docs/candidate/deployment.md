@@ -142,7 +142,8 @@ Do not copy tokens/screenshots with credentials into repository evidence.
 
 ## Privacy and #8 seam
 
-`turn_off_message_logging=true`, `store_prompts_in_spend_logs=false`,
+`turn_off_message_logging=true`, `global_disable_no_log_param=true`,
+`store_prompts_in_spend_logs=false`,
 `disable_spend_logs=false`, `disable_error_logs=true`, no debug/verbose mode,
 ERROR log level. Detailed error-table persistence is disabled because exceptions
 may include content; document the resulting diagnostics limit. Admin UI overrides
@@ -157,13 +158,23 @@ avoid HIBP hash-prefix egress; other native password policy checks remain enable
 Backend telemetry and remote price-map fetch are disabled. The browser home page
 may still load upstream news; this is not an offline deployment.
 
+`general_settings.user_header_mappings` stays unset. The installed 1.106.6
+`litellm_logging.py` consumes `global_disable_no_log_param`; setting it explicitly
+prevents caller `no-log` from opting out of configured logging. This does not
+establish trusted attribution or content redaction on every callback outcome.
+
 No callback is enabled by #2. `secret_env.py` supports
 `LANGFUSE_PUBLIC_KEY_FILE` / `LANGFUSE_SECRET_KEY_FILE`; #8 can mount Compose secrets,
 set their file paths plus native destination, attach the selected Langfuse network
 and configure **one** native callback in the candidate config/overlay. It owns a
 separate Langfuse project, trusted identity/session mapping and redaction. If a
 narrow mapping hook is necessary, mount it read-only with its focused tests.
-Do not point at the old Langfuse fixture project or add a second exporter.
+Do not point at the old Langfuse fixture project or add a second exporter. #8's
+pinned-source research found success-only logging hooks insufficient for failures
+and dynamic callback destination selection occurring before pre-call sanitation.
+The coordinator owns selection of the narrow callback-local adapter gap; real
+delivery waits for its all-outcome attribution/redaction evidence. Research
+handoff: `/data/tmp/opencode/proxylens-litellm-20261029/telemetry-research.md`.
 
 ## Stop, restart and rollback
 

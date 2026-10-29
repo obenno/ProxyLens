@@ -42,6 +42,13 @@ estimates, not subscription spend. Rate/revocation semantics remain #7 evidence.
 
 ### Validation and limitations
 
+Telemetry research follow-up: explicitly set `global_disable_no_log_param=true`
+after confirming its consumer in the installed 1.106.6 `litellm_logging.py`.
+Keep message logging off and user-header mappings unset; focused candidate-config
+regression observed red→green. No external sink enabled. #8's callback-local
+all-outcome attribution/redaction gap requires owner selection and verification
+before native transport activation; generic success logging hooks are insufficient.
+
 TDD skill invoked before build; focused public setup tests observed red→green
 for secret loading/missing-file failure, private init/reissue refusal, and the
 Podman healthcheck correction. Four tests and scoped Ruff pass. Compose startup

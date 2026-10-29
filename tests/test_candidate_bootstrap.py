@@ -106,3 +106,11 @@ def test_missing_secret_aborts_before_launch_and_does_not_disclose_values(tmp_pa
     assert result.returncode != 0
     assert "LAUNCHED" not in result.stdout
     assert "cannot load POSTGRES_PASSWORD_FILE" in result.stderr
+
+
+def test_candidate_logging_configuration_keeps_trusted_controls():
+    config = yaml.safe_load((ROOT / "deploy/candidate/config.yaml").read_text())
+    settings = config["litellm_settings"]
+    assert settings["turn_off_message_logging"] is True
+    assert settings["global_disable_no_log_param"] is True
+    assert not config["general_settings"].get("user_header_mappings")
