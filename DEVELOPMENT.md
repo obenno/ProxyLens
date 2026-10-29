@@ -1,5 +1,46 @@
 # Development Notes
 
+## 2026-10-29 — Worker diagnostic checkpoint startup race
+
+### Scope and decision
+
+Started `fix/litellm-integration-ci` from integration tip `8c3253b` and confirmed
+integration ancestry. The reported PR #12 run `40837525150` failed the existing
+worker-lifespan test while checkpointing supervisor status. Production `src/`
+was byte-identical between `fbf49c1` and `8c3253b`; the documentation tranche did
+not introduce this runtime race.
+
+Root cause: `checkpoint_worker_status()` iterated the live status dictionary
+across awaited PostgreSQL writes while background ticks added component keys.
+Decision: materialize the status items as a tuple before those writes. Runtime
+writers replace complete state entries, so this shallow snapshot preserves the
+selected entries and values for one checkpoint; concurrent additions/replacements
+appear in the next checkpoint. This keeps the existing JSONB diagnostic shape,
+datetime normalization, transaction behavior and ADR 0001 health/readiness rules.
+
+### Regression and validation
+
+Used the owner-approved durable diagnostic checkpoint seam in
+`tests/test_operations_health.py`. The regression performs real PostgreSQL writes,
+pauses the first write's return with asyncio events, and replaces/adds status from
+a concurrent task. It checks the committed initial snapshot and the next
+checkpoint's updated state. No timing sleeps or mocked SQL results are used.
+Both datetime and ISO-string observations retain the fixed persisted shape.
+
+- Red: the focused test failed twice with the exact `RuntimeError: dictionary
+  changed size during iteration` at `src/proxylens/app.py:154` (0.09s / 0.28s).
+- Green: health/checkpoint and application wiring suites passed **10 tests**,
+  including the originally failing worker startup/shutdown test.
+- `scripts/ci-tests.py` passed **342 tests, zero skips**, including real dump/restore;
+  reused the repository venv with an exclusively owned Podman PostgreSQL instance
+  and newly allocated databases/schemas. Existing services were not modified.
+- Ruff lint/format and `git diff --check` passed. Test review confirmed event-driven
+  scheduling, real persistence assertions, bounded task cleanup and schema isolation.
+
+Affected files: `src/proxylens/app.py`, `tests/test_operations_health.py`, this log.
+If status writers ever switch to in-place mutation of state dictionaries, revisit
+the snapshot's value-copy contract; current writers replace entries.
+
 ## 2026-10-29 — Issue #1 candidate setup-scope tranche
 
 ### Scope and decisions
