@@ -1,4 +1,6 @@
 # Standalone offline rehearsal, NOT an overlay for the live candidate Compose file.
+# The active #8 callback/config is archived privately; the mounted restore config is
+# a separate callback-disabled copy. Never attach the Langfuse overlay to this file.
 # See docs/candidate/recovery.md. Start postgres first; restore before starting litellm.
 name: proxylens-candidate-restore
 
@@ -43,6 +45,7 @@ services:
       PROXY_BASE_URL: http://127.0.0.1:${RESTORE_PORT:-14006}
     secrets: [postgres_password, master_key, salt_key, ui_password]
     volumes:
+      # These are the offline loader/config copies, not the active callback source.
       - ${RECOVERY_DIR:?Set new private RECOVERY_DIR}/artifacts/secret_env.py:/candidate/secret_env.py:ro
       - ${RECOVERY_DIR}/artifacts/config.yaml:/candidate/config.yaml:ro
     ports: ["127.0.0.1:${RESTORE_PORT:-14006}:4000"]

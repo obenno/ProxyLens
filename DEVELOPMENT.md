@@ -1,5 +1,59 @@
 # Development Notes
 
+## 2026-10-30 — Issue #6 populated native history recovery
+
+### Scope and decisions
+
+Merged integration tip `01cc406` before execution. Used the immutable #7 handoff
+`checkpoint-1793273530` and the public recovery seam: PostgreSQL
+`pg_dump`/`pg_restore` plus native login/history/key readback. The live candidate,
+CPA, CPAMP and shared Langfuse services were not stopped or restarted. No provider
+call, inference replay, queue read, telemetry mutation or replacement request was
+performed.
+
+Archived the active #8 config, callback hook, Langfuse overlay, Compose files,
+secret loader, selected private secrets, image/schema fingerprints and checkpoint
+readback outside Git. The offline restore deliberately used a separate config copy
+with `callbacks: []`, dummy CPA settings, no Langfuse overlay and an internal-only
+network. The callback-enabled source config remains the recovery source of truth.
+
+The source snapshot was a repeatable-read, read-only exported snapshot. Full
+98-table fingerprints matched before restored LiteLLM startup, and the normalized
+schema matched afterward with 213 migrations. Native readback verified A/B login,
+own user/history/aggregate access, A/A2/B key ownership and limits, and the exact
+checkpoint request-detail projections and numeric metrics.
+
+The source database had advanced after the settled checkpoint before this snapshot:
+seven later A-owned rows were included in the dump. They were retained as a later
+accounting interval; private comparison isolated the three A and two B checkpoint
+rows without deletion or replay. The sanitized evidence is
+`docs/candidate/evidence/2026-10-30-populated-recovery.json`.
+
+### Validation performed
+
+Private restore checks passed: dump/restore warnings were empty; pre-startup table
+fingerprints were equal; post-startup schemas and migration state matched; restored
+readiness was healthy; A/B login and own reads returned 200; A-to-B aggregate access
+returned 403; original A/A2/B key info and local model discovery returned 200; and
+the checkpoint subset matched request details, owners, statuses, token totals,
+spend and response-time metrics. Restore network inspection showed an internal
+network with no default route, no real provider credential mount and no Langfuse
+attachment. Private directories/files were reset to 0700/0600.
+
+No production external-store recovery, retention/custody approval, off-host backup
+retrieval, upgrade/rollback, PITR, queue replay, crash-loss or cutover evidence was
+claimed. The restore project was isolated from the live candidate; its private
+volume/evidence remain available for inspection.
+
+### Affected files and follow-up discipline
+
+Updated `docs/candidate/recovery.md`, `docs/candidate/decisions.md`,
+`deploy/candidate/restore.compose.yaml`, this log and sanitized recovery evidence.
+Keep the active #8 artifact set and the offline callback-disabled config distinct.
+Treat post-checkpoint rows as a separate accounting interval. Future recovery work
+must repeat the matching artifact/fingerprint gate and obtain a genuinely settled
+checkpoint before claiming direct API totals equal the checkpoint.
+
 ## 2026-10-29 — PR12 runtime review corrections
 
 ### Scope and decisions
