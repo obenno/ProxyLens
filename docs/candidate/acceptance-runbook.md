@@ -64,10 +64,10 @@ Read-only reproduction in Python, with credentials kept in process:
 # session_key comes from this user's native /v2/login response/browser cookie.
 # user_id comes from the existing private fixture, never caller ownership claims.
 headers = {"Authorization": "Bearer " + session_key}
-query = urlencode({"user_id": user_id, "start_date": "2026-10-29",
-                   "end_date": "2026-10-30", "timezone": 0})
-request = Request(base_url + "/user/daily/activity/aggregated?" + query,
-                  headers=headers)
+query = urlencode(
+    {"user_id": user_id, "start_date": "2026-10-29", "end_date": "2026-10-30", "timezone": 0}
+)
+request = Request(base_url + "/user/daily/activity/aggregated?" + query, headers=headers)
 # Save the response privately. Emit only status, field names and numeric counts.
 ```
 
