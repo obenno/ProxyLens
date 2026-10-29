@@ -1,5 +1,10 @@
 # Operations and recovery
 
+> **Current implementation / original #6.** Revised #6 validates candidate
+> deployment recovery and separately approved cutover. See the
+> [POC contract](specs/litellm-poc.md); native replacements do not inherit the
+> custom worker's guarantees merely by configuration.
+
 The worker owns the scheduled projection, completion scan, Langfuse outbox
 delivery/recovery, retention participants, and Keycloak group reconciliation.
 The API installs the proof-gated usage routes against the same PostgreSQL

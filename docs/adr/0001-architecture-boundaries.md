@@ -5,6 +5,11 @@ status: accepted
 date: 2026-10-23
 ---
 
+**Transition note (2026-10-29):** this remains accepted for the existing runtime.
+[ADR 0002](0002-litellm-personal-usage.md) proposes a personal-usage replacement;
+the [POC contract](../specs/litellm-poc.md) defines validation before adoption.
+Revised issue scopes do not mark this architecture's unfinished proof gates passed.
+
 ProxyLens uses Keycloak as the sole authority for human identity, groups, membership, and group administration; CLIProxyAPI as the provider and OAuth boundary; and CPA-Manager-Plus Full Mode as the sole CLIProxyAPI usage-queue consumer and authoritative usage-history/analytics service. ProxyLens owns the public gateway, application and client-key resources, authorization policies, request correlation, derived group-scoped usage projections, and redacted Langfuse export. ProxyLens must read CPAMP through a supported interface or an explicitly version-pinned read-only fallback and must never independently consume the CLIProxyAPI usage queue. This preserves one queue consumer, avoids duplicated authoritative ledgers, and keeps identity, provider credentials, usage analytics, authorization, and observability under distinct ownership boundaries.
 
 ## Consequences

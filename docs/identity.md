@@ -1,5 +1,9 @@
 # Keycloak identity and group authorization
 
+> **Current implementation / original #5.** Native-account configuration folds
+> into #2 with shared checks in #7 under the [plan](specs/litellm-poc.md). This Keycloak
+> contract remains applicable to existing services until approved cutover.
+
 ## Realm and clients
 
 One self-hosted `proxylens` realm owns all human identities and memberships.

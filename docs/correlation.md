@@ -1,5 +1,9 @@
 # Request lineage contract (#3)
 
+> **Current implementation / original #3.** Revised #3 covers optional CPA/CPAMP
+> diagnostic joins. The [candidate contract](specs/litellm-poc.md) derives personal
+> ownership at admission; it does not complete the original correlation proof.
+
 ## Status and evidence
 
 **Live native correlation partially demonstrated; tenant usage disabled.**

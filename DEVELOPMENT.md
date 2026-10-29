@@ -1,5 +1,82 @@
 # Development Notes
 
+## 2026-10-29 — Personal-usage architecture and issue revision
+
+### Scope and decisions
+
+The owner requested ticket/spec revision from the architecture handoff and selected
+in-place rewrites of issues #1–#10, preserving their original bodies, plus native
+personal Usage as the first usable milestone. The shared candidate contract is
+`docs/specs/litellm-poc.md`; the issue map and publication status are in
+`docs/planning/architecture-rebaseline-2026-10-29.md`.
+
+Decision: target LiteLLM accounts/keys/admission/client-request facts with CPA
+retained for provider OAuth/runtime, native Langfuse first, and optional CPAMP
+diagnostics. Reason: personal ownership at admission avoids a mandatory CPAMP join
+and reduces custom gateway/identity/reporting surface. Consequence: historical
+group ownership and old tests remain distinct from the candidate's unperformed
+acceptance. ADR 0002 is proposed; ADR 0001 remains accepted for current code.
+
+### Task consolidation after owner feedback
+
+The owner challenged separate implementation/test tasks for built-in LiteLLM
+features. Revised the local plan to five active tickets (#1 coordinator, #2 native
+configuration, #8 Langfuse configuration, #7 shared integration acceptance, #6
+production readiness), with #4 folded into #7 and #5/#9 into #2. #3 remains
+optional diagnostics; #10 is deferred until native Usage reveals a selected gap.
+After owner approval, published all ten rewritten titles/bodies and closed #4/#5/#9
+with reason `not_planned` and consolidation comments pointing to #7/#2/#2.
+These closures are superseded work, not completed runtime acceptance. #3/#10
+remain open as optional/deferred; the five active tickets remain open.
+
+Reason: the first draft over-scoped native reuse as separate custom projects and
+repeated broad validation. Consequence: remove preplanned custom accounting/UI/
+exporter infrastructure and upstream feature suites. A1–A6 checks configuration,
+the actual CPA client path, personal attribution/access and telemetry together.
+Custom code receives focused regression tests. Strict budgets, detailed crash-loss,
+durable delivery and capacity certification require explicit stronger requirements;
+the handoff's deferred scenarios remain unperformed, not passed.
+
+### Important behavior and source boundaries
+
+- Native account/key/Usage configuration and one bounded integration pass establish
+  the initial experience. Advanced statistics remain follow-up work.
+- Record selected native policy/delivery semantics and observed limitations. Do not
+  manufacture quantitative guarantees; production retention/recovery choices are
+  made in #6 and stronger requirements receive separate scoped acceptance.
+- CPAMP joins gate optional enrichment only. CPAMP remains the sole CPA queue
+  consumer when enabled. Current custom projections retain their old proof gate.
+- Native keys establish owner attribution, not an interactive actor. Never
+  relabel old group-owned machine history or assume hashed-key import works.
+- Candidate acceptance, final architecture adoption and approved cutover are
+  distinct. Documentation changes do not migrate runtime state or provider traffic.
+
+### Validation and follow-up
+
+Read the full handoff, live GitHub #1–#10, accepted ADR/glossary, Compose and current
+gateway/live-acceptance evidence. Saved exact original issue metadata/bodies before
+drafting. Local documentation and remote publication checks are recorded in the
+revision record. No candidate deployment or model requests were
+performed; candidate A1–A6 and deferred handoff scenarios remain unperformed.
+Official native self-service, virtual-key/budget and Langfuse docs were checked
+for the configuration-first revision; deployment still requires selected-version
+configuration, not an assumption that live docs match the research snapshot.
+
+Local validation: all relative links in 21 changed/new Markdown documents resolve;
+all ten revised issue drafts contain required sections with unchecked acceptance;
+A1–A6 and the P1–P13 disposition mapping are complete; `git diff --check` passes.
+The archived original issue snapshot is byte-identical to the pre-edit capture.
+Publication validation: all ten issues matched the original snapshot immediately
+before mutation. Readback through the GitHub API confirmed exact approved titles/
+bodies, unchanged labels, seven open issues and three closed with `not_planned`.
+Saved `docs/planning/archive/issues-after-2026-10-29.json` with published state and
+timestamps. This task did not commit or push the local documentation/snapshots.
+
+Maintain shared contracts in the POC spec and executable progress in GitHub Issues;
+archives are historical snapshots. Future changes must check the ADRs, glossary,
+agent guidance, README and component transition notices together. Preserve the
+existing three untracked research documents as owner-provided evidence.
+
 ## 2026-10-27 — Final review: isolate CPAMP polling owners and audit readiness reads
 
 ### Scope and decisions

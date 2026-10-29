@@ -1,5 +1,9 @@
 # Applications, client keys, and policies
 
+> **Current implementation / original #9.** Personal virtual-key configuration folds
+> into #2 with shared checks in #7 under the [plan](specs/litellm-poc.md). Historical
+> group ownership and current key guarantees are not silently migrated.
+
 ## Integration contract
 
 `proxylens.db.Database` supplies a fresh real PostgreSQL transaction per operation.

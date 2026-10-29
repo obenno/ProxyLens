@@ -1,5 +1,9 @@
 # CPAMP usage projection (#10)
 
+> **Current implementation / original #10.** Revised #10 is deferred reporting-gap
+> work; native Usage is configured in #2 and checked in #7 under the [plan](specs/litellm-poc.md).
+> The existing group projection and its proof gates below remain in force.
+
 ## Status
 
 The implementation is locally validated, with partial live provider/correlation

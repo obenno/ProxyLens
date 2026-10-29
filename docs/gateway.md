@@ -1,5 +1,9 @@
 # Responses gateway
 
+> **Current implementation / original #7.** Revised #7 validates LiteLLM → CPA;
+> see the [POC contract](specs/litellm-poc.md). The behavior below describes the
+> custom gateway and is not evidence that the candidate preserves it.
+
 The `gateway` service accepts `POST /v1/responses`. Authenticate with an issued
 ProxyLens client key in `Authorization: Bearer …`. The `api` service exposes
 Keycloak-authenticated `/api/applications`, key lifecycle and policy routes.

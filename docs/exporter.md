@@ -1,5 +1,10 @@
 # Metadata-only Langfuse exporter (#8)
 
+> **Current implementation / original #8.** Revised #8 validates native LiteLLM
+> Langfuse integration under the [POC contract](specs/litellm-poc.md). The old
+> machine-subject, CPAMP input and delivery contracts below are historical/runtime
+> evidence, not interchangeable with candidate key-owner attribution.
+
 ## Contract
 
 One immutable root `GENERATION` per ingress, using **the persisted**

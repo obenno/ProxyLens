@@ -1,5 +1,9 @@
 # CPAMP durable-history adapter — v1.14.9
 
+> **Current implementation / original #4.** This CPAMP-specific contract remains
+> useful for optional diagnostics in revised #3. Candidate usage checks consolidate
+> into #7 under the [integration plan](specs/litellm-poc.md).
+
 Issue #4. Implementation: `src/proxylens/cpamp.py`. CPAMP Full Mode remains the
 authoritative durable history and sole CPA usage-queue consumer. This adapter
 uses three read-only HTTP operations. No SQLite fallback or queue client exists.

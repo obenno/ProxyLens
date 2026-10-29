@@ -1,5 +1,10 @@
 # Phase 1 live acceptance harness
 
+> **Historical/current-runtime evidence.** These cases exercise the original
+> #1–#10 architecture. Candidate A1–A6 start unperformed under the
+> [integration plan](specs/litellm-poc.md), which maps the broader handoff scenarios
+> to retained/deferred scope. Old successful cases do not pass candidate checks.
+
 `scripts/live-acceptance.py` is a deliberately private, one-shot acceptance
 harness for the already authorized local CPA/CPAMP runtime. It is not a proof
 gate enabler and never calls a CPA usage-queue route. It reads the actual pinned

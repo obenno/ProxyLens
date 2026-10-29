@@ -1,5 +1,9 @@
 # Foundation dependency pins
 
+> **Current implementation pins.** These are not LiteLLM candidate image/schema
+> pins. Revised #2 must record those separately under the
+> [POC contract](specs/litellm-poc.md).
+
 Verified **2026-10-24**, against official release metadata, tagged source,
 Docker Official Images metadata, PyPI, and registry manifest responses. These are
 deliberate pins, not a claim that subsequent releases are compatible.

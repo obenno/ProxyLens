@@ -4,7 +4,27 @@
 
 ProxyLens is a Docker Compose stack for exposing authorized AI subscription access as an API, recording usage, supporting user-scoped access, and providing observability.
 
-### Component boundaries
+### Select the applicable contract
+
+- **Candidate work and revised issues #1–#10:** read `docs/specs/litellm-poc.md`,
+  proposed `docs/adr/0002-litellm-personal-usage.md`, and
+  `docs/planning/architecture-rebaseline-2026-10-29.md`. Target LiteLLM → CLIProxyAPI,
+  native personal accounts/keys/Usage, and native asynchronous Langfuse. CPAMP is
+  optional operator diagnostics; personal ownership and totals come from verified
+  LiteLLM facts. Configure native features in #2/#8; use #7's shared A1–A6
+  integration checks. Custom work addresses demonstrated reporting/integration
+  gaps and receives focused regression tests; avoid duplicating upstream suites.
+- **Existing runtime maintenance:** accepted ADR 0001 and the current-implementation
+  boundaries below still govern `compose.yaml` and the existing Python services.
+  Their group ownership and unfinished CPAMP proof gates remain in force.
+- **Adoption or cutover:** require the candidate's A1–A6 integration evidence and
+  explicit owner decisions. Update ADR statuses, glossary, guidance and runtime
+  docs together at adoption; cutover is separately approved. Preserve old history
+  semantics and evidence. The plan maps handoff P1–P13 to retained, deferred and
+  conditional scope; deferred scenarios are not passed evidence. A ticket rewrite
+  does not validate a replacement runtime.
+
+### Current implementation: component boundaries
 
 ```text
 Client / SDK / IDE
@@ -45,7 +65,7 @@ ProxyLens integration boundary
   - Langfuse user/session attribution
 ```
 
-### Required decisions
+### Current implementation: required decisions
 
 - **CLIProxyAPI is the provider/OAuth boundary.** Reuse it for Codex OAuth, provider credentials, model translation, routing, streaming, and tool calls.
 - **CPA-Manager-Plus Full Mode is the usage analytics layer.** Use it for persistent request history, token usage, latency, estimated cost, filtering, request inspection, account health, and quota operations.
@@ -55,7 +75,7 @@ ProxyLens integration boundary
 - **Only one service may consume the CLIProxyAPI usage queue for a given CLIProxyAPI instance.** CPA-Manager-Plus Full Mode is the designated consumer. ProxyLens must read a supported CPAMP interface or an explicitly designed export/read integration rather than independently popping the queue.
 - **Docker Compose is the reference single-host deployment.** Include Keycloak, ProxyLens, CLIProxyAPI, CPAMP Full Mode, and selected Langfuse services with persistent volumes, private networks, healthchecks, and Compose secrets. Publish only client/API and operator UI ports that are explicitly required.
 
-### Integration rules
+### Current implementation: integration rules
 
 - Keep CLIProxyAPI Management API credentials server-side.
 - Never expose CPAMP’s manager/admin key to end users.
@@ -72,9 +92,10 @@ ProxyLens integration boundary
 
 ### Research and design references
 
+- `docs/research/architecture-handoff-2026-10-29.md` — candidate rationale and dated evidence; use the POC contract for revised scope and gates.
 - `docs/research/proxy-stack-research.md` — verified capabilities, gaps, architecture, and source register.
 - `DEVELOPMENT.md` — implementation decisions, rationale, validation, and follow-up discipline.
-- Read relevant ADRs in `docs/adr/` and `GLOSSARY.md` when they are added.
+- Read `GLOSSARY.md` and the applicable ADR in `docs/adr/` when changing ownership, accounting, or identity contracts.
 
 ## Agent skills
 

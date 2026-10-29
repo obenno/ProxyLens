@@ -1,5 +1,10 @@
 # Single-host foundation deployment
 
+> **Current implementation / original issue scopes.** This runbook describes the
+> existing ADR 0001 stack. Candidate deployment work is defined in revised #2 and
+> the [LiteLLM POC contract](specs/litellm-poc.md); see the
+> [revision record](planning/architecture-rebaseline-2026-10-29.md).
+
 This includes issue #2's foundation and issue #5's Keycloak identity boundary.
 API supports OIDC login and `/api/me`; a healthy stack does **not** mean the
 Phase 1 POC is complete. See `docs/identity.md` for clients, role/scope rules,

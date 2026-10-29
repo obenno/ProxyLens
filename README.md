@@ -1,14 +1,29 @@
 # ProxyLens
 
-Single-host integration foundation for Keycloak identity, CLIProxyAPI provider
-access, CPAMP Full Mode usage history, and ProxyLens resource authorization.
+Single-host integration for authorized subscription-backed API access, personal
+usage visibility, and observability.
+
+## Architecture transition
+
+The revised candidate is **LiteLLM → CLIProxyAPI**, with native personal accounts,
+user-owned keys and Usage, plus asynchronous Langfuse. CPAMP becomes optional
+operator diagnostics. Start with the [POC contract](docs/specs/litellm-poc.md) and
+[issue revision record](docs/planning/architecture-rebaseline-2026-10-29.md).
+Work is configuration-first: native setup, Langfuse configuration, one shared
+integration acceptance pass, then deployment recovery/cutover. Advanced personal
+charts and custom implementations require a demonstrated selected gap.
+
+[ADR 0002](docs/adr/0002-litellm-personal-usage.md) is **proposed**. The checked-in
+runtime still implements [ADR 0001](docs/adr/0001-architecture-boundaries.md):
+Keycloak, custom authorization/gateway, CPA and CPAMP-derived usage. Candidate
+acceptance and approved cutover are separate milestones.
 
 Start with `docs/deployment.md`. Verified image pins and upstream contracts are
 in `docs/dependency-pins.md`; implementation decisions are in `DEVELOPMENT.md`.
 
-## Current scope
+## Current implemented scope
 
-Issue #2 provides a Compose stack and Python 3.12 service entrypoints:
+The original issue #2 scope provides a Compose stack and Python 3.12 service entrypoints:
 
 ```sh
 PYTHONPATH=src .venv/bin/python -m proxylens api --port 8001
