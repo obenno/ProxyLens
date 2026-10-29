@@ -215,6 +215,11 @@ the existing smoke does not prove them. #7 records missing/truncated native fiel
 and other coverage limits for owner review. Native project configuration in #6
 does not introduce a separate UI/access implementation project.
 
+The later [#7 read-only checkpoint](acceptance.md) passed bounded A1 login,
+personal keys/Usage and a representative cross-user aggregate denial. Its
+[shared runbook](acceptance-runbook.md) records native read shapes and the bounded
+provider/telemetry cases still awaiting coordinated #8 readiness.
+
 ## Stop, restart and rollback
 
 ```sh

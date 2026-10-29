@@ -130,7 +130,7 @@ preserve the change; publication supplies no runtime acceptance evidence.
 | #1 setup and coordination | Owner defaults recorded; **partial**, not full issue completion. | #2 exact choices, #7 results and limitations, then explicit owner candidate decision. |
 | #2 stack/native configuration | Configuration/startup tranche recorded in [deployment](deployment.md); shared acceptance pending. | #7 verifies actual-client, ownership/usage and controls; #8 implements the revised tracing objective. |
 | #8 native Langfuse | [Configuration tranche](langfuse.md): separate project/native logger plus demonstrated narrow mapping/credential seam; A5 pending. | Verify deployed shared A5 through #7. |
-| #7 acceptance | **A1–A6 unperformed.** | Assembled #2/#8 candidate and one shared fixture. |
+| #7 acceptance | [Initial read-only checkpoint](acceptance.md): bounded A1 passed; A6 topology/empty UI partial; A2–A5 pending. #8 ready handoff delivered. | Shared bounded provider/usage/telemetry sample; #7 owns runtime coordination. |
 | #6 production readiness | [Partial same-pin recovery evidence](recovery.md) for native account/key/policy state; production cutover not authorized. | Populated request-history restore, external recovery, native project access/content retention, upgrade/rollback, candidate acceptance and separate cutover approval. |
 | #3 diagnostics | **Optional, unselected.** | Select only for a concrete operator diagnostic need; never gates personal totals. |
 | #10 reporting extension | **Deferred, unselected.** | Use native UI in A6, identify a gap and obtain explicit feature selection. |
@@ -151,17 +151,20 @@ personal ownership is selected.
 These are setup/document checks, not runtime evidence.
 
 The [shared A1–A6 definitions](../specs/litellm-poc.md#bounded-integration-acceptance-7)
-remain authoritative. No candidate requests, native UI walkthrough or telemetry
-acceptance were performed by this tranche.
+remain authoritative. The original setup-scope tranche above performed no candidate
+requests, native UI walkthrough or telemetry acceptance. The later
+[#7 read-only checkpoint](acceptance.md) verifies A1 below. The subsequent
+[#8 activation](langfuse.md) delivered readiness and the coordinator authorized
+the bounded shared run; provider/telemetry results remain pending #7 evidence.
 
 | Check | Status | Required evidence still outstanding (#7) |
 |---|---|---|
-| A1 Native access | **Unperformed** | A/B ordinary login, own keys/usage and representative denied cross-user direct read. |
+| A1 Native access | **Passed, bounded empty-history configuration check** | A/B ordinary browser login and own keys/Usage passed; A→B aggregate-history read denied 403. Populated detail isolation remains a supplemental check after sample B; an empty list response is inconclusive. |
 | A2 Actual client | **Unperformed** | OpenCode protocol cases on the selected route, upstream error and interrupted stream under the shared retry contract: native client retries preserved, no silent gateway restart within the same response stream, per-layer settings/dispatches and native retained-request reconciliation. Local preflight above is not deployed A2 evidence. |
 | A3 Ownership/usage | **Unperformed** | A's keys aggregate separately from B; numeric usage reconciliation including supplied subsets/unknowns; completed record survives restart. |
 | A4 Controls | **Unperformed** | Revoked-key and model denials without forbidden CPA dispatch; configured rate-limit exercise and native propagation semantics. |
 | A5 Langfuse | **Unperformed** | Content-bearing debugging trace readback, targeted credential masking, trusted owner/session and forged-metadata check, project access boundary and sink outage without usage/telemetry-triggered inference replay; native client retries remain permitted. See shared A5 for the sample. |
-| A6 Independence/usability | **Unperformed** | Inference and native Usage without CPAMP; history/filter walkthrough, observed lag/gaps and owner baseline/gap decision. |
+| A6 Independence/usability | **Partial topology / empty UI** | Populated inference/Usage without CPAMP dependency; history/filter walkthrough, observed lag/gaps and owner baseline/gap decision. |
 
 #2 records exact versions/digests, edition/schema, model/route, role, policies,
 pricing, sanitized configuration and reproduction steps once; #8 adds destination
