@@ -113,8 +113,11 @@ observability:
     ids=["block-scalar", "quoted-boolean", "duplicate", "multiline-quote", "shadowed-parent"],
 )
 def test_cpa_initialization_rejects_ambiguous_logging_guard(tmp_path, server):
-    existing = """config-version: 8
-""" + server + """\
+    existing = (
+        """config-version: 8
+"""
+        + server
+        + """\
 observability:
   logs:
     debug: false
@@ -123,6 +126,7 @@ observability:
 management:
   secret-key: synthetic-persisted-secret
 """
+    )
     target = tmp_path / "config.yaml"
     target.write_text(existing)
     result = subprocess.run(
@@ -136,9 +140,9 @@ management:
 
 
 def test_cpa_initialization_rejects_duplicate_json_guard_without_echoing_config(tmp_path):
-    existing = '''{"server":{"commercial-mode":false,"commercial-mode":true},
+    existing = """{"server":{"commercial-mode":false,"commercial-mode":true},
 "observability":{"logs":{"debug":false,"logging-to-file":false,"request-log":false}},
-"management":{"secret-key":"synthetic-persisted-secret"}}'''
+"management":{"secret-key":"synthetic-persisted-secret"}}"""
     target = tmp_path / "config.yaml"
     target.write_text(existing)
     result = subprocess.run(
