@@ -6,13 +6,14 @@ and proposed [ADR 0002](../adr/0002-litellm-personal-usage.md). This rehearsal r
 the settled native request-history subset plus account/key/policy state from
 `checkpoint-1793273530`. The prior October 29 rehearsal restored account/key/policy
 state only and remains historical evidence. The bounded #7 follow-up is recorded in
-[acceptance.md](acceptance.md), with candidate acceptance still open.
+[acceptance.md](acceptance.md), with bounded candidate acceptance approved and
+adoption/cutover still separate.
 The owner subsequently accepted native client
 retries; the [local preflight's former blocker classification is superseded](decisions.md#local-client-preflight-reclassification).
 A1 is accepted for the bounded LiteLLM-native access semantics; A2, A5 and A6
 are accepted for their recorded bounded contracts and limitations. The deferred
-CPAMP-unavailable runtime check is not claimed as tested. Owner candidate
-acceptance and production cutover remain pending. Leave #6 open.
+CPAMP-unavailable runtime check is not claimed as tested. ADR adoption and
+production cutover remain pending. Leave #6 open.
 
 The owner subsequently approved **native Langfuse content-rich tracing**: prompts
 (including source code), model output, gateway-visible tool arguments/results,
@@ -412,16 +413,14 @@ telemetry content/readback,
 attribution, masking and no-replay outage behavior were observed; durable delivery
 across restart remains unproven. The complete private run exceeded the documented
 22-submission ceiling by three; the owner accepted this as a documented execution
-exception with the full ledger preserved. Candidate acceptance now requires the
-separate overall owner decision before adoption; the deferred CPAMP-unavailable
-runtime check remains outside the bounded evidence.
+exception with the full ledger preserved. Overall bounded candidate acceptance is
+approved; the deferred CPAMP-unavailable runtime check remains outside the
+bounded evidence. ADR adoption and production cutover remain separate gates.
 
 **Production sequence, not authorization to execute:**
 
-1. Resolve the #7 execution accounting defect and complete/owner-accept the remaining A2–A6
-   (including deployed retry-boundary evidence, persisted request history, selected
-   controls, native content-rich telemetry and access), #1 owner acceptance,
-   and coordinated ADR/glossary/guidance adoption. Record accepted native batching,
+1. Preserve the #7 execution ledger and bounded A1–A6 owner decisions, then complete
+   #1's coordinated ADR/glossary/guidance adoption decision. Record accepted native batching,
    volatility, limit propagation, missing fields and delivery limitations. No strict
    no-overspend, lossless accounting or exactly-once claim follows from this restore.
 2. Assign and approve backup/retention/content-access custodians and actual values

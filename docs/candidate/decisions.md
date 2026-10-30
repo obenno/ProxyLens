@@ -1,8 +1,7 @@
 # Candidate setup decisions and evidence status
 
-**Recorded:** October 29, 2026; updated October 30 for the owner's native tracing objective, retry boundaries and bounded follow-up evidence.
-**Status:** issue #1 setup-scope and objective decisions only;
-candidate acceptance and architecture adoption remain pending.
+**Recorded:** October 29, 2026; updated October 30 for the owner's native tracing objective, retry boundaries, bounded follow-up evidence and overall candidate decision.
+**Status:** bounded candidate acceptance approved; ADR adoption and production cutover remain separate pending decisions.
 
 The [POC contract](../specs/litellm-poc.md) owns shared scope; live GitHub Issues
 own executable work. This record captures the owner's setup selections and the
@@ -183,6 +182,27 @@ native public-alias limitation; no concrete #10 reporting gap was selected, so
 no reporting extension is activated. This bounded A6 decision does not authorize
 ADR adoption or production cutover.
 
+## Owner-approved overall bounded candidate acceptance: October 30, 2026
+
+The owner accepted the LiteLLM → CLIProxyAPI candidate for the bounded POC
+contract. A1–A6 have recorded owner-approved dispositions covering bounded native
+access, actual-client behavior, populated ownership/usage readback, valid native
+controls, content-rich native Langfuse tracing and the native Usage/usability
+baseline.
+
+The decision includes the recorded limits: incomplete client termination after
+native retries without same-stream gateway replay; unproven native Langfuse
+delivery across process restart and external sink recovery; deferred and untested
+CPAMP-unavailable runtime inference; and no strict lossless, exactly-once,
+no-overspend, freshness, capacity or durable-telemetry guarantee. The complete
+25-submission ledger and accepted three-submission ceiling exception remain
+authoritative.
+
+This is bounded candidate acceptance only. ADR 0002 remains proposed, ADR 0001
+continues to govern the checked-in runtime, and production cutover is not
+authorized. Adoption requires coordinated ADR, glossary and guidance updates;
+cutover separately requires #6 recovery/readiness evidence and approval.
+
 ### Local client preflight reclassification
 
 Source: retained local transport-preflight report, stub POST counts and CLI-output
@@ -228,7 +248,7 @@ preserve the change; publication supplies no runtime acceptance evidence.
 | #1 setup and coordination | Owner defaults recorded; **partial**, not full issue completion. | #2 exact choices, #7 results and limitations, then explicit owner candidate decision. |
 | #2 stack/native configuration | Configuration/startup tranche recorded in [deployment](deployment.md); shared acceptance pending. | #7 verifies actual-client, ownership/usage and controls; #8 implements the revised tracing objective. |
 | #8 native Langfuse | [Configuration tranche](langfuse.md): separate project/native logger plus demonstrated narrow mapping/credential seam; bounded shared A5 follow-up is owner-accepted with explicit native durability limits. | Preserve the accepted limits and complete #6 project access/retention/recovery decisions; no custom outbox is selected. |
-| #7 acceptance | [Bounded follow-up](acceptance.md): A1–A6 include populated detail, restart, valid rate-control, sink-outage and UI evidence. A1, bounded A2, bounded A5 and bounded A6 are accepted for their recorded contracts; the submission overage is an accepted execution exception; candidate acceptance remains open. | Resolve the remaining overall owner candidate decision. |
+| #7 acceptance | [Bounded follow-up](acceptance.md): A1–A6 include populated detail, restart, valid rate-control, sink-outage and UI evidence. A1, bounded A2, bounded A5 and bounded A6 are accepted for their recorded contracts; the submission overage is an accepted execution exception; overall bounded candidate acceptance is approved. | Preserve limits; proceed separately to ADR adoption and #6 production-readiness/cutover decisions. |
 | #6 production readiness | [Same-pin populated recovery evidence](recovery.md) now covers the authorized `checkpoint-1793273530` request-history subset plus native account/key/policy state; production cutover not authorized. | External CPA/Langfuse recovery, approved retention/custody and off-host backup, upgrade/rollback/PITR, candidate acceptance and separate cutover approval. |
 | #3 diagnostics | **Optional, unselected.** | Select only for a concrete operator diagnostic need; never gates personal totals. |
 | #10 reporting extension | **Deferred, unselected.** | Use native UI in A6, identify a gap and obtain explicit feature selection. |
@@ -280,7 +300,7 @@ native configuration used by that run.
 |---|---|---|
 | A1 Native access | **Accepted bounded LiteLLM-native semantics** | Own request-ID details return rows; cross-owner `/spend/logs/v2` queries return empty 200 results without disclosure, accepted as list-route filtering. Explicit detail denial remains on `/spend/logs/ui/{request_id}`. |
 | A2 Actual client | **Accepted bounded contract; interruption limitation retained** | OpenCode route/tool/image/history and interrupted-stream observations are recorded; candidate `403` is accepted as the representative LiteLLM-visible error. The client ended incomplete after native retries, but no same-stream gateway replay occurred; this remains a client limitation, not a compatibility blocker. CPA-route `metadata` remains an A5 tracing limitation. |
-| A3 Ownership/usage | **Bounded sample pass; candidate acceptance still open** | Five checked request details survived candidate restart with owner/detail equality. No strict crash-loss or freshness guarantee follows. |
+| A3 Ownership/usage | **Bounded sample pass; overall candidate acceptance approved** | Five checked request details survived candidate restart with owner/detail equality. No strict crash-loss or freshness guarantee follows. |
 | A4 Controls | **Bounded valid-control pass** | Fresh native RPM=1 case returned 200 then 429 with one provider dispatch and the disposable key was revoked. Earlier invalid attempts remain marked invalid. |
 | A5 Langfuse | **Accepted bounded contract; durability limit retained** | Native content/readback, trusted attribution, targeted masking and four sink-failure attempts were observed with no inference replay. Durable delivery/restart remains unproven; no exactly-once or lossless guarantee follows. |
 | A6 Independence/usability | **Accepted bounded native Usage baseline; deferred runtime check** | A/B populated totals and read-only model/key/date controls were observed; candidate config has no CPAMP credential, endpoint or read dependency. CPAMP-unavailable runtime inference was not tested and remains explicitly deferred; no concrete #10 reporting gap was selected. |
@@ -298,13 +318,13 @@ in repository evidence with their source and limits.
 ## Remaining #1 decisions
 
 - #2's [recorded model/configuration choices](deployment.md) are setup evidence;
-  runtime acceptance is partial after the #7 follow-up. The revised tracing
+  bounded candidate acceptance follows the #7 follow-up. The revised tracing
   objective is configured and observed in bounded native readback, with the limits
   recorded in [langfuse.md](langfuse.md) and [acceptance.md](acceptance.md).
-- Review A1–A6 and native UI limitations before accepting or rejecting the candidate.
-  Wrong ownership, credential exposure, unauthorized access or broken required
-  OpenCode behavior blocks acceptance. Additional custom work requires a
-  demonstrated, selected gap.
+- Preserve the recorded A1–A6 limits after bounded acceptance. Wrong ownership,
+  credential exposure, unauthorized access or broken required OpenCode behavior
+  would require reopening the candidate decision. Additional custom work requires
+  a demonstrated, selected gap.
 - Preserve the P1–P13 dispositions in the shared spec: deferred/conditional scenarios
   are not passed. No strict-budget, lossless-accounting, exactly-once telemetry,
   freshness or capacity guarantee follows from a smoke check. Earlier proposed

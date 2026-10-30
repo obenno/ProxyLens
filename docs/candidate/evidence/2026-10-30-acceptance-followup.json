@@ -9,6 +9,13 @@
     "candidate_restart": true,
     "candidate_healthy_after_restart": true
   },
+  "overall_candidate_acceptance": {
+    "status": "approved_bounded_poc_contract",
+    "owner_decision_date": "2026-10-30",
+    "a1_a6_bounded_dispositions_accepted": true,
+    "adr_0002_adoption": "separate_pending_decision",
+    "production_cutover": "not_authorized"
+  },
   "A1": {
     "own_request_detail": {
       "A": {"status": 200, "rows": 1, "owner_match": true},

@@ -100,10 +100,18 @@ environment.
 
 Updated `docs/candidate/acceptance.md`, `docs/candidate/decisions.md`,
 `docs/candidate/recovery.md`, this log and sanitized follow-up evidence. Candidate
-acceptance, ADR adoption and production cutover remain separate decisions. Do
-not run another live inference case under this reservation set; review the
-deferred CPAMP-unavailable runtime check and the accepted A2 interruption/A5
-durability limits separately.
+acceptance is now approved for the bounded POC contract; ADR adoption and
+production cutover remain separate decisions. Do not run another live inference
+case under this reservation set; review the deferred CPAMP-unavailable runtime
+check and the accepted A2 interruption/A5 durability limits separately.
+
+### Owner decision: overall bounded candidate acceptance
+
+The owner accepted the candidate for the bounded POC contract after the A1–A6
+dispositions were reconciled. This approval preserves all recorded limits and
+does not adopt ADR 0002 or authorize production cutover. ADR adoption requires
+coordinated glossary/guidance updates; #6 separately owns recovery/readiness and
+cutover approval.
 
 ## 2026-10-30 — Issue #6 populated native history recovery
 
@@ -466,12 +474,13 @@ credentials, credential hashes or content committed.
 
 ### Remaining gates / maintenance
 
-Keep #6 open. #7's bounded follow-up is now recorded with partial A1–A6 results;
+Keep #6 open. #7's bounded follow-up is now recorded with owner-accepted A1–A6
+dispositions;
 the actual-client preflight replay blocker classification remains superseded by the
 owner-approved retry boundary. Repeat populated **request-history** restore using #7 retained facts and obtain
 separate authorization for any live restored request. External CPA/Langfuse
 recovery, content retention/access, protected off-host backup/cadence/RPO/RTO,
-candidate acceptance and production cutover approvals remain pending. Native
+candidate acceptance is approved; production cutover approval remains pending. Native
 zero/null budget state is all the currently selected fixture can prove. No
 cross-version upgrade, binary downgrade, PITR or production switchover performed.
 

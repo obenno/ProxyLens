@@ -1,6 +1,6 @@
 # Candidate acceptance evidence (#7)
 
-**October 30, 2026 — bounded follow-up evidence; candidate acceptance remains open.**
+**October 30, 2026 — bounded candidate acceptance approved; adoption and cutover remain separate gates.**
 Source: live issue #7 (open; updated `2026-10-29T10:36:29Z`), the
 [shared contract](../specs/litellm-poc.md#bounded-integration-acceptance-7) and
 [execution runbook](acceptance-runbook.md). Branch
@@ -17,6 +17,26 @@ Source: live issue #7 (open; updated `2026-10-29T10:36:29Z`), the
 | A5 | **Accepted for the bounded native telemetry contract; durability limitation retained.** | Content/readback, trusted attribution, targeted masking and candidate-only sink-outage isolation were observed. Inference returned 200 with one provider dispatch, four native telemetry delivery failures occurred during the roughly 39-second outage, and no inference replay occurred. Durable delivery across process restart and external sink recovery remains unproven; no exactly-once or lossless guarantee follows. |
 | A6 | **Accepted for the bounded native Usage baseline; CPAMP-unavailable runtime check deferred.** | A/B Usage showed populated request/token totals; model/key activity controls and date-range control rendered using read-only paths. Candidate configuration has no CPAMP credential, endpoint or read dependency. The owner accepted this bounded baseline; healthy inference with CPAMP unavailable was not exercised and remains a separately deferred follow-up. No concrete #10 reporting gap was selected. |
 
+## Owner-approved overall bounded candidate acceptance: October 30, 2026
+
+The owner accepted the LiteLLM → CLIProxyAPI candidate for the bounded POC
+contract. A1–A6 have recorded owner-approved dispositions: bounded native access,
+actual-client behavior, populated ownership/usage readback, valid controls,
+content-rich native Langfuse tracing and native Usage/usability baseline.
+
+The acceptance includes the documented limits: the interrupted client exited
+incomplete after native retries without same-stream gateway replay; native
+Langfuse delivery across process restart and external sink recovery is unproven;
+the CPAMP-unavailable runtime inference check was deferred and not tested; and no
+strict lossless, exactly-once, no-overspend, freshness, capacity or durable
+telemetry guarantee is claimed. The full 25-submission ledger and accepted
+three-submission ceiling exception remain authoritative.
+
+This is bounded candidate acceptance only. ADR 0002 remains proposed, ADR 0001
+continues to govern the checked-in runtime, and production cutover is not
+authorized. Adoption requires coordinated ADR, glossary and guidance updates;
+cutover separately requires #6 recovery/readiness evidence and approval.
+
 The complete private run records **25 client submissions**: the prior 20 plus
 five follow-up submissions. This exceeded the documented hard 22-submission
 ceiling by three. The owner accepted this as a documented runbook execution
@@ -26,8 +46,8 @@ reservation. No existing A/A2/B key, user or limit was mutated; disposable
 control keys were revoked. The candidate and candidate PostgreSQL remained
 healthy; the private observer was restarted once after a one-shot startup marker
 failure, no shared service was restarted, no CPA queue was read and no telemetry
-recovery triggered inference replay. This exception does not complete PR #12 or
-issue #7; readiness/adoption/cutover remain gated. A2 is
+recovery triggered inference replay. This exception does not authorize production
+use. A2 is
 owner-accepted for the bounded actual-client contract, with the incomplete
 interruption outcome retained as a client limitation. A5 is
 owner-accepted only for the bounded native contract, with its durability
@@ -83,10 +103,9 @@ The follow-up added five submissions. The resulting total is 25, not 19 relay
 events: relay event counts do not replace the reservation ledger and direct
 candidate calls must also count. The 22-submission ceiling was exceeded by three.
 The owner accepted this as a documented execution exception; preserve the full
-ledger and the three-submission overage in the evidence. This closes the
-accounting exception only; it does not close candidate acceptance. A2, A5 and A6
-now have separate owner-accepted bounded dispositions with their recorded
-limitations retained.
+ledger and the three-submission overage in the evidence. The accounting
+exception and bounded A1–A6 dispositions are now reconciled under the overall
+candidate acceptance decision; their recorded limitations remain retained.
 
 ## A1 observations
 

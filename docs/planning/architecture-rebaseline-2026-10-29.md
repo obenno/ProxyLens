@@ -48,8 +48,8 @@ published clarification; publication is not runtime acceptance.
 **Initial runtime status:** capture/callbacks were disabled in the original #2
 setup recorded in [candidate deployment](../candidate/deployment.md#current-logging-settings-and-8-target).
 #8 has since activated the selected native callback and documented its setup;
-shared A5 evidence is still pending. This does not establish architecture adoption
-or cutover. ADR 0002 stays proposed.
+bounded shared A5 evidence is now owner-accepted with its recorded native limits.
+This does not establish architecture adoption or cutover. ADR 0002 stays proposed.
 
 **Historical research:** the [architecture handoff](../research/architecture-handoff-2026-10-29.md),
 [stack comparison](../research/new-api-stack-comparison.md),
@@ -84,7 +84,8 @@ titles/states/labels and all acceptance criteria unchecked. Exact public-issue
 this revision; earlier archives remain immutable. A2 now distinguishes client
 submissions from same-stream gateway behavior; A5/#8 prohibit usage/telemetry-triggered
 inference replay without forbidding native client retries. Publication is complete;
-runtime A1–A6, candidate acceptance, adoption and cutover remain pending.
+bounded runtime A1–A6 and candidate acceptance are now approved; ADR adoption and
+production cutover remain separate pending decisions.
 
 ## Published issue map
 

@@ -2,7 +2,9 @@
 
 ProxyLens integrates authorized model-provider access, usage visibility, and
 observability. Current-runtime terms and proposed personal-usage terms are
-separated below; [ADR 0002](docs/adr/0002-litellm-personal-usage.md) remains proposed.
+separated below; the bounded candidate is accepted, while
+[ADR 0002](docs/adr/0002-litellm-personal-usage.md) remains proposed pending
+coordinated adoption.
 
 ## Current implementation: identity and access
 
