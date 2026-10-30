@@ -98,8 +98,24 @@ The native request-detail route remains the explicit authorization boundary:
 `/spend/logs/ui/{request_id}` checks ownership and can return `403` for a foreign
 or unavailable request. Therefore, A1 is accepted for the bounded native access
 contract with the list-versus-detail distinction recorded. This decision does not
-close A2, A5, A6, the submission-ceiling blocker, candidate acceptance as a whole,
-ADR adoption or production cutover.
+close A2, A5, A6, candidate acceptance as a whole, ADR adoption or production
+cutover.
+
+## Owner-approved submission-ceiling execution exception: October 30, 2026
+
+The complete private run recorded 25 admitted client submissions against the
+runbook's hard 22-submission reservation ceiling: 20 in the prior tranche and
+five in the follow-up. The owner accepted the three-submission overage as a
+documented runbook execution exception. The full ledger remains authoritative;
+none of the 25 submissions may be deleted, omitted or reclassified to make the
+run appear within the ceiling.
+
+The overage is bounded and understood: two diagnostic `C-rate-v2` submissions,
+two valid `C-rate-v3` submissions and one `L-A-v2` Langfuse sink-outage
+submission. No further live submissions are authorized under the original reservation. This
+decision closes the accounting exception only; it does not establish strict
+budget, no-overspend, exactly-once, lossless or freshness guarantees, and it does
+not close A2, A5, A6, candidate acceptance, ADR adoption or production cutover.
 
 ### Local client preflight reclassification
 
@@ -146,7 +162,7 @@ preserve the change; publication supplies no runtime acceptance evidence.
 | #1 setup and coordination | Owner defaults recorded; **partial**, not full issue completion. | #2 exact choices, #7 results and limitations, then explicit owner candidate decision. |
 | #2 stack/native configuration | Configuration/startup tranche recorded in [deployment](deployment.md); shared acceptance pending. | #7 verifies actual-client, ownership/usage and controls; #8 implements the revised tracing objective. |
 | #8 native Langfuse | [Configuration tranche](langfuse.md): separate project/native logger plus demonstrated narrow mapping/credential seam; bounded shared A5 follow-up is partial. | Resolve durable-delivery limits and obtain owner acceptance through #7. |
-| #7 acceptance | [Bounded follow-up](acceptance.md): A1–A6 include populated detail, restart, valid rate-control, sink-outage and UI evidence. A1 is accepted for the bounded native contract; candidate acceptance remains open. | Resolve the 25-submission/22-ceiling execution defect, upstream-error provenance, telemetry durability, owner baseline/gap decision and remaining owner acceptance. |
+| #7 acceptance | [Bounded follow-up](acceptance.md): A1–A6 include populated detail, restart, valid rate-control, sink-outage and UI evidence. A1 is accepted for the bounded native contract; the submission overage is an accepted execution exception; candidate acceptance remains open. | Resolve upstream-error provenance, telemetry durability, owner baseline/gap decision and remaining owner acceptance. |
 | #6 production readiness | [Same-pin populated recovery evidence](recovery.md) now covers the authorized `checkpoint-1793273530` request-history subset plus native account/key/policy state; production cutover not authorized. | External CPA/Langfuse recovery, approved retention/custody and off-host backup, upgrade/rollback/PITR, candidate acceptance and separate cutover approval. |
 | #3 diagnostics | **Optional, unselected.** | Select only for a concrete operator diagnostic need; never gates personal totals. |
 | #10 reporting extension | **Deferred, unselected.** | Use native UI in A6, identify a gap and obtain explicit feature selection. |

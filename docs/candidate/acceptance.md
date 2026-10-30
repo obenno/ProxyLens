@@ -17,16 +17,18 @@ Source: live issue #7 (open; updated `2026-10-29T10:36:29Z`), the
 | A5 | **Partial: content/readback, attribution, masking and outage isolation observed.** | A candidate-only sink outage produced four native telemetry delivery failures while inference returned 200 and no inference replay occurred. Durable delivery across restart remains unproven. |
 | A6 | **Partial: candidate independence and populated native UI observed.** | A/B Usage showed populated request/token totals; model/key activity controls and date-range control rendered using read-only paths. Owner baseline/gap decision remains pending. |
 
-The complete private run now records **25 client submissions**: the prior 20 plus
-five follow-up submissions. This exceeds the documented hard 22-submission
-ceiling by three and is an acceptance blocker requiring owner disposition; no
-further live submissions are authorized in this tranche. No existing A/A2/B key,
-user or limit was mutated; disposable control keys were revoked. The candidate
-and candidate PostgreSQL remained healthy; the private observer was restarted
-once after a one-shot startup marker failure, no shared service was restarted,
-no CPA queue was read and no telemetry recovery triggered inference replay. This
-tranche does not complete PR #12 or issue #7; readiness/adoption/cutover remain
-gated. No OpenCode patch or deduplication was selected.
+The complete private run records **25 client submissions**: the prior 20 plus
+five follow-up submissions. This exceeded the documented hard 22-submission
+ceiling by three. The owner accepted this as a documented runbook execution
+exception; all 25 submissions remain in the ledger and none are removed or
+reclassified. No further live submissions are authorized under the original
+reservation. No existing A/A2/B key, user or limit was mutated; disposable
+control keys were revoked. The candidate and candidate PostgreSQL remained
+healthy; the private observer was restarted once after a one-shot startup marker
+failure, no shared service was restarted, no CPA queue was read and no telemetry
+recovery triggered inference replay. This exception does not complete PR #12 or
+issue #7; A2/A5/A6 limitations and readiness/adoption/cutover remain gated. No
+OpenCode patch or deduplication was selected.
 
 ## October 30 follow-up results
 
@@ -75,8 +77,9 @@ The original record of 20 client submissions was correct for the prior tranche.
 The follow-up added five submissions. The resulting total is 25, not 19 relay
 events: relay event counts do not replace the reservation ledger and direct
 candidate calls must also count. The 22-submission ceiling was exceeded by three.
-Preserve this as a runbook execution defect and obtain an explicit owner decision
-before claiming candidate acceptance or merging PR #12.
+The owner accepted this as a documented execution exception; preserve the full
+ledger and the three-submission overage in the evidence. This closes the
+accounting exception only; it does not close A2, A5, A6 or candidate acceptance.
 
 ## A1 observations
 
@@ -169,11 +172,13 @@ DOM/screenshots, effective configs and container inspections remain there with
 No real credentials, credential hashes or generated request/session IDs belong
 in committed evidence.
 
-The A1 ambiguity is closed by the owner decision recorded in
-[`decisions.md`](decisions.md#owner-approved-a1-list-and-detail-access-semantics-october-30-2026).
+The A1 ambiguity and the submission-ceiling accounting exception are closed by
+the owner decisions recorded in
+[`decisions.md`](decisions.md#owner-approved-a1-list-and-detail-access-semantics-october-30-2026)
+and
+[`decisions.md`](decisions.md#owner-approved-submission-ceiling-execution-exception-october-30-2026).
 No further live cases are authorized under this tranche after the 25-submission
 ceiling correction. Preserve native client retries and count every admitted
 request, including direct control calls; telemetry recovery never authorizes
-inference replay. Obtain explicit owner disposition of the ceiling breach,
-review A2/A5/A6 limitations and #1's baseline/gap decision, then separately
+inference replay. Review A2/A5/A6 limitations and #1's baseline/gap decision, then separately
 authorize adoption and production cutover.

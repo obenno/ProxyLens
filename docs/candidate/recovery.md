@@ -403,8 +403,9 @@ access semantics were accepted by the owner as bounded LiteLLM-native behavior. 
 telemetry content/readback,
 attribution, masking and no-replay outage behavior were observed; durable delivery
 across restart remains unproven. The complete private run exceeded the documented
-22-submission ceiling by three, so candidate acceptance requires explicit owner
-disposition before adoption.
+22-submission ceiling by three; the owner accepted this as a documented execution
+exception with the full ledger preserved. Candidate acceptance still requires the
+remaining A2/A5/A6 decisions and evidence before adoption.
 
 **Production sequence, not authorization to execute:**
 

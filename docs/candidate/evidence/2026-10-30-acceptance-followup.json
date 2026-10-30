@@ -97,6 +97,8 @@
     "total_client_submissions": 25,
     "documented_ceiling": 22,
     "ceiling_exceeded_by": 3,
+    "owner_disposition": "accepted_documented_runbook_execution_exception",
+    "ledger_preserved": true,
     "reason": "Two invalid/diagnostic rate-limit follow-up submissions plus two valid rate-control submissions and one sink-outage submission were performed after the prior 20-submission record.",
     "further_live_submissions": 0
   },
@@ -109,7 +111,7 @@
     "existing_A_A2_B_fixture_mutations": 0
   },
   "limitations": [
-    "The hard reservation ceiling was exceeded; candidate acceptance requires owner disposition or a separately approved fresh bounded run.",
+    "The hard reservation ceiling was exceeded by three; the owner accepted this as a documented execution exception and the full ledger remains preserved.",
     "Cross-owner /spend/logs/v2 queries returned empty 200 responses accepted as native list-route filtering; explicit request-detail authorization remains on /spend/logs/ui/{request_id}.",
     "The upstream-error case remained candidate-side validation, not provider provenance.",
     "Native telemetry delivery durability across restart remains untested.",

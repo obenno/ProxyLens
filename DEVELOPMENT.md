@@ -29,7 +29,7 @@ access. `/spend/logs/v2` may return an empty successful result after applying th
 authenticated ownership scope; this is accepted as bounded no-disclosure behavior.
 The native `/spend/logs/ui/{request_id}` detail route remains the explicit
 ownership-denial boundary. A1 is therefore closed for the bounded candidate
-contract, while A2/A5/A6 and the submission-ceiling blocker remain open.
+contract, while A2/A5/A6 remain open.
 
 ### Acceptance accounting correction
 
@@ -37,8 +37,10 @@ The prior sanitized record contained 20 client submissions. The follow-up added
 five submissions. The complete private ledger therefore contains **25
 submissions**, exceeding the runbook's hard 22-submission ceiling by three. Relay
 event counts alone undercount because direct candidate control calls also count.
-This is preserved as a runbook execution defect and candidate-acceptance blocker;
-no further live submissions were made.
+The owner accepted this as a documented runbook execution exception; the full
+ledger remains authoritative and no further live submissions were made under the
+original reservation. The exception does not establish strict budget,
+no-overspend, exactly-once, lossless or freshness guarantees.
 
 ### Validation performed
 
@@ -63,8 +65,7 @@ Updated `docs/candidate/acceptance.md`, `docs/candidate/decisions.md`,
 `docs/candidate/recovery.md`, this log and sanitized follow-up evidence. Candidate
 acceptance, ADR adoption and production cutover remain separate decisions. Do
 not run another live inference case under this reservation set; obtain owner
-disposition of the ceiling breach and the remaining A2/A5/A6 limitations
-first.
+review the remaining A2/A5/A6 limitations first.
 
 ## 2026-10-30 — Issue #6 populated native history recovery
 
