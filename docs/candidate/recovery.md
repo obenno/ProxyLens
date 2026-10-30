@@ -1,6 +1,11 @@
 # Candidate recovery and production-readiness preparation
 
 **October 30, 2026 — populated #6 evidence; no production approval or cutover.**
+
+Current criterion-by-criterion status is in the [#6 production-readiness matrix](readiness.md).
+The matrix is the readiness summary; this document remains the detailed recovery
+evidence and procedure record.
+
 Uses the [candidate deployment](deployment.md), [shared contract](../specs/litellm-poc.md)
 and adopted target [ADR 0002](../adr/0002-litellm-personal-usage.md). This rehearsal restored
 the settled native request-history subset plus account/key/policy state from

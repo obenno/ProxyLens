@@ -1,5 +1,29 @@
 # Development Notes
 
+## 2026-10-30 — #6 production-readiness matrix
+
+### Scope and decision
+
+Created [`docs/candidate/readiness.md`](docs/candidate/readiness.md) from issue #6's
+seven acceptance criteria and the existing populated recovery, #7 acceptance and
+#8 Langfuse evidence. Overall readiness is **not ready for production cutover**.
+Criteria 2, 4 and 5 have bounded passes; criteria 1, 3 and 6 are partial; criterion
+7 has not started because cutover requires a separate explicit approval/window.
+
+The matrix records the remaining production decisions: custodians and retention,
+off-host backup/retrieval, external CPA/Langfuse recovery, version upgrade/rollback,
+personal key issuance, old-history/accounting-epoch handling, and cutover authority.
+It preserves the rule that bounded evidence does not establish strict lossless,
+exactly-once, no-overspend, freshness, capacity or durable-telemetry guarantees.
+No provider request, queue read, telemetry replay, ingress switch or service
+retirement was performed.
+
+### Validation and follow-up
+
+Linked the matrix from the recovery record, candidate decision table and POC
+adoption/cutover section. #6 remains open until the partial criteria and explicit
+cutover gate are resolved.
+
 ## 2026-10-30 — Issue #7 bounded follow-up reconciliation
 
 ### Scope and decisions

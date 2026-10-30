@@ -272,7 +272,8 @@ strict budgets or crash safety. Explicitly document accepted native limitations.
 
 #1 reviewed A1–A6, native configuration, unresolved gaps and documented limitations.
 The owner approved bounded candidate acceptance and adopted ADR 0002 on October 30,
-2026; ADR 0001 remains the checked-in runtime contract until cutover. #6 completes
+2026; ADR 0001 remains the checked-in runtime contract until cutover. The [#6
+readiness matrix](../candidate/readiness.md) tracks production evidence. #6 completes
 deployment-specific readiness before separately approved production cutover:
 backups, replacement keys, ingress switch, history semantics and rollback. Retire
 old components only after replacement/cutover acceptance. Do not replay production
