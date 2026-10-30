@@ -204,8 +204,11 @@ or drain that shared service to manufacture an independence test.
 Once populated, open native history/detail and apply time, model and key filters
 once. Compare displayed results with the same native sample and record observed
 lag, rounding, absent fields/panels and useful detail availability. Have #1 record
-baseline acceptance or select a concrete #10 gap. Navigation/empty counters alone
-do not complete A6. Keep adopted architecture and production cutover separate.
+baseline acceptance or select a concrete #10 gap. For this candidate, the owner
+may accept the bounded static independence evidence while explicitly deferring a
+CPAMP-unavailable runtime inference check; do not claim that deferred scenario
+was tested. Navigation/empty counters alone do not complete A6. Keep adopted
+architecture and production cutover separate.
 
 ## Closing a tranche
 

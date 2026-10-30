@@ -15,7 +15,7 @@ Source: live issue #7 (open; updated `2026-10-29T10:36:29Z`), the
 | A3 | **Pass for the bounded populated sample; limits retained.** | After a candidate-only restart, all five checked checkpoint request IDs, owners and selected details matched. This does not establish lossless crash accounting or strict freshness. |
 | A4 | **Pass for the valid bounded native controls.** | Fresh disposable key case returned 200 then 429 with one provider dispatch; the key was revoked afterward. Earlier invalid rate attempts remain retained as invalid evidence. |
 | A5 | **Accepted for the bounded native telemetry contract; durability limitation retained.** | Content/readback, trusted attribution, targeted masking and candidate-only sink-outage isolation were observed. Inference returned 200 with one provider dispatch, four native telemetry delivery failures occurred during the roughly 39-second outage, and no inference replay occurred. Durable delivery across process restart and external sink recovery remains unproven; no exactly-once or lossless guarantee follows. |
-| A6 | **Partial: candidate independence and populated native UI observed.** | A/B Usage showed populated request/token totals; model/key activity controls and date-range control rendered using read-only paths. Owner baseline/gap decision remains pending. |
+| A6 | **Accepted for the bounded native Usage baseline; CPAMP-unavailable runtime check deferred.** | A/B Usage showed populated request/token totals; model/key activity controls and date-range control rendered using read-only paths. Candidate configuration has no CPAMP credential, endpoint or read dependency. The owner accepted this bounded baseline; healthy inference with CPAMP unavailable was not exercised and remains a separately deferred follow-up. No concrete #10 reporting gap was selected. |
 
 The complete private run records **25 client submissions**: the prior 20 plus
 five follow-up submissions. This exceeded the documented hard 22-submission
@@ -27,11 +27,12 @@ control keys were revoked. The candidate and candidate PostgreSQL remained
 healthy; the private observer was restarted once after a one-shot startup marker
 failure, no shared service was restarted, no CPA queue was read and no telemetry
 recovery triggered inference replay. This exception does not complete PR #12 or
-issue #7; A6 limitations and readiness/adoption/cutover remain gated. A2 is
+issue #7; readiness/adoption/cutover remain gated. A2 is
 owner-accepted for the bounded actual-client contract, with the incomplete
 interruption outcome retained as a client limitation. A5 is
 owner-accepted only for the bounded native contract, with its durability
-limitation retained. No
+limitation retained. A6 is owner-accepted for the bounded native Usage baseline;
+the CPAMP-unavailable runtime check remains deferred and untested. No
 OpenCode patch or deduplication was selected.
 
 ## October 30 follow-up results
@@ -83,9 +84,9 @@ events: relay event counts do not replace the reservation ledger and direct
 candidate calls must also count. The 22-submission ceiling was exceeded by three.
 The owner accepted this as a documented execution exception; preserve the full
 ledger and the three-submission overage in the evidence. This closes the
-accounting exception only; it does not close A2, A6 or candidate acceptance. A5
-has a separate owner-accepted bounded disposition with its native durability
-limitation retained.
+accounting exception only; it does not close candidate acceptance. A2, A5 and A6
+now have separate owner-accepted bounded dispositions with their recorded
+limitations retained.
 
 ## A1 observations
 
@@ -130,6 +131,8 @@ The native UI also requested `/health/license`, `/api/plugins` and
 `/ui.txt` returned **404**. Personal Usage and keys still rendered. Record these
 as ancillary UI observations, not required-client route failures or an enterprise
 blocker. No additional native access failure is demonstrated by this checkpoint.
+The backend-model filter `403` remains a native public-alias limitation; no
+concrete reporting gap was selected for #10.
 
 ## API shapes and topology
 
@@ -156,8 +159,9 @@ Candidate PostgreSQL uses the private database network; LiteLLM attaches to that
 network and the shared CPA provider network. Candidate Compose depends only on
 PostgreSQL and carries no CPAMP service/credential/endpoint. Existing CPAMP remains
 running on the provider network and is the sole existing queue consumer. The
-topology supports the intended independence; healthy inference without a CPAMP
-dependency remains unperformed, so A6 is not passed.
+topology supports the bounded independence baseline; healthy inference while
+CPAMP is unavailable was not performed and remains an explicitly deferred,
+non-gating runtime check under the owner-approved A6 disposition.
 
 Read-only CPA configuration inspection found config-versioned nested sections,
 no explicit retry/fallback settings, and native request/file logs disabled.
@@ -186,10 +190,12 @@ and
 [`decisions.md`](decisions.md#owner-approved-submission-ceiling-execution-exception-october-30-2026),
 with the A5 disposition recorded in
 [`decisions.md`](decisions.md#owner-approved-bounded-a5-native-telemetry-contract-october-30-2026).
+The A6 baseline disposition is recorded in
+[`decisions.md`](decisions.md#owner-approved-bounded-a6-native-usage-baseline-october-30-2026).
 No further live cases are authorized under this tranche after the 25-submission
 ceiling correction. Preserve native client retries and count every admitted
 request, including direct control calls; telemetry recovery never authorizes
-inference replay. Review the A6 limitation and #1's baseline/gap decision; the
-accepted A2 interruption and A5 durability limitations remain explicit. Then
-separately
+inference replay. The A6 baseline decision is recorded; the deferred CPAMP-
+unavailable runtime check and accepted A2 interruption/A5 durability limitations
+remain explicit. Then separately
 authorize adoption and production cutover.

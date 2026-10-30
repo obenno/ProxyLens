@@ -93,7 +93,10 @@
       "mutating_requests": 0,
       "read_paths_only": true
     },
-    "classification": "partial_populated_native_ui_and_filter_controls_observed"
+    "classification": "bounded_native_usage_baseline_owner_accepted",
+    "owner_disposition": "accepted_bounded_baseline_cpamp_unavailable_runtime_deferred",
+    "cpamp_unavailable_runtime_inference_tested": false,
+    "reporting_gap_selected": false
   },
   "accounting": {
     "previously_recorded_client_submissions": 20,
@@ -117,8 +120,8 @@
   "limitations": [
     "The hard reservation ceiling was exceeded by three; the owner accepted this as a documented execution exception and the full ledger remains preserved.",
     "Cross-owner /spend/logs/v2 queries returned empty 200 responses accepted as native list-route filtering; explicit request-detail authorization remains on /spend/logs/ui/{request_id}.",
-    "The upstream-error case remained candidate-side validation, not provider provenance.",
+    "The representative error case remained candidate-side validation; raw provider provenance was not required by the accepted LiteLLM-facing A2 contract.",
     "Native telemetry delivery durability across restart remains untested.",
-    "Owner baseline/gap acceptance and architecture adoption remain pending."
+    "CPAMP-unavailable runtime inference remains untested and deferred; no concrete #10 reporting gap was selected."
   ]
 }

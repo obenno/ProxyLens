@@ -166,6 +166,23 @@ guarantee follows. This limitation is recorded and owner-accepted for candidate
 A5; it remains relevant to #6 retention/recovery planning and does not authorize
 ADR adoption or production cutover.
 
+## Owner-approved bounded A6 native Usage baseline: October 30, 2026
+
+The owner accepted A6 for the bounded native Usage/usability baseline. The
+follow-up observed populated A/B Usage totals (A: 11 requests and 7,384 total
+tokens; B: 2 requests and 669 total tokens), native model/key activity controls,
+the date-range control, populated request detail and read-only browser/API
+paths. Candidate configuration contains no CPAMP credential, endpoint or read
+dependency, and CPAMP remains the sole existing shared queue consumer.
+
+The owner-approved exception is explicit: healthy inference while CPAMP is
+unavailable was not exercised and remains a deferred, non-gating runtime check.
+The candidate must not claim that scenario was tested or infer strict runtime
+independence from it. The observed backend-model filter `403` is retained as a
+native public-alias limitation; no concrete #10 reporting gap was selected, so
+no reporting extension is activated. This bounded A6 decision does not authorize
+ADR adoption or production cutover.
+
 ### Local client preflight reclassification
 
 Source: retained local transport-preflight report, stub POST counts and CLI-output
@@ -211,7 +228,7 @@ preserve the change; publication supplies no runtime acceptance evidence.
 | #1 setup and coordination | Owner defaults recorded; **partial**, not full issue completion. | #2 exact choices, #7 results and limitations, then explicit owner candidate decision. |
 | #2 stack/native configuration | Configuration/startup tranche recorded in [deployment](deployment.md); shared acceptance pending. | #7 verifies actual-client, ownership/usage and controls; #8 implements the revised tracing objective. |
 | #8 native Langfuse | [Configuration tranche](langfuse.md): separate project/native logger plus demonstrated narrow mapping/credential seam; bounded shared A5 follow-up is owner-accepted with explicit native durability limits. | Preserve the accepted limits and complete #6 project access/retention/recovery decisions; no custom outbox is selected. |
-| #7 acceptance | [Bounded follow-up](acceptance.md): A1–A6 include populated detail, restart, valid rate-control, sink-outage and UI evidence. A1, bounded A2 and bounded A5 are accepted for their recorded contracts; the submission overage is an accepted execution exception; candidate acceptance remains open. | Resolve A6 owner baseline/gap decision and remaining overall owner acceptance. |
+| #7 acceptance | [Bounded follow-up](acceptance.md): A1–A6 include populated detail, restart, valid rate-control, sink-outage and UI evidence. A1, bounded A2, bounded A5 and bounded A6 are accepted for their recorded contracts; the submission overage is an accepted execution exception; candidate acceptance remains open. | Resolve the remaining overall owner candidate decision. |
 | #6 production readiness | [Same-pin populated recovery evidence](recovery.md) now covers the authorized `checkpoint-1793273530` request-history subset plus native account/key/policy state; production cutover not authorized. | External CPA/Langfuse recovery, approved retention/custody and off-host backup, upgrade/rollback/PITR, candidate acceptance and separate cutover approval. |
 | #3 diagnostics | **Optional, unselected.** | Select only for a concrete operator diagnostic need; never gates personal totals. |
 | #10 reporting extension | **Deferred, unselected.** | Use native UI in A6, identify a gap and obtain explicit feature selection. |
@@ -266,7 +283,7 @@ native configuration used by that run.
 | A3 Ownership/usage | **Bounded sample pass; candidate acceptance still open** | Five checked request details survived candidate restart with owner/detail equality. No strict crash-loss or freshness guarantee follows. |
 | A4 Controls | **Bounded valid-control pass** | Fresh native RPM=1 case returned 200 then 429 with one provider dispatch and the disposable key was revoked. Earlier invalid attempts remain marked invalid. |
 | A5 Langfuse | **Accepted bounded contract; durability limit retained** | Native content/readback, trusted attribution, targeted masking and four sink-failure attempts were observed with no inference replay. Durable delivery/restart remains unproven; no exactly-once or lossless guarantee follows. |
-| A6 Independence/usability | **Partial populated Usage/UI** | A/B populated totals and read-only model/key/date controls were observed; owner baseline/gap decision remains pending. |
+| A6 Independence/usability | **Accepted bounded native Usage baseline; deferred runtime check** | A/B populated totals and read-only model/key/date controls were observed; candidate config has no CPAMP credential, endpoint or read dependency. CPAMP-unavailable runtime inference was not tested and remains explicitly deferred; no concrete #10 reporting gap was selected. |
 
 #2 records exact versions/digests, edition/schema, model/route, role, policies,
 pricing, sanitized configuration and reproduction steps once; #8 adds destination

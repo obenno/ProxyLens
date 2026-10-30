@@ -51,8 +51,22 @@ access. `/spend/logs/v2` may return an empty successful result after applying th
 authenticated ownership scope; this is accepted as bounded no-disclosure behavior.
 The native `/spend/logs/ui/{request_id}` detail route remains the explicit
 ownership-denial boundary. A1 is therefore closed for the bounded candidate
-contract, while A6 remains open. Raw CPA/provider error provenance is out of
-scope for A2; caller metadata handling remains an A5 tracing concern.
+contract, while A6 is accepted for its bounded native Usage baseline. Raw
+CPA/provider error provenance is out of scope for A2; caller metadata handling
+remains an A5 tracing concern.
+
+### Owner decision: bounded A6 native Usage baseline
+
+The owner accepted A6 for the bounded native Usage/usability baseline. The
+follow-up observed populated A/B totals, native history/detail, model/key
+activity and date-range controls through read-only paths. Candidate configuration
+contains no CPAMP credential, endpoint or read dependency. The observed
+backend-model filter `403` is a native public-alias limitation, not a selected
+reporting gap.
+
+Healthy inference while CPAMP is unavailable was not exercised. The owner
+explicitly deferred that runtime check as non-gating; no strict runtime
+independence claim follows. No #10 reporting extension is selected.
 
 ### Acceptance accounting correction
 
@@ -88,8 +102,8 @@ Updated `docs/candidate/acceptance.md`, `docs/candidate/decisions.md`,
 `docs/candidate/recovery.md`, this log and sanitized follow-up evidence. Candidate
 acceptance, ADR adoption and production cutover remain separate decisions. Do
 not run another live inference case under this reservation set; review the
-remaining A6 limitation and the accepted A2 interruption/A5 durability limits
-separately.
+deferred CPAMP-unavailable runtime check and the accepted A2 interruption/A5
+durability limits separately.
 
 ## 2026-10-30 — Issue #6 populated native history recovery
 

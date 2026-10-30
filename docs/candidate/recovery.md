@@ -9,9 +9,10 @@ state only and remains historical evidence. The bounded #7 follow-up is recorded
 [acceptance.md](acceptance.md), with candidate acceptance still open.
 The owner subsequently accepted native client
 retries; the [local preflight's former blocker classification is superseded](decisions.md#local-client-preflight-reclassification).
-A1 is accepted for the bounded LiteLLM-native access semantics; A2–A6 retain
-their recorded bounded results and limitations. Owner candidate acceptance and
-production cutover remain pending. Leave #6 open.
+A1 is accepted for the bounded LiteLLM-native access semantics; A2, A5 and A6
+are accepted for their recorded bounded contracts and limitations. The deferred
+CPAMP-unavailable runtime check is not claimed as tested. Owner candidate
+acceptance and production cutover remain pending. Leave #6 open.
 
 The owner subsequently approved **native Langfuse content-rich tracing**: prompts
 (including source code), model output, gateway-visible tool arguments/results,
@@ -397,7 +398,8 @@ returned healthy with five previously checked request details still readable.
 Neither implies complete inference acceptance. The bounded #7 run observed actual
 client/provider and native tracing behavior. A3's bounded restart readback, A4's
 valid rate-control and A5's candidate-only sink-outage isolation are now recorded;
-A6 retains its partial limitation under the clarified retry contract. A2's
+A6's bounded native Usage baseline is owner-accepted under the clarified retry
+contract; its CPAMP-unavailable runtime check remains deferred. A2's
 bounded interruption contract is owner-accepted; its incomplete client outcome
 remains an explicit limitation. A5's
 bounded native telemetry contract is owner-accepted; its durability limitation
@@ -410,9 +412,9 @@ telemetry content/readback,
 attribution, masking and no-replay outage behavior were observed; durable delivery
 across restart remains unproven. The complete private run exceeded the documented
 22-submission ceiling by three; the owner accepted this as a documented execution
-exception with the full ledger preserved. Candidate acceptance still requires the
-remaining A6 decision and evidence, plus the separate overall owner decision,
-before adoption.
+exception with the full ledger preserved. Candidate acceptance now requires the
+separate overall owner decision before adoption; the deferred CPAMP-unavailable
+runtime check remains outside the bounded evidence.
 
 **Production sequence, not authorization to execute:**
 
