@@ -22,6 +22,17 @@ semantics without requiring an explicit authorization denial on that route. The 
 filter probe used the backend model name and returned ordinary-user model access
 403; the UI's configured public alias remains the relevant native label.
 
+### Owner decision: bounded A5 native telemetry contract
+
+The owner accepted A5 for the bounded native contract: native content/readback,
+trusted attribution, targeted masking and candidate-only sink-outage isolation
+were observed. The outage returned inference `200` with one provider dispatch,
+recorded four native sink failures over about 39 seconds and caused no inference
+replay. Delivery across process restart and external sink recovery remains
+unproven because no durable outbox or replay mechanism was selected. This is an
+accepted limitation for candidate A5, not an exactly-once, lossless or recovery
+guarantee; #6 still owns retention/recovery decisions.
+
 ### Owner decision: A1 access semantics
 
 The owner accepted the observed LiteLLM-native distinction between list and detail
@@ -29,7 +40,7 @@ access. `/spend/logs/v2` may return an empty successful result after applying th
 authenticated ownership scope; this is accepted as bounded no-disclosure behavior.
 The native `/spend/logs/ui/{request_id}` detail route remains the explicit
 ownership-denial boundary. A1 is therefore closed for the bounded candidate
-contract, while A2/A5/A6 remain open. Raw CPA/provider error provenance is out of
+contract, while A2/A6 remain open. Raw CPA/provider error provenance is out of
 scope for A2; caller metadata handling remains an A5 tracing concern.
 
 ### Acceptance accounting correction
@@ -65,8 +76,8 @@ environment.
 Updated `docs/candidate/acceptance.md`, `docs/candidate/decisions.md`,
 `docs/candidate/recovery.md`, this log and sanitized follow-up evidence. Candidate
 acceptance, ADR adoption and production cutover remain separate decisions. Do
-not run another live inference case under this reservation set; obtain owner
-review the remaining A2/A5/A6 limitations first.
+not run another live inference case under this reservation set; review the
+remaining A2/A6 limitations and the accepted A5 durability limit separately.
 
 ## 2026-10-30 — Issue #6 populated native history recovery
 

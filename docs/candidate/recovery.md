@@ -397,7 +397,9 @@ returned healthy with five previously checked request details still readable.
 Neither implies complete inference acceptance. The bounded #7 run observed actual
 client/provider and native tracing behavior. A3's bounded restart readback, A4's
 valid rate-control and A5's candidate-only sink-outage isolation are now recorded;
-A2/A5/A6 retain partial limitations under the clarified retry contract. The
+A2/A6 retain partial limitations under the clarified retry contract. A5's
+bounded native telemetry contract is owner-accepted; its durability limitation
+remains explicit. The
 LiteLLM-facing A2 error boundary is accepted; raw CPA/provider error provenance
 is not required. Accepted native client retries are not a blocker requiring
 correction. A1's list-versus-detail
@@ -407,7 +409,8 @@ attribution, masking and no-replay outage behavior were observed; durable delive
 across restart remains unproven. The complete private run exceeded the documented
 22-submission ceiling by three; the owner accepted this as a documented execution
 exception with the full ledger preserved. Candidate acceptance still requires the
-remaining A2/A5/A6 decisions and evidence before adoption.
+remaining A2/A6 decisions and evidence, plus the separate overall owner decision,
+before adoption.
 
 **Production sequence, not authorization to execute:**
 

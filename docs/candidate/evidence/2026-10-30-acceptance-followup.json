@@ -76,9 +76,10 @@
       "telemetry_sink_unavailable_events": 4,
       "outage_held_seconds": 39,
       "inference_replay": 0,
-      "classification": "bounded_sink_outage_isolation_pass"
+      "classification": "bounded_sink_outage_isolation_pass_owner_accepted",
+      "owner_disposition": "accepted_bounded_native_contract_with_durability_limit"
     },
-    "remaining_limit": "Durable delivery across process restart and external sink recovery remain unproven."
+    "remaining_limit": "Durable delivery across process restart and external sink recovery remain unproven; no exactly-once or lossless guarantee follows."
   },
   "A6": {
     "native_ui": {

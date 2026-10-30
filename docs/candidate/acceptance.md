@@ -14,7 +14,7 @@ Source: live issue #7 (open; updated `2026-10-29T10:36:29Z`), the
 | A2 | **Partial: LiteLLM-facing actual-client contract accepted with limits.** | Tool/image/history paths worked; the candidate-side `403` is accepted as the representative LiteLLM-visible error, so raw CPA/provider provenance is not required. The interruption case showed client-visible cut and native resubmissions without a same-stream gateway replay, but the client ended incomplete. Caller metadata handling remains an A5 tracing concern; the selected CPA-route `metadata` field is unsupported. |
 | A3 | **Pass for the bounded populated sample; limits retained.** | After a candidate-only restart, all five checked checkpoint request IDs, owners and selected details matched. This does not establish lossless crash accounting or strict freshness. |
 | A4 | **Pass for the valid bounded native controls.** | Fresh disposable key case returned 200 then 429 with one provider dispatch; the key was revoked afterward. Earlier invalid rate attempts remain retained as invalid evidence. |
-| A5 | **Partial: content/readback, attribution, masking and outage isolation observed.** | A candidate-only sink outage produced four native telemetry delivery failures while inference returned 200 and no inference replay occurred. Durable delivery across restart remains unproven. |
+| A5 | **Accepted for the bounded native telemetry contract; durability limitation retained.** | Content/readback, trusted attribution, targeted masking and candidate-only sink-outage isolation were observed. Inference returned 200 with one provider dispatch, four native telemetry delivery failures occurred during the roughly 39-second outage, and no inference replay occurred. Durable delivery across process restart and external sink recovery remains unproven; no exactly-once or lossless guarantee follows. |
 | A6 | **Partial: candidate independence and populated native UI observed.** | A/B Usage showed populated request/token totals; model/key activity controls and date-range control rendered using read-only paths. Owner baseline/gap decision remains pending. |
 
 The complete private run records **25 client submissions**: the prior 20 plus
@@ -27,7 +27,9 @@ control keys were revoked. The candidate and candidate PostgreSQL remained
 healthy; the private observer was restarted once after a one-shot startup marker
 failure, no shared service was restarted, no CPA queue was read and no telemetry
 recovery triggered inference replay. This exception does not complete PR #12 or
-issue #7; A2/A5/A6 limitations and readiness/adoption/cutover remain gated. No
+issue #7; A2/A6 limitations and readiness/adoption/cutover remain gated. A5 is
+owner-accepted only for the bounded native contract, with its durability
+limitation retained. No
 OpenCode patch or deduplication was selected.
 
 ## October 30 follow-up results
@@ -79,7 +81,9 @@ events: relay event counts do not replace the reservation ledger and direct
 candidate calls must also count. The 22-submission ceiling was exceeded by three.
 The owner accepted this as a documented execution exception; preserve the full
 ledger and the three-submission overage in the evidence. This closes the
-accounting exception only; it does not close A2, A5, A6 or candidate acceptance.
+accounting exception only; it does not close A2, A6 or candidate acceptance. A5
+has a separate owner-accepted bounded disposition with its native durability
+limitation retained.
 
 ## A1 observations
 
@@ -172,13 +176,17 @@ DOM/screenshots, effective configs and container inspections remain there with
 No real credentials, credential hashes or generated request/session IDs belong
 in committed evidence.
 
-The A1 ambiguity and the submission-ceiling accounting exception are closed by
+The A1 ambiguity, the submission-ceiling accounting exception and the bounded A5
+disposition are closed by
 the owner decisions recorded in
 [`decisions.md`](decisions.md#owner-approved-a1-list-and-detail-access-semantics-october-30-2026)
 and
-[`decisions.md`](decisions.md#owner-approved-submission-ceiling-execution-exception-october-30-2026).
+[`decisions.md`](decisions.md#owner-approved-submission-ceiling-execution-exception-october-30-2026),
+with the A5 disposition recorded in
+[`decisions.md`](decisions.md#owner-approved-bounded-a5-native-telemetry-contract-october-30-2026).
 No further live cases are authorized under this tranche after the 25-submission
 ceiling correction. Preserve native client retries and count every admitted
 request, including direct control calls; telemetry recovery never authorizes
-inference replay. Review A2/A5/A6 limitations and #1's baseline/gap decision, then separately
+inference replay. Review A2/A6 limitations and #1's baseline/gap decision; the
+accepted A5 durability limitation remains explicit. Then separately
 authorize adoption and production cutover.

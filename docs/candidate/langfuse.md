@@ -240,9 +240,12 @@ evidence, not real-provider error or A5 outage evidence.
 #7 owns shared real-provider A2/A5 content/error/forgery/readback/outage
 evidence. The bounded follow-up linked from [acceptance](acceptance.md) observed
 four sink failures during a candidate-only outage, successful inference with one
-provider dispatch and no inference replay. Durable delivery across process restart
-remains unproven; native client retries remain accepted under [Retry boundaries](../specs/litellm-poc.md#retry-boundaries).
-Do not close #8 before owner acceptance of the remaining A5 limits.
+provider dispatch and no inference replay. The owner accepted this bounded A5
+contract on October 30, 2026; durable delivery across process restart and
+external sink recovery remains unproven. Native client retries remain accepted
+under [Retry boundaries](../specs/litellm-poc.md#retry-boundaries). The retained
+durability limit belongs in #6 retention/recovery planning; no custom durable
+outbox or replay mechanism is selected.
 
 ### Exact activation evidence and shared fixture
 
