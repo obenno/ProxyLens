@@ -30,7 +30,8 @@
       "http_status": 403,
       "provider_dispatch": false,
       "provenance": "candidate response-id ownership validation",
-      "classification": "not_upstream_error_evidence"
+      "classification": "bounded_litellm_visible_error_accepted_for_a2",
+      "raw_cpa_provider_provenance_required": false
     },
     "interruption_case": {
       "client_visible_before_cut": true,
@@ -40,7 +41,7 @@
       "client_exit_code": 1,
       "classification": "partial_client_retry_and_interruption_observation"
     },
-    "known_route_limitation": "CPA route rejected the selected metadata field with 400."
+    "known_route_limitation": "CPA route rejected the selected metadata field with 400; caller metadata handling remains an A5 tracing concern, not a LiteLLM-facing A2 requirement."
   },
   "A3": {
     "restart_readback": {

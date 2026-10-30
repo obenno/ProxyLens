@@ -397,8 +397,10 @@ returned healthy with five previously checked request details still readable.
 Neither implies complete inference acceptance. The bounded #7 run observed actual
 client/provider and native tracing behavior. A3's bounded restart readback, A4's
 valid rate-control and A5's candidate-only sink-outage isolation are now recorded;
-A2/A5/A6 retain partial limitations under the clarified retry contract. Accepted
-native client retries are not a blocker requiring correction. A1's list-versus-detail
+A2/A5/A6 retain partial limitations under the clarified retry contract. The
+LiteLLM-facing A2 error boundary is accepted; raw CPA/provider error provenance
+is not required. Accepted native client retries are not a blocker requiring
+correction. A1's list-versus-detail
 access semantics were accepted by the owner as bounded LiteLLM-native behavior. Native
 telemetry content/readback,
 attribution, masking and no-replay outage behavior were observed; durable delivery

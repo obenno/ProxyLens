@@ -14,9 +14,9 @@ without changing the existing A/A2/B fixtures.
 
 The final sink-outage case returned successful inference with one provider
 dispatch. Native Langfuse delivery generated four bounded sink failures while the
-outage remained active; no provider replay occurred. The upstream-error case was
-not upgraded to pass because candidate response-ID ownership validation returned
-403 before CPA dispatch. Empty cross-owner detail results are recorded as
+outage remained active; no provider replay occurred. The representative LiteLLM
+error case returned 403 from candidate response-ID ownership validation before CPA
+dispatch; the owner accepted this as sufficient user-facing error evidence. Empty cross-owner detail results are recorded as
 LiteLLM-native no-disclosure list-route behavior; the owner accepted this
 semantics without requiring an explicit authorization denial on that route. The native UI model
 filter probe used the backend model name and returned ordinary-user model access
@@ -29,7 +29,8 @@ access. `/spend/logs/v2` may return an empty successful result after applying th
 authenticated ownership scope; this is accepted as bounded no-disclosure behavior.
 The native `/spend/logs/ui/{request_id}` detail route remains the explicit
 ownership-denial boundary. A1 is therefore closed for the bounded candidate
-contract, while A2/A5/A6 remain open.
+contract, while A2/A5/A6 remain open. Raw CPA/provider error provenance is out of
+scope for A2; caller metadata handling remains an A5 tracing concern.
 
 ### Acceptance accounting correction
 
