@@ -33,6 +33,17 @@ unproven because no durable outbox or replay mechanism was selected. This is an
 accepted limitation for candidate A5, not an exactly-once, lossless or recovery
 guarantee; #6 still owns retention/recovery decisions.
 
+### Owner decision: bounded A2 interruption contract
+
+The owner accepted the observed interruption result. The coordinated cut occurred
+after visible output; the native client made three admitted submissions and three
+provider dispatches, and the candidate performed no same-stream replay. The
+client exited with code `1` after native retries. That incomplete client outcome
+is retained as a client limitation, not a gateway compatibility blocker, because
+the approved A2 boundary requires preserved native retries and no silent restart
+within the original response stream. No anti-retry, deduplication or OpenCode
+patch is selected.
+
 ### Owner decision: A1 access semantics
 
 The owner accepted the observed LiteLLM-native distinction between list and detail
@@ -40,7 +51,7 @@ access. `/spend/logs/v2` may return an empty successful result after applying th
 authenticated ownership scope; this is accepted as bounded no-disclosure behavior.
 The native `/spend/logs/ui/{request_id}` detail route remains the explicit
 ownership-denial boundary. A1 is therefore closed for the bounded candidate
-contract, while A2/A6 remain open. Raw CPA/provider error provenance is out of
+contract, while A6 remains open. Raw CPA/provider error provenance is out of
 scope for A2; caller metadata handling remains an A5 tracing concern.
 
 ### Acceptance accounting correction
@@ -77,7 +88,8 @@ Updated `docs/candidate/acceptance.md`, `docs/candidate/decisions.md`,
 `docs/candidate/recovery.md`, this log and sanitized follow-up evidence. Candidate
 acceptance, ADR adoption and production cutover remain separate decisions. Do
 not run another live inference case under this reservation set; review the
-remaining A2/A6 limitations and the accepted A5 durability limit separately.
+remaining A6 limitation and the accepted A2 interruption/A5 durability limits
+separately.
 
 ## 2026-10-30 — Issue #6 populated native history recovery
 

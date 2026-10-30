@@ -11,7 +11,7 @@ Source: live issue #7 (open; updated `2026-10-29T10:36:29Z`), the
 | Check | Follow-up status | Remaining evidence / limitation |
 |---|---|---|
 | A1 | **Accepted for the bounded LiteLLM-native access contract.** | `/spend/logs/v2` list/detail filters may return empty `200` results for inaccessible rows; explicit request-detail authorization remains enforced through the native detail route. The native model filter limitation remains documented. |
-| A2 | **Partial: LiteLLM-facing actual-client contract accepted with limits.** | Tool/image/history paths worked; the candidate-side `403` is accepted as the representative LiteLLM-visible error, so raw CPA/provider provenance is not required. The interruption case showed client-visible cut and native resubmissions without a same-stream gateway replay, but the client ended incomplete. Caller metadata handling remains an A5 tracing concern; the selected CPA-route `metadata` field is unsupported. |
+| A2 | **Accepted for the bounded LiteLLM-facing actual-client contract; interruption limitation retained.** | Tool/image/history paths worked; the candidate-side `403` is accepted as the representative LiteLLM-visible error, so raw CPA/provider provenance is not required. The interruption case showed a client-visible cut and native resubmissions without a same-stream gateway replay; the client then exited incomplete, which is retained as an observed client limitation rather than a gateway compatibility blocker. Caller metadata handling remains an A5 tracing concern; the selected CPA-route `metadata` field is unsupported. |
 | A3 | **Pass for the bounded populated sample; limits retained.** | After a candidate-only restart, all five checked checkpoint request IDs, owners and selected details matched. This does not establish lossless crash accounting or strict freshness. |
 | A4 | **Pass for the valid bounded native controls.** | Fresh disposable key case returned 200 then 429 with one provider dispatch; the key was revoked afterward. Earlier invalid rate attempts remain retained as invalid evidence. |
 | A5 | **Accepted for the bounded native telemetry contract; durability limitation retained.** | Content/readback, trusted attribution, targeted masking and candidate-only sink-outage isolation were observed. Inference returned 200 with one provider dispatch, four native telemetry delivery failures occurred during the roughly 39-second outage, and no inference replay occurred. Durable delivery across process restart and external sink recovery remains unproven; no exactly-once or lossless guarantee follows. |
@@ -27,7 +27,9 @@ control keys were revoked. The candidate and candidate PostgreSQL remained
 healthy; the private observer was restarted once after a one-shot startup marker
 failure, no shared service was restarted, no CPA queue was read and no telemetry
 recovery triggered inference replay. This exception does not complete PR #12 or
-issue #7; A2/A6 limitations and readiness/adoption/cutover remain gated. A5 is
+issue #7; A6 limitations and readiness/adoption/cutover remain gated. A2 is
+owner-accepted for the bounded actual-client contract, with the incomplete
+interruption outcome retained as a client limitation. A5 is
 owner-accepted only for the bounded native contract, with its durability
 limitation retained. No
 OpenCode patch or deduplication was selected.
@@ -187,6 +189,7 @@ with the A5 disposition recorded in
 No further live cases are authorized under this tranche after the 25-submission
 ceiling correction. Preserve native client retries and count every admitted
 request, including direct control calls; telemetry recovery never authorizes
-inference replay. Review A2/A6 limitations and #1's baseline/gap decision; the
-accepted A5 durability limitation remains explicit. Then separately
+inference replay. Review the A6 limitation and #1's baseline/gap decision; the
+accepted A2 interruption and A5 durability limitations remain explicit. Then
+separately
 authorize adoption and production cutover.

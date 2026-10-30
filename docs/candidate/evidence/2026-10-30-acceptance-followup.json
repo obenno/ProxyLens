@@ -39,7 +39,9 @@
       "provider_dispatches": 3,
       "candidate_replayed_same_stream": false,
       "client_exit_code": 1,
-      "classification": "partial_client_retry_and_interruption_observation"
+      "classification": "bounded_native_retry_no_same_stream_replay_owner_accepted",
+      "owner_disposition": "accepted_bounded_a2_contract_with_incomplete_client_outcome",
+      "incomplete_client_outcome_is_blocker": false
     },
     "known_route_limitation": "CPA route rejected the selected metadata field with 400; caller metadata handling remains an A5 tracing concern, not a LiteLLM-facing A2 requirement."
   },
