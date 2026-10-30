@@ -9,8 +9,9 @@ state only and remains historical evidence. The bounded #7 follow-up is recorded
 [acceptance.md](acceptance.md), with candidate acceptance still open.
 The owner subsequently accepted native client
 retries; the [local preflight's former blocker classification is superseded](decisions.md#local-client-preflight-reclassification).
-A1–A6 have partial results; owner candidate acceptance and production cutover remain
-pending. Leave #6 open.
+A1 is accepted for the bounded LiteLLM-native access semantics; A2–A6 retain
+their recorded bounded results and limitations. Owner candidate acceptance and
+production cutover remain pending. Leave #6 open.
 
 The owner subsequently approved **native Langfuse content-rich tracing**: prompts
 (including source code), model output, gateway-visible tool arguments/results,
@@ -396,8 +397,10 @@ returned healthy with five previously checked request details still readable.
 Neither implies complete inference acceptance. The bounded #7 run observed actual
 client/provider and native tracing behavior. A3's bounded restart readback, A4's
 valid rate-control and A5's candidate-only sink-outage isolation are now recorded;
-A1/A2/A6 remain partial under the clarified retry contract. Accepted native client
-retries are not a blocker requiring correction. Native telemetry content/readback,
+A2/A5/A6 retain partial limitations under the clarified retry contract. Accepted
+native client retries are not a blocker requiring correction. A1's list-versus-detail
+access semantics were accepted by the owner as bounded LiteLLM-native behavior. Native
+telemetry content/readback,
 attribution, masking and no-replay outage behavior were observed; durable delivery
 across restart remains unproven. The complete private run exceeded the documented
 22-submission ceiling by three, so candidate acceptance requires explicit owner
@@ -405,7 +408,7 @@ disposition before adoption.
 
 **Production sequence, not authorization to execute:**
 
-1. Resolve the #7 execution accounting defect and complete/owner-accept A1–A6
+1. Resolve the #7 execution accounting defect and complete/owner-accept the remaining A2–A6
    (including deployed retry-boundary evidence, persisted request history, selected
    controls, native content-rich telemetry and access), #1 owner acceptance,
    and coordinated ADR/glossary/guidance adoption. Record accepted native batching,

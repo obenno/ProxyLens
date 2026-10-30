@@ -85,6 +85,22 @@ LiteLLM/router retry=0 stays configured; it does not control client retries.
 #7 still verifies deployed A2 and A5. Candidate acceptance/adoption and cutover
 remain pending.
 
+## Owner-approved A1 list and detail access semantics: October 30, 2026
+
+The owner accepted the bounded LiteLLM-native behavior observed in the populated
+cross-owner checks. The paginated `/spend/logs/v2` list route may apply the
+authenticated user's ownership scope and return an ordinary successful empty
+result when an inaccessible owner's rows are filtered out. This is accepted as
+no-disclosure behavior for the candidate contract; it is not required to produce
+a `403` for every list-filter mismatch.
+
+The native request-detail route remains the explicit authorization boundary:
+`/spend/logs/ui/{request_id}` checks ownership and can return `403` for a foreign
+or unavailable request. Therefore, A1 is accepted for the bounded native access
+contract with the list-versus-detail distinction recorded. This decision does not
+close A2, A5, A6, the submission-ceiling blocker, candidate acceptance as a whole,
+ADR adoption or production cutover.
+
 ### Local client preflight reclassification
 
 Source: retained local transport-preflight report, stub POST counts and CLI-output
@@ -130,7 +146,7 @@ preserve the change; publication supplies no runtime acceptance evidence.
 | #1 setup and coordination | Owner defaults recorded; **partial**, not full issue completion. | #2 exact choices, #7 results and limitations, then explicit owner candidate decision. |
 | #2 stack/native configuration | Configuration/startup tranche recorded in [deployment](deployment.md); shared acceptance pending. | #7 verifies actual-client, ownership/usage and controls; #8 implements the revised tracing objective. |
 | #8 native Langfuse | [Configuration tranche](langfuse.md): separate project/native logger plus demonstrated narrow mapping/credential seam; bounded shared A5 follow-up is partial. | Resolve durable-delivery limits and obtain owner acceptance through #7. |
-| #7 acceptance | [Bounded follow-up](acceptance.md): A1–A6 include populated detail, restart, valid rate-control, sink-outage and UI evidence. Candidate acceptance remains open. | Resolve the 25-submission/22-ceiling execution defect, explicit detail-denial semantics, upstream-error provenance, telemetry durability, owner baseline/gap decision and owner acceptance. |
+| #7 acceptance | [Bounded follow-up](acceptance.md): A1–A6 include populated detail, restart, valid rate-control, sink-outage and UI evidence. A1 is accepted for the bounded native contract; candidate acceptance remains open. | Resolve the 25-submission/22-ceiling execution defect, upstream-error provenance, telemetry durability, owner baseline/gap decision and remaining owner acceptance. |
 | #6 production readiness | [Same-pin populated recovery evidence](recovery.md) now covers the authorized `checkpoint-1793273530` request-history subset plus native account/key/policy state; production cutover not authorized. | External CPA/Langfuse recovery, approved retention/custody and off-host backup, upgrade/rollback/PITR, candidate acceptance and separate cutover approval. |
 | #3 diagnostics | **Optional, unselected.** | Select only for a concrete operator diagnostic need; never gates personal totals. |
 | #10 reporting extension | **Deferred, unselected.** | Use native UI in A6, identify a gap and obtain explicit feature selection. |
@@ -180,7 +196,7 @@ native configuration used by that run.
 
 | Check | Status | Required evidence still outstanding (#7) |
 |---|---|---|
-| A1 Native access | **Partial: populated own-detail and no-disclosure evidence** | Own request-ID details return rows; cross-owner request-ID queries return empty 200 results rather than explicit authorization denials. |
+| A1 Native access | **Accepted bounded LiteLLM-native semantics** | Own request-ID details return rows; cross-owner `/spend/logs/v2` queries return empty 200 results without disclosure, accepted as list-route filtering. Explicit detail denial remains on `/spend/logs/ui/{request_id}`. |
 | A2 Actual client | **Partial** | OpenCode route/tool/image/history and interrupted-stream observations are recorded; upstream-error provenance remains unproven and CPA-route `metadata` is incompatible. |
 | A3 Ownership/usage | **Bounded sample pass; candidate acceptance still open** | Five checked request details survived candidate restart with owner/detail equality. No strict crash-loss or freshness guarantee follows. |
 | A4 Controls | **Bounded valid-control pass** | Fresh native RPM=1 case returned 200 then 429 with one provider dispatch and the disposable key was revoked. Earlier invalid attempts remain marked invalid. |

@@ -17,9 +17,19 @@ dispatch. Native Langfuse delivery generated four bounded sink failures while th
 outage remained active; no provider replay occurred. The upstream-error case was
 not upgraded to pass because candidate response-ID ownership validation returned
 403 before CPA dispatch. Empty cross-owner detail results are recorded as
-no-disclosure evidence, not explicit authorization denials. The native UI model
+LiteLLM-native no-disclosure list-route behavior; the owner accepted this
+semantics without requiring an explicit authorization denial on that route. The native UI model
 filter probe used the backend model name and returned ordinary-user model access
 403; the UI's configured public alias remains the relevant native label.
+
+### Owner decision: A1 access semantics
+
+The owner accepted the observed LiteLLM-native distinction between list and detail
+access. `/spend/logs/v2` may return an empty successful result after applying the
+authenticated ownership scope; this is accepted as bounded no-disclosure behavior.
+The native `/spend/logs/ui/{request_id}` detail route remains the explicit
+ownership-denial boundary. A1 is therefore closed for the bounded candidate
+contract, while A2/A5/A6 and the submission-ceiling blocker remain open.
 
 ### Acceptance accounting correction
 
@@ -53,7 +63,7 @@ Updated `docs/candidate/acceptance.md`, `docs/candidate/decisions.md`,
 `docs/candidate/recovery.md`, this log and sanitized follow-up evidence. Candidate
 acceptance, ADR adoption and production cutover remain separate decisions. Do
 not run another live inference case under this reservation set; obtain owner
-disposition of the ceiling breach and the remaining A1/A2/A5/A6 limitations
+disposition of the ceiling breach and the remaining A2/A5/A6 limitations
 first.
 
 ## 2026-10-30 — Issue #6 populated native history recovery

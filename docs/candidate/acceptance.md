@@ -10,7 +10,7 @@ Source: live issue #7 (open; updated `2026-10-29T10:36:29Z`), the
 
 | Check | Follow-up status | Remaining evidence / limitation |
 |---|---|---|
-| A1 | **Partial: populated own-detail and no-disclosure evidence recorded.** | A/B can read their own populated request details; cross-owner request-ID queries return empty 200 responses without disclosure, not explicit authorization denials. Native model filter values also exposed an ordinary-user/API limitation. |
+| A1 | **Accepted for the bounded LiteLLM-native access contract.** | `/spend/logs/v2` list/detail filters may return empty `200` results for inaccessible rows; explicit request-detail authorization remains enforced through the native detail route. The native model filter limitation remains documented. |
 | A2 | **Partial: actual route and OpenCode compatibility observed.** | Tool/image/history paths worked; the upstream-error case remained candidate-side response-ID validation. The interruption case showed client-visible cut and native resubmissions without a same-stream gateway replay, but the client ended incomplete. CPA-route `metadata` remains incompatible. |
 | A3 | **Pass for the bounded populated sample; limits retained.** | After a candidate-only restart, all five checked checkpoint request IDs, owners and selected details matched. This does not establish lossless crash accounting or strict freshness. |
 | A4 | **Pass for the valid bounded native controls.** | Fresh disposable key case returned 200 then 429 with one provider dispatch; the key was revoked afterward. Earlier invalid rate attempts remain retained as invalid evidence. |
@@ -40,8 +40,10 @@ Sanitized machine-readable evidence is
 The populated detail check used retained A/B request identities. Each owner
 received one own request row with the expected owner; A querying B's request ID
 and B querying A's request ID each returned `200` with zero rows. This records no
-cross-owner disclosure, but the endpoint's empty authorized result is not treated
-as an explicit authorization denial. The candidate-only restart returned
+cross-owner disclosure. The owner accepted this as LiteLLM's native list-query
+semantics: inaccessible rows are filtered from `/spend/logs/v2` rather than
+returned as a `403`. Explicit request-detail authorization remains available on
+LiteLLM's native `/spend/logs/ui/{request_id}` route. The candidate-only restart returned
 `running healthy`; five previously checked checkpoint rows remained present with
 matching owners and selected model/status/token/spend detail.
 
@@ -102,9 +104,10 @@ invalid-date or malformed-query failure. Users were not elevated.
 **Additional bounded probe:** A's `/spend/logs/v2` request filtered by B returned
 **200**, `data=[]`, `total=0`; the populated request-ID checks similarly returned
 empty cross-owner results while own request-ID checks returned one row. This is
-no-disclosure evidence, but not an explicit authorization-denial response.
-Source inspection and empty authorized results do not establish a stronger
-authorization contract.
+LiteLLM-native no-disclosure behavior for the paginated list route, accepted by
+the owner for this bounded contract. It does not imply that every LiteLLM route
+uses the same response semantics: request-detail access retains an explicit
+ownership check and denial path.
 
 Two preparation mistakes are retained privately: initial browser script matched
 the still-active login URL and navigated too early (selector timeout); initial
@@ -166,9 +169,11 @@ DOM/screenshots, effective configs and container inspections remain there with
 No real credentials, credential hashes or generated request/session IDs belong
 in committed evidence.
 
+The A1 ambiguity is closed by the owner decision recorded in
+[`decisions.md`](decisions.md#owner-approved-a1-list-and-detail-access-semantics-october-30-2026).
 No further live cases are authorized under this tranche after the 25-submission
 ceiling correction. Preserve native client retries and count every admitted
 request, including direct control calls; telemetry recovery never authorizes
 inference replay. Obtain explicit owner disposition of the ceiling breach,
-review A1/A2/A5/A6 limitations and #1's baseline/gap decision, then separately
+review A2/A5/A6 limitations and #1's baseline/gap decision, then separately
 authorize adoption and production cutover.

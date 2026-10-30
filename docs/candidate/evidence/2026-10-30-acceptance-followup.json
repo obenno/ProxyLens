@@ -23,7 +23,7 @@
       "B": {"status": 403, "reason": "key_model_access_denied"},
       "interpretation": "The backend model name was not an ordinary-user filter value; this is a UI/API limitation, not detail-isolation evidence."
     },
-    "classification": "partial_no_populated_cross_owner_disclosure_but_empty_200_is_not_explicit_denial"
+    "classification": "bounded_no_populated_cross_owner_disclosure_empty_200_accepted_native_list_semantics"
   },
   "A2": {
     "upstream_error_case": {
@@ -110,7 +110,7 @@
   },
   "limitations": [
     "The hard reservation ceiling was exceeded; candidate acceptance requires owner disposition or a separately approved fresh bounded run.",
-    "Cross-owner populated detail queries returned empty 200 responses rather than explicit authorization denials.",
+    "Cross-owner /spend/logs/v2 queries returned empty 200 responses accepted as native list-route filtering; explicit request-detail authorization remains on /spend/logs/ui/{request_id}.",
     "The upstream-error case remained candidate-side validation, not provider provenance.",
     "Native telemetry delivery durability across restart remains untested.",
     "Owner baseline/gap acceptance and architecture adoption remain pending."
