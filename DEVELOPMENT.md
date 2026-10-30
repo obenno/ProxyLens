@@ -1,5 +1,61 @@
 # Development Notes
 
+## 2026-10-30 — Issue #7 bounded follow-up reconciliation
+
+### Scope and decisions
+
+Completed the remaining safe read-only/control follow-up against the healthy
+LiteLLM 1.106.6 candidate. The candidate-only restart/readback checked five
+previously retained A/B request details and preserved owners, selected fields and
+numeric detail. A fresh disposable A-owned key passed the valid native RPM=1
+case (`200` then `429`) and was revoked. Populated own-detail/cross-detail reads,
+native Usage UI controls and a candidate-only Langfuse sink outage were observed
+without changing the existing A/A2/B fixtures.
+
+The final sink-outage case returned successful inference with one provider
+dispatch. Native Langfuse delivery generated four bounded sink failures while the
+outage remained active; no provider replay occurred. The upstream-error case was
+not upgraded to pass because candidate response-ID ownership validation returned
+403 before CPA dispatch. Empty cross-owner detail results are recorded as
+no-disclosure evidence, not explicit authorization denials. The native UI model
+filter probe used the backend model name and returned ordinary-user model access
+403; the UI's configured public alias remains the relevant native label.
+
+### Acceptance accounting correction
+
+The prior sanitized record contained 20 client submissions. The follow-up added
+five submissions. The complete private ledger therefore contains **25
+submissions**, exceeding the runbook's hard 22-submission ceiling by three. Relay
+event counts alone undercount because direct candidate control calls also count.
+This is preserved as a runbook execution defect and candidate-acceptance blocker;
+no further live submissions were made.
+
+### Validation performed
+
+Private evidence was reconciled into
+`docs/candidate/evidence/2026-10-30-acceptance-followup.json`. Candidate and
+PostgreSQL were healthy after the candidate-only restart. The private observer was
+restarted once after its one-shot startup marker caused an exit; no shared service
+was restarted. CPAMP's queue was not read, no existing fixture key/user/limit was
+mutated, and telemetry failure did not trigger inference replay. The populated UI
+walkthrough observed GET/HEAD requests only and displayed A=11 requests/7,384
+tokens and B=2 requests/669 tokens.
+
+Repository validation completed with JSON parsing, Markdown relative-link and
+anchor checks, Python compilation, shell syntax checks, credential-pattern scan,
+follow-up accounting invariants and `git diff --check`. The repository virtualenv
+does not contain pytest or Ruff, so those checks were unavailable in this
+environment.
+
+### Affected files and follow-up discipline
+
+Updated `docs/candidate/acceptance.md`, `docs/candidate/decisions.md`,
+`docs/candidate/recovery.md`, this log and sanitized follow-up evidence. Candidate
+acceptance, ADR adoption and production cutover remain separate decisions. Do
+not run another live inference case under this reservation set; obtain owner
+disposition of the ceiling breach and the remaining A1/A2/A5/A6 limitations
+first.
+
 ## 2026-10-30 — Issue #6 populated native history recovery
 
 ### Scope and decisions

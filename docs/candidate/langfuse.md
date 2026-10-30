@@ -1,6 +1,6 @@
 # Candidate native Langfuse tracing
 
-**October 29, 2026 — #8 configuration tranche. A5 remains pending #7.**
+**October 30, 2026 — #8 configuration tranche with bounded #7 A5 follow-up.**
 Uses the [content-rich contract](../specs/litellm-poc.md#native-debugging-traces).
 Runtime activation/readback status is recorded below; neither configuration nor
 synthetic callback tests establish shared acceptance or production adoption.
@@ -238,9 +238,11 @@ synthetic sample; it is not an empty counting fixture. This is auth/callback set
 evidence, not real-provider error or A5 outage evidence.
 
 #7 owns shared real-provider A2/A5 content/error/forgery/readback/outage
-evidence. Sink failure must not replay inference; native client retries remain
-accepted under [Retry boundaries](../specs/litellm-poc.md#retry-boundaries).
-Do not close #8 before A5 evidence is linked.
+evidence. The bounded follow-up linked from [acceptance](acceptance.md) observed
+four sink failures during a candidate-only outage, successful inference with one
+provider dispatch and no inference replay. Durable delivery across process restart
+remains unproven; native client retries remain accepted under [Retry boundaries](../specs/litellm-poc.md#retry-boundaries).
+Do not close #8 before owner acceptance of the remaining A5 limits.
 
 ### Exact activation evidence and shared fixture
 

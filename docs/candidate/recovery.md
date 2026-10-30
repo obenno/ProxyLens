@@ -391,19 +391,23 @@ requests require explicit handling as a separate accounting interval, not replay
 
 **Health is three separate observations:** `/health/readiness` confirmed app/DB
 availability; own history API confirmed readable native history (the populated
-checkpoint subset is documented above).
+checkpoint subset is documented above); and the October 30 candidate-only restart
+returned healthy with five previously checked request details still readable.
 Neither implies complete inference acceptance. The bounded #7 run observed actual
-client/provider and native tracing behavior, but its A2–A6 results remain partial
-under the clarified retry contract. Accepted native client retries are not a blocker
-requiring correction. Native telemetry is configured and bounded content/readback,
-attribution and masking evidence was observed; sink-outage isolation, durable
-delivery and restart behavior remain unproven. Reuse #7 restart/optional-dependency
-evidence when available; no duplicate fault matrix.
+client/provider and native tracing behavior. A3's bounded restart readback, A4's
+valid rate-control and A5's candidate-only sink-outage isolation are now recorded;
+A1/A2/A6 remain partial under the clarified retry contract. Accepted native client
+retries are not a blocker requiring correction. Native telemetry content/readback,
+attribution, masking and no-replay outage behavior were observed; durable delivery
+across restart remains unproven. The complete private run exceeded the documented
+22-submission ceiling by three, so candidate acceptance requires explicit owner
+disposition before adoption.
 
 **Production sequence, not authorization to execute:**
 
-1. Complete A1–A6 (including deployed retry-boundary evidence, persisted request history,
-   selected controls, native content-rich telemetry and access), #1 owner acceptance,
+1. Resolve the #7 execution accounting defect and complete/owner-accept A1–A6
+   (including deployed retry-boundary evidence, persisted request history, selected
+   controls, native content-rich telemetry and access), #1 owner acceptance,
    and coordinated ADR/glossary/guidance adoption. Record accepted native batching,
    volatility, limit propagation, missing fields and delivery limitations. No strict
    no-overspend, lossless accounting or exactly-once claim follows from this restore.

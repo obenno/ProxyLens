@@ -1,6 +1,6 @@
 # Candidate acceptance evidence (#7)
 
-**October 29, 2026 — bounded follow-up evidence; candidate acceptance remains open.**
+**October 30, 2026 — bounded follow-up evidence; candidate acceptance remains open.**
 Source: live issue #7 (open; updated `2026-10-29T10:36:29Z`), the
 [shared contract](../specs/litellm-poc.md#bounded-integration-acceptance-7) and
 [execution runbook](acceptance-runbook.md). Branch
@@ -10,21 +10,71 @@ Source: live issue #7 (open; updated `2026-10-29T10:36:29Z`), the
 
 | Check | Follow-up status | Remaining evidence / limitation |
 |---|---|---|
-| A1 | **Partial: bounded access/isolation evidence passed.** | A/B own histories are populated and cross-user aggregate reads return 403. Cross-user `/spend/logs/v2` returns empty 200 rather than a denial, so populated detail isolation remains inconclusive. |
-| A2 | **Partial: actual route and OpenCode compatibility observed.** | O-A read/image continuation completed; tools, image and streaming paths worked. E-B was candidate-side 403 before provider dispatch, not proven upstream. X-A recorded client-visible interruption and native resubmissions but ended incomplete. S-A2 exposed downstream CPA-route `metadata` incompatibility. |
-| A3 | **Partial: populated ownership and numeric reconciliation.** | A/B totals and retained rows reconcile for the completed interval. No candidate restart/readback was performed, so restart persistence remains pending. |
-| A4 | **Partial: revoked-key and model denials passed.** | C-rate is failed/unperformed: the disposable key was revoked before both requests, producing 401/401. No existing A/A2/B key or limit was mutated. |
-| A5 | **Partial: native payload/readback, attribution and targeted masking observed.** | Success/tool/result/image/error payloads reached the candidate Langfuse project; forged owner/session controls did not replace trusted key-owner attribution. L-A inference succeeded, but the asynchronous sink-outage rejection was not observed, so outage isolation is inconclusive. |
-| A6 | **Partial: candidate topology and populated native Usage observed.** | Candidate has no CPAMP endpoint/credential dependency and healthy inference completed while CPAMP remained the shared queue consumer. Populated UI/filter walkthrough, candidate restart and owner baseline/gap decision remain pending. |
+| A1 | **Partial: populated own-detail and no-disclosure evidence recorded.** | A/B can read their own populated request details; cross-owner request-ID queries return empty 200 responses without disclosure, not explicit authorization denials. Native model filter values also exposed an ordinary-user/API limitation. |
+| A2 | **Partial: actual route and OpenCode compatibility observed.** | Tool/image/history paths worked; the upstream-error case remained candidate-side response-ID validation. The interruption case showed client-visible cut and native resubmissions without a same-stream gateway replay, but the client ended incomplete. CPA-route `metadata` remains incompatible. |
+| A3 | **Pass for the bounded populated sample; limits retained.** | After a candidate-only restart, all five checked checkpoint request IDs, owners and selected details matched. This does not establish lossless crash accounting or strict freshness. |
+| A4 | **Pass for the valid bounded native controls.** | Fresh disposable key case returned 200 then 429 with one provider dispatch; the key was revoked afterward. Earlier invalid rate attempts remain retained as invalid evidence. |
+| A5 | **Partial: content/readback, attribution, masking and outage isolation observed.** | A candidate-only sink outage produced four native telemetry delivery failures while inference returned 200 and no inference replay occurred. Durable delivery across restart remains unproven. |
+| A6 | **Partial: candidate independence and populated native UI observed.** | A/B Usage showed populated request/token totals; model/key activity controls and date-range control rendered using read-only paths. Owner baseline/gap decision remains pending. |
 
-The bounded run admitted 20 client submissions in total: 16 observed through the
-candidate relay and four native control calls made directly to the candidate. It
-stayed below the hard 22-submission ceiling. No existing A/A2/B key, user or
-limit was mutated; one disposable control key was created and revoked. The
-candidate, observer and candidate PostgreSQL remained healthy; no shared service
-restart, CPA queue read or inference replay was performed. This tranche does not
-complete PR #12 or issue #7; readiness/adoption/cutover remain gated. No OpenCode
-patch or deduplication was selected.
+The complete private run now records **25 client submissions**: the prior 20 plus
+five follow-up submissions. This exceeds the documented hard 22-submission
+ceiling by three and is an acceptance blocker requiring owner disposition; no
+further live submissions are authorized in this tranche. No existing A/A2/B key,
+user or limit was mutated; disposable control keys were revoked. The candidate
+and candidate PostgreSQL remained healthy; the private observer was restarted
+once after a one-shot startup marker failure, no shared service was restarted,
+no CPA queue was read and no telemetry recovery triggered inference replay. This
+tranche does not complete PR #12 or issue #7; readiness/adoption/cutover remain
+gated. No OpenCode patch or deduplication was selected.
+
+## October 30 follow-up results
+
+### Follow-up evidence
+
+Sanitized machine-readable evidence is
+[`evidence/2026-10-30-acceptance-followup.json`](evidence/2026-10-30-acceptance-followup.json).
+
+### Populated detail, restart and controls
+
+The populated detail check used retained A/B request identities. Each owner
+received one own request row with the expected owner; A querying B's request ID
+and B querying A's request ID each returned `200` with zero rows. This records no
+cross-owner disclosure, but the endpoint's empty authorized result is not treated
+as an explicit authorization denial. The candidate-only restart returned
+`running healthy`; five previously checked checkpoint rows remained present with
+matching owners and selected model/status/token/spend detail.
+
+The corrected fresh rate case used a new A-owned disposable key with native RPM
+one: the first request returned `200`, the second returned `429`, exactly one
+provider dispatch was observed, and the key was revoked. Earlier invalid rate
+attempts remain retained in the private record and are not silently replaced.
+
+### Native UI and sink outage
+
+Read-only native Usage walkthroughs showed A with 11 requests and 7,384 total
+tokens and B with 2 requests and 669 total tokens. Model Activity, Key Activity
+and date-range controls rendered; the date-range control opened; all observed
+requests were GET/HEAD and no UI mutation or inference occurred. Model filter
+probes using the retained backend model name returned ordinary-user `403`
+`key_model_access_denied`; this is recorded as an API/UI limitation because the
+native Usage view uses the configured public alias.
+
+For the final candidate-only sink-outage case, inference returned `200` with one
+provider dispatch. The native telemetry delivery path attempted the export and
+the private sink returned four bounded `503` failures while the outage remained
+active for about 39 seconds. No additional provider dispatch occurred. Native
+delivery behavior is therefore observed as separate from inference execution;
+durable delivery across process restart remains unproven.
+
+### Acceptance accounting correction
+
+The original record of 20 client submissions was correct for the prior tranche.
+The follow-up added five submissions. The resulting total is 25, not 19 relay
+events: relay event counts do not replace the reservation ledger and direct
+candidate calls must also count. The 22-submission ceiling was exceeded by three.
+Preserve this as a runbook execution defect and obtain an explicit owner decision
+before claiming candidate acceptance or merging PR #12.
 
 ## A1 observations
 
@@ -50,11 +100,11 @@ identity returned **200**. This is an authorization denial, not an edition,
 invalid-date or malformed-query failure. Users were not elevated.
 
 **Additional bounded probe:** A's `/spend/logs/v2` request filtered by B returned
-**200**, `data=[]`, `total=0`; B's own history was also empty. This is **inconclusive
-for populated-record isolation**, not an observed disclosure or proof of denial.
-After S-B exists, use its real retained identity for a representative detail read.
-The cache's pinned native source applies owned-row scoping to list queries, but
-source inspection does not replace populated execution evidence.
+**200**, `data=[]`, `total=0`; the populated request-ID checks similarly returned
+empty cross-owner results while own request-ID checks returned one row. This is
+no-disclosure evidence, but not an explicit authorization-denial response.
+Source inspection and empty authorized results do not establish a stronger
+authorization contract.
 
 Two preparation mistakes are retained privately: initial browser script matched
 the still-active login URL and navigated too early (selector timeout); initial
@@ -74,8 +124,10 @@ blocker. No additional native access failure is demonstrated by this checkpoint.
 The [runbook interface table](acceptance-runbook.md#native-read-interfaces-observed-before-inference)
 records actual empty native response shapes for subsequent A3/A6 readback.
 Aggregate metadata has input/output/total tokens, cache-read/cache-creation,
-spend, success/failure/request and timing totals. Populated row detail and supplied
-reasoning retention remain unobserved. Empty usage-bearing-key results do not
+spend, success/failure/request and timing totals. Populated row detail and the
+selected native UI overview are now observed. Reasoning remains represented in
+request detail/native trace fields rather than a separate ordinary-user aggregate
+bucket. Empty usage-bearing-key results from the initial checkpoint do not
 contradict the separate key-list count of A=2/B=1.
 
 The running candidate config matched `deploy/candidate/config.yaml` byte-for-byte,
@@ -108,14 +160,15 @@ Private directory:
 `/data/tmp/opencode/proxylens-litellm-20261029/issue7-acceptance-20261029`.
 One-shot browser/read scripts, reservations, raw native responses, login cookies,
 DOM/screenshots, effective configs and container inspections remain there with
-0700 directories/0600 files. Sanitized machine-readable result:
-[`evidence/2026-10-29-initial.json`](evidence/2026-10-29-initial.json).
+0700 directories/0600 files. Sanitized machine-readable results:
+[`evidence/2026-10-29-initial.json`](evidence/2026-10-29-initial.json) and
+[`evidence/2026-10-30-acceptance-followup.json`](evidence/2026-10-30-acceptance-followup.json).
 No real credentials, credential hashes or generated request/session IDs belong
 in committed evidence.
 
-Continue on the coordinator's readiness follow-up using the runbook's shared
-bounded cases. Coordinate populated history/restart with #6. Preserve native
-client retries and count admitted requests; telemetry recovery never authorizes
-inference replay. Report any confirmed mapping/access/client defect as a blocker
-before expanding custom code. Obtain #1's baseline/gap decision after A6, and
-separate authorization for adoption and production cutover.
+No further live cases are authorized under this tranche after the 25-submission
+ceiling correction. Preserve native client retries and count every admitted
+request, including direct control calls; telemetry recovery never authorizes
+inference replay. Obtain explicit owner disposition of the ceiling breach,
+review A1/A2/A5/A6 limitations and #1's baseline/gap decision, then separately
+authorize adoption and production cutover.

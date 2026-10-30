@@ -1,9 +1,10 @@
 # Isolated LiteLLM candidate deployment
 
-**Observed October 29, 2026; issue #2 configuration/startup tranche.** Native
-community ordinary-user login and empty personal Usage work on this pin. Shared
-A1–A6, provider inference, Langfuse acceptance and production adoption remain
-pending. [Setup decisions](decisions.md), [contract](../specs/litellm-poc.md).
+**Observed October 30, 2026; issue #2 configuration/startup tranche with bounded
+#7 follow-up.** Native community ordinary-user login, populated personal Usage,
+bounded provider inference and candidate-only restart/readback work on this pin.
+Shared acceptance remains partial; production adoption remains pending.
+[Setup decisions](decisions.md), [contract](../specs/litellm-poc.md).
 
 ## Pins and source verification
 
@@ -210,15 +211,19 @@ The metadata-only target and blanket filtering proposal in that research are
 superseded by the [owner decision](decisions.md#owner-approved-tracing-objective-october-29-2026).
 Research handoff (historical input):
 `/data/tmp/opencode/proxylens-litellm-20261029/telemetry-research.md`.
-Native delivery, content, attribution and credential checks remain unperformed;
-the existing smoke does not prove them. #7 records missing/truncated native fields
-and other coverage limits for owner review. Native project configuration in #6
-does not introduce a separate UI/access implementation project.
+Native delivery, content, attribution and credential checks are recorded in #8 and
+the bounded #7 follow-up. The native sink-outage case isolated telemetry failure
+from inference without replay; durable delivery across restart remains unproven.
+#7 records missing/truncated native fields and other coverage limits for owner
+review. Native project configuration in #6 does not introduce a separate UI/access
+implementation project.
 
 The later [#7 read-only checkpoint](acceptance.md) passed bounded A1 login,
 personal keys/Usage and a representative cross-user aggregate denial. Its
-[shared runbook](acceptance-runbook.md) records native read shapes and the bounded
-provider/telemetry cases still awaiting coordinated #8 readiness.
+follow-up records populated own-detail/no-disclosure results, candidate restart
+readback, valid rate control, sink-outage isolation and native UI controls with
+their remaining limits. The [shared runbook](acceptance-runbook.md) remains the
+source for case ceilings and execution boundaries.
 
 ## Stop, restart and rollback
 

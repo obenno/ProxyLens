@@ -1,6 +1,6 @@
 # Candidate setup decisions and evidence status
 
-**Recorded:** October 29, 2026; updated for the owner's native tracing objective and retry boundaries.
+**Recorded:** October 29, 2026; updated October 30 for the owner's native tracing objective, retry boundaries and bounded follow-up evidence.
 **Status:** issue #1 setup-scope and objective decisions only;
 candidate acceptance and architecture adoption remain pending.
 
@@ -129,8 +129,8 @@ preserve the change; publication supplies no runtime acceptance evidence.
 |---|---|---|
 | #1 setup and coordination | Owner defaults recorded; **partial**, not full issue completion. | #2 exact choices, #7 results and limitations, then explicit owner candidate decision. |
 | #2 stack/native configuration | Configuration/startup tranche recorded in [deployment](deployment.md); shared acceptance pending. | #7 verifies actual-client, ownership/usage and controls; #8 implements the revised tracing objective. |
-| #8 native Langfuse | [Configuration tranche](langfuse.md): separate project/native logger plus demonstrated narrow mapping/credential seam; A5 pending. | Verify deployed shared A5 through #7. |
-| #7 acceptance | [Bounded follow-up](acceptance.md): A1–A6 have partial results, including populated usage/readback and native tracing. Candidate acceptance remains open. | Close the documented isolation, upstream-error/interruption, restart, rate-limit, sink-outage, UI/filter and owner-decision gaps. |
+| #8 native Langfuse | [Configuration tranche](langfuse.md): separate project/native logger plus demonstrated narrow mapping/credential seam; bounded shared A5 follow-up is partial. | Resolve durable-delivery limits and obtain owner acceptance through #7. |
+| #7 acceptance | [Bounded follow-up](acceptance.md): A1–A6 include populated detail, restart, valid rate-control, sink-outage and UI evidence. Candidate acceptance remains open. | Resolve the 25-submission/22-ceiling execution defect, explicit detail-denial semantics, upstream-error provenance, telemetry durability, owner baseline/gap decision and owner acceptance. |
 | #6 production readiness | [Same-pin populated recovery evidence](recovery.md) now covers the authorized `checkpoint-1793273530` request-history subset plus native account/key/policy state; production cutover not authorized. | External CPA/Langfuse recovery, approved retention/custody and off-host backup, upgrade/rollback/PITR, candidate acceptance and separate cutover approval. |
 | #3 diagnostics | **Optional, unselected.** | Select only for a concrete operator diagnostic need; never gates personal totals. |
 | #10 reporting extension | **Deferred, unselected.** | Use native UI in A6, identify a gap and obtain explicit feature selection. |
@@ -180,12 +180,12 @@ native configuration used by that run.
 
 | Check | Status | Required evidence still outstanding (#7) |
 |---|---|---|
-| A1 Native access | **Partial: bounded access plus populated restore supplement** | Cross-user aggregate reads deny 403, but populated `/spend/logs/v2` isolation remains inconclusive because filtered responses were empty 200s. |
-| A2 Actual client | **Partial** | OpenCode route/tool/image/history cases worked; upstream-error provenance and complete interruption evidence remain incomplete, with the observed CPA-route metadata incompatibility documented. |
-| A3 Ownership/usage | **Partial** | A/B ownership and numeric reconciliation passed for the completed interval; candidate restart persistence remains untested. |
-| A4 Controls | **Partial** | Revoked-key and model denials passed without provider dispatch; the disposable rate-limit fixture was invalid and requires a fresh valid setup. |
-| A5 Langfuse | **Partial** | Native content/readback, trusted attribution and targeted masking were observed; sink-outage isolation and durable delivery/restart behavior remain unproven. |
-| A6 Independence/usability | **Partial topology and populated Usage** | Candidate independence and populated Usage were observed; populated UI/filter walkthrough and owner baseline/gap decision remain pending. |
+| A1 Native access | **Partial: populated own-detail and no-disclosure evidence** | Own request-ID details return rows; cross-owner request-ID queries return empty 200 results rather than explicit authorization denials. |
+| A2 Actual client | **Partial** | OpenCode route/tool/image/history and interrupted-stream observations are recorded; upstream-error provenance remains unproven and CPA-route `metadata` is incompatible. |
+| A3 Ownership/usage | **Bounded sample pass; candidate acceptance still open** | Five checked request details survived candidate restart with owner/detail equality. No strict crash-loss or freshness guarantee follows. |
+| A4 Controls | **Bounded valid-control pass** | Fresh native RPM=1 case returned 200 then 429 with one provider dispatch and the disposable key was revoked. Earlier invalid attempts remain marked invalid. |
+| A5 Langfuse | **Partial: outage isolation observed** | Native content/readback, trusted attribution, targeted masking and four sink-failure attempts were observed with no inference replay; durable delivery/restart remains unproven. |
+| A6 Independence/usability | **Partial populated Usage/UI** | A/B populated totals and read-only model/key/date controls were observed; owner baseline/gap decision remains pending. |
 
 #2 records exact versions/digests, edition/schema, model/route, role, policies,
 pricing, sanitized configuration and reproduction steps once; #8 adds destination
