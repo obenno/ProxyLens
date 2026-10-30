@@ -1,6 +1,6 @@
 # Candidate acceptance evidence (#7)
 
-**October 30, 2026 — bounded candidate acceptance approved; adoption and cutover remain separate gates.**
+**October 30, 2026 — bounded candidate acceptance and ADR 0002 target adoption approved; production cutover remains a separate gate.**
 Source: live issue #7 (open; updated `2026-10-29T10:36:29Z`), the
 [shared contract](../specs/litellm-poc.md#bounded-integration-acceptance-7) and
 [execution runbook](acceptance-runbook.md). Branch
@@ -32,10 +32,11 @@ strict lossless, exactly-once, no-overspend, freshness, capacity or durable
 telemetry guarantee is claimed. The full 25-submission ledger and accepted
 three-submission ceiling exception remain authoritative.
 
-This is bounded candidate acceptance only. ADR 0002 remains proposed, ADR 0001
-continues to govern the checked-in runtime, and production cutover is not
-authorized. Adoption requires coordinated ADR, glossary and guidance updates;
-cutover separately requires #6 recovery/readiness evidence and approval.
+This is bounded candidate acceptance followed by the owner-approved adoption of
+ADR 0002 as the target architecture. ADR 0001 continues to govern the checked-in
+runtime, and production cutover is not authorized. The coordinated ADR, glossary
+and guidance adoption is recorded; cutover separately requires #6
+recovery/readiness evidence and approval.
 
 The complete private run records **25 client submissions**: the prior 20 plus
 five follow-up submissions. This exceeded the documented hard 22-submission
@@ -216,5 +217,5 @@ ceiling correction. Preserve native client retries and count every admitted
 request, including direct control calls; telemetry recovery never authorizes
 inference replay. The A6 baseline decision is recorded; the deferred CPAMP-
 unavailable runtime check and accepted A2 interruption/A5 durability limitations
-remain explicit. Then separately
-authorize adoption and production cutover.
+remain explicit. ADR 0002 target adoption is recorded separately; production
+cutover still requires #6 readiness evidence and approval.

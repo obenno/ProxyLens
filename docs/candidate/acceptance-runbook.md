@@ -4,7 +4,8 @@
 [A1–A6 contract](../specs/litellm-poc.md#bounded-integration-acceptance-7),
 [retry boundaries](../specs/litellm-poc.md#retry-boundaries) and
 [setup decisions](decisions.md). Results live in [acceptance.md](acceptance.md).
-This runbook does not authorize production adoption or cutover.
+This runbook records bounded candidate acceptance evidence and does not authorize
+production cutover.
 
 ## Execution boundary and common register
 

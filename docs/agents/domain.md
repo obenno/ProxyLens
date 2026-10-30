@@ -1,19 +1,20 @@
 # Domain documentation
 
 ProxyLens is a single domain context. `GLOSSARY.md` distinguishes current-runtime
-terms from proposed personal-usage vocabulary. Keep definitions concise and free
+terms from adopted target personal-usage vocabulary. Keep definitions concise and free
 of implementation details. Read `docs/specs/litellm-poc.md` and the applicable ADR
 before changing ownership, accounting or identity semantics.
 
-## Candidate boundaries
+## Adopted target boundaries
 
-Proposed ADR 0002 assigns native accounts, keys, admission and client-request
+Accepted ADR 0002 assigns native accounts, keys, admission and client-request
 accounting to LiteLLM; provider execution to CLIProxyAPI; observability to Langfuse;
 optional provider history to CPAMP; deployment and bounded reporting glue to
 ProxyLens. Personal ownership is the admitted key owner, distinct from a verified
-interactive actor or customer label. These boundaries need POC acceptance before
-final adoption. See the shared plan for bounded A1–A6 integration acceptance;
-reuse native features and add custom domain/storage contracts only for selected gaps.
+interactive actor or customer label. The bounded A1–A6 integration acceptance is
+complete for its recorded limits. Reuse native features and add custom
+domain/storage contracts only for selected gaps. ADR 0001 remains the checked-in
+runtime contract until separately approved cutover.
 
 For candidate observability, follow the spec's
 [native debugging trace contract](../specs/litellm-poc.md#native-debugging-traces)

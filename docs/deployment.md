@@ -1,7 +1,8 @@
 # Single-host foundation deployment
 
 > **Current implementation / original issue scopes.** This runbook describes the
-> existing ADR 0001 stack. Candidate deployment work is defined in revised #2 and
+> existing ADR 0001 stack, which remains active until separately approved #6
+> cutover. Adopted target deployment work is defined in revised #2 and
 > the [LiteLLM POC contract](specs/litellm-poc.md); see the
 > [revision record](planning/architecture-rebaseline-2026-10-29.md).
 

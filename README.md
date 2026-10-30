@@ -25,14 +25,15 @@ truncated, and automatic removal of all embedded secrets is not promised.
 
 The [candidate deployment record](docs/candidate/deployment.md#current-logging-settings-and-8-target)
 preserves the original disabled-capture setup as history and records the active
-#8 native callback configuration. Shared #7 A1–A6 bounded acceptance is approved;
-see [setup decisions](docs/candidate/decisions.md) for limits and separate
-adoption/cutover gates.
+#8 native callback configuration. Shared #7 A1–A6 bounded acceptance and ADR 0002
+target adoption are recorded; see [setup decisions](docs/candidate/decisions.md)
+for limits and the separate production cutover gate.
 
-[ADR 0002](docs/adr/0002-litellm-personal-usage.md) is **proposed**. The checked-in
-runtime still implements [ADR 0001](docs/adr/0001-architecture-boundaries.md):
-Keycloak, custom authorization/gateway, CPA and CPAMP-derived usage. Candidate
-acceptance and approved cutover are separate milestones.
+[ADR 0002](docs/adr/0002-litellm-personal-usage.md) is **accepted as the target
+architecture**. The checked-in runtime still implements [ADR 0001](docs/adr/0001-architecture-boundaries.md):
+Keycloak, custom authorization/gateway, CPA and CPAMP-derived usage. Bounded
+candidate acceptance and target adoption are recorded; approved production cutover
+remains a separate #6 milestone.
 
 Start with `docs/deployment.md`. Verified image pins and upstream contracts are
 in `docs/dependency-pins.md`; implementation decisions are in `DEVELOPMENT.md`.

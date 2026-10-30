@@ -10,8 +10,26 @@ The [shared plan](../specs/litellm-poc.md) now specifies five active tickets
 including the coordinator, three consolidated tickets and two optional/deferred
 tickets. Native capabilities are configuration work, with one shared integration
 acceptance pass. Custom development requires a demonstrated selected gap.
-[ADR 0002](../adr/0002-litellm-personal-usage.md) remains proposed; ADR 0001 governs
-the existing runtime. Deferred handoff scenarios are not recorded as passed.
+[ADR 0002](../adr/0002-litellm-personal-usage.md) is accepted as the target
+architecture as of October 30, 2026; ADR 0001 continues to govern the existing
+runtime until separately approved cutover. Deferred handoff scenarios are not
+recorded as passed.
+
+## Bounded candidate acceptance and ADR adoption: October 30, 2026
+
+The owner approved the bounded LiteLLM → CLIProxyAPI candidate after the A1–A6
+dispositions were reconciled. The coordinated adoption record now accepts ADR 0002
+as the target personal-usage architecture, with LiteLLM native accounts, personal
+keys, limits, Usage and client-request accounting; CLIProxyAPI provider execution;
+and one native asynchronous Langfuse integration for content-rich debugging traces.
+
+ADR 0001 remains the accepted contract for the checked-in Keycloak/group/custom
+runtime and historical group-owned data until #6 completes recovery/readiness and
+receives separate production cutover approval. Adoption does not switch ingress,
+migrate state, issue replacement keys or retire services. The A1–A6 limitations
+remain binding: no strict lossless, exactly-once, no-overspend, freshness, capacity
+or durable-telemetry guarantee is claimed, and the CPAMP-unavailable inference check
+remains deferred and untested.
 
 ## Native tracing objective clarification: October 29, 2026
 
@@ -49,7 +67,8 @@ published clarification; publication is not runtime acceptance.
 setup recorded in [candidate deployment](../candidate/deployment.md#current-logging-settings-and-8-target).
 #8 has since activated the selected native callback and documented its setup;
 bounded shared A5 evidence is now owner-accepted with its recorded native limits.
-This does not establish architecture adoption or cutover. ADR 0002 stays proposed.
+This does not authorize production cutover. ADR 0002 target adoption is recorded
+above; #6 still owns production access, retention/recovery and cutover decisions.
 
 **Historical research:** the [architecture handoff](../research/architecture-handoff-2026-10-29.md),
 [stack comparison](../research/new-api-stack-comparison.md),
@@ -84,8 +103,9 @@ titles/states/labels and all acceptance criteria unchecked. Exact public-issue
 this revision; earlier archives remain immutable. A2 now distinguishes client
 submissions from same-stream gateway behavior; A5/#8 prohibit usage/telemetry-triggered
 inference replay without forbidding native client retries. Publication is complete;
-bounded runtime A1–A6 and candidate acceptance are now approved; ADR adoption and
-production cutover remain separate pending decisions.
+bounded runtime A1–A6 and candidate acceptance are now approved; ADR 0002 target
+adoption is recorded and production cutover remains a separate decision pending
+#6 readiness approval.
 
 ## Published issue map
 
@@ -152,4 +172,5 @@ passed. Repository documentation and snapshots are local working-tree changes;
 this publication did not commit or push them.
 
 No replacement runtime deployment, model request or integration acceptance was
-run as part of these specification edits. ADR 0002 remains proposed.
+run as part of these specification edits. ADR 0002 adoption was recorded after the
+separate bounded acceptance evidence; no production cutover occurred.

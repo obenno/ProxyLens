@@ -13,7 +13,7 @@
     "status": "approved_bounded_poc_contract",
     "owner_decision_date": "2026-10-30",
     "a1_a6_bounded_dispositions_accepted": true,
-    "adr_0002_adoption": "separate_pending_decision",
+    "adr_0002_adoption": "approved_target_architecture",
     "production_cutover": "not_authorized"
   },
   "A1": {

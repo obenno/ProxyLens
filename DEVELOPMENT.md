@@ -100,8 +100,8 @@ environment.
 
 Updated `docs/candidate/acceptance.md`, `docs/candidate/decisions.md`,
 `docs/candidate/recovery.md`, this log and sanitized follow-up evidence. Candidate
-acceptance is now approved for the bounded POC contract; ADR adoption and
-production cutover remain separate decisions. Do not run another live inference
+acceptance is approved for the bounded POC contract; ADR 0002 target adoption is
+recorded and production cutover remains a separate decision. Do not run another live inference
 case under this reservation set; review the deferred CPAMP-unavailable runtime
 check and the accepted A2 interruption/A5 durability limits separately.
 
@@ -109,9 +109,36 @@ check and the accepted A2 interruption/A5 durability limits separately.
 
 The owner accepted the candidate for the bounded POC contract after the A1–A6
 dispositions were reconciled. This approval preserves all recorded limits and
-does not adopt ADR 0002 or authorize production cutover. ADR adoption requires
-coordinated glossary/guidance updates; #6 separately owns recovery/readiness and
-cutover approval.
+does not authorize production cutover. The subsequent coordinated ADR 0002,
+glossary and guidance adoption records the target architecture; #6 separately
+owns recovery/readiness and cutover approval.
+
+## 2026-10-30 — ADR 0002 target adoption
+
+### Scope and decision
+
+Following the owner-approved bounded A1–A6 candidate acceptance, adopted ADR 0002
+as the target personal-usage architecture. LiteLLM owns native personal accounts,
+keys, admission, limits, Usage and retained client-request facts; CLIProxyAPI owns
+provider OAuth and execution; Langfuse owns the selected native asynchronous
+content-rich debugging integration; CPAMP remains optional operator diagnostics and
+the sole CLIProxyAPI usage-queue consumer when enabled.
+
+ADR 0001 remains accepted for the checked-in Keycloak/group/custom runtime and
+historical group-owned data until #6 recovery/readiness evidence and separate
+production cutover approval. Adoption changes the target contract and guidance; it
+does not switch ingress, migrate state, issue replacement keys, retire services or
+authorize production traffic. All bounded A1–A6 limitations remain binding, including
+the deferred CPAMP-unavailable inference check and the absence of strict lossless,
+exactly-once, no-overspend, freshness, capacity or durable-telemetry guarantees.
+
+### Validation and follow-up
+
+Updated ADR 0002, the ADR 0001 transition note, glossary, POC specification, README,
+candidate status/recovery/deployment records, agent guidance and this development
+record together. No runtime state, provider traffic, keys or shared services were
+changed. #6 remains open for external CPA/Langfuse recovery, retention/access,
+off-host backup, rollback, key issuance and explicit cutover approval.
 
 ## 2026-10-30 — Issue #6 populated native history recovery
 
@@ -366,8 +393,8 @@ criterion. The shared spec owns the revised objective and A5 acceptance.
   execution or files never sent. Unknown usage/cost stays explicit.
 - `userId`/session attribution is analysis, not reader authorization. #6 records
   native project access/roles, content retention/deletion and recovery ownership;
-  no bespoke UI/access project is added. Candidate acceptance, architecture
-  adoption and production cutover remain separate decisions; ADR 0002 is proposed.
+  no bespoke UI/access project is added. Bounded candidate acceptance and ADR 0002
+  target adoption are recorded; production cutover remains a separate decision.
 - Checked-in message capture, spend-log prompt storage and detailed error logs
   remain disabled; no callback is enabled. Deployment docs distinguish those
   current settings from the future #8 target. This tranche changes no runtime,
@@ -480,7 +507,8 @@ the actual-client preflight replay blocker classification remains superseded by 
 owner-approved retry boundary. Repeat populated **request-history** restore using #7 retained facts and obtain
 separate authorization for any live restored request. External CPA/Langfuse
 recovery, content retention/access, protected off-host backup/cadence/RPO/RTO,
-candidate acceptance is approved; production cutover approval remains pending. Native
+and production cutover approval remain pending. Candidate acceptance and ADR 0002
+target adoption are approved. Native
 zero/null budget state is all the currently selected fixture can prove. No
 cross-version upgrade, binary downgrade, PITR or production switchover performed.
 
@@ -624,7 +652,7 @@ from an unverified release. The setup record identifies who must resolve each.
 ### Validation and follow-up
 
 Loaded the TDD skill before editing; this documentation-only tranche needs no
-artificial tests. Read AGENTS.md, glossary, POC spec, proposed ADR 0002, rebaseline
+artificial tests. Read AGENTS.md, glossary, POC spec, accepted target ADR 0002, rebaseline
 and live `gh issue view 1` (open; updated `2026-10-29T07:11:34Z`). Python 3 document
 checks passed: all five relative links/anchors resolve, A1–A6 each explicitly
 unperformed, six protected spec/ADR/rebaseline/archive files byte-identical to

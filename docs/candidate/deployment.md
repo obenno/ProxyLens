@@ -3,7 +3,8 @@
 **Observed October 30, 2026; issue #2 configuration/startup tranche with bounded
 #7 follow-up.** Native community ordinary-user login, populated personal Usage,
 bounded provider inference and candidate-only restart/readback work on this pin.
-Shared acceptance remains partial; production adoption remains pending.
+Bounded shared acceptance and ADR 0002 target adoption are approved; production
+cutover remains pending.
 [Setup decisions](decisions.md), [contract](../specs/litellm-poc.md).
 
 ## Pins and source verification

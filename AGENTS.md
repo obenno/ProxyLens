@@ -7,7 +7,7 @@ ProxyLens is a Docker Compose stack for exposing authorized AI subscription acce
 ### Select the applicable contract
 
 - **Candidate work and revised issues #1–#10:** read `docs/specs/litellm-poc.md`,
-  proposed `docs/adr/0002-litellm-personal-usage.md`, and
+  accepted target `docs/adr/0002-litellm-personal-usage.md`, and
   `docs/planning/architecture-rebaseline-2026-10-29.md`. Target LiteLLM → CLIProxyAPI,
   native personal accounts/keys/Usage, and one native asynchronous Langfuse
   integration for content-rich debugging traces. Follow the spec's
@@ -18,7 +18,8 @@ ProxyLens is a Docker Compose stack for exposing authorized AI subscription acce
   content stripping. `userId` is analysis, not authorization; #6 records native
   project access/retention. The owner-approved target supersedes candidate
   metadata-only guidance. The original disabled capture/callback settings are
-  historical; #8 now configures the selected native callback, pending #7 evidence.
+  historical; #8 configured the selected native callback and bounded #7 evidence
+  is accepted, with #6 still owning production project access/retention.
   CPAMP is
   optional operator diagnostics; personal ownership and totals come from verified
   LiteLLM facts. Configure native features in #2/#8; use #7's shared A1–A6
@@ -27,9 +28,9 @@ ProxyLens is a Docker Compose stack for exposing authorized AI subscription acce
 - **Existing runtime maintenance:** accepted ADR 0001 and the current-implementation
   boundaries below still govern `compose.yaml` and the existing Python services.
   Their group ownership and unfinished CPAMP proof gates remain in force.
-- **Adoption or cutover:** require the candidate's A1–A6 integration evidence and
-  explicit owner decisions. Update ADR statuses, glossary, guidance and runtime
-  docs together at adoption; cutover is separately approved. Preserve old history
+- **Adoption or cutover:** adoption requires the candidate's A1–A6 integration
+  evidence and explicit owner decisions; the coordinated ADR/glossary/guidance
+  adoption is recorded for the target. Cutover is separately approved. Preserve old history
   semantics and evidence. The plan maps handoff P1–P13 to retained, deferred and
   conditional scope; deferred scenarios are not passed evidence. A ticket rewrite
   does not validate a replacement runtime.

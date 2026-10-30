@@ -1,8 +1,8 @@
 # LiteLLM personal-usage integration plan
 
 **Date:** 2026-10-29  
-**Status:** owner-approved backlog revision; GitHub issues published October 29, 2026. Candidate runtime acceptance remains pending.  
-**Objective update:** native Langfuse debugging traces approved and issue revisions published October 29, 2026; configuration and shared acceptance remain pending.
+**Status:** bounded candidate acceptance and ADR 0002 target adoption approved October 30, 2026; production readiness and cutover remain separately gated by #6.
+**Objective update:** native Langfuse debugging traces, configuration and bounded shared acceptance are approved for their recorded contracts; native project access, retention/recovery and production cutover remain pending.
 
 **Tracker:** [revision map](../planning/architecture-rebaseline-2026-10-29.md).
 GitHub Issues own executable work; this document owns the shared scope.
@@ -27,11 +27,11 @@ blanket filtering adapter. The [decision record](../candidate/decisions.md#owner
 distinguishes this target from the currently disabled integration.
 
 [ADR 0001](../adr/0001-architecture-boundaries.md) still governs the current
-implementation; [ADR 0002](../adr/0002-litellm-personal-usage.md) is proposed. The
-original [handoff](../research/architecture-handoff-2026-10-29.md) supplies research
-and deeper test scenarios, not an instruction to implement every scenario as an
-initial release gate. Deferred scenarios are not passed evidence. Adoption and
-cutover remain explicit decisions.
+implementation until cutover; [ADR 0002](../adr/0002-litellm-personal-usage.md) is
+the accepted target architecture. The original [handoff](../research/architecture-handoff-2026-10-29.md)
+supplies research and deeper test scenarios, not an instruction to implement every
+scenario as an initial release gate. Deferred scenarios are not passed evidence.
+Adoption is recorded; production cutover remains an explicit #6 decision.
 
 ## Candidate topology
 
@@ -270,11 +270,12 @@ strict budgets or crash safety. Explicitly document accepted native limitations.
 
 ## Adoption and cutover
 
-#1 reviews A1–A6, native configuration, unresolved gaps and documented limitations.
-On acceptance, update ADR 0002, ADR 0001 status, glossary and guidance together.
-#6 completes deployment-specific readiness before separately approved production
-cutover: backups, replacement keys, ingress switch, history semantics and rollback.
-Retire old components after replacement/cutover acceptance. Do not replay production
+#1 reviewed A1–A6, native configuration, unresolved gaps and documented limitations.
+The owner approved bounded candidate acceptance and adopted ADR 0002 on October 30,
+2026; ADR 0001 remains the checked-in runtime contract until cutover. #6 completes
+deployment-specific readiness before separately approved production cutover:
+backups, replacement keys, ingress switch, history semantics and rollback. Retire
+old components only after replacement/cutover acceptance. Do not replay production
 requests merely to compare accounting. Historical tests remain old-path evidence.
 
 ## Capability references

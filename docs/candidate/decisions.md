@@ -1,20 +1,20 @@
 # Candidate setup decisions and evidence status
 
 **Recorded:** October 29, 2026; updated October 30 for the owner's native tracing objective, retry boundaries, bounded follow-up evidence and overall candidate decision.
-**Status:** bounded candidate acceptance approved; ADR adoption and production cutover remain separate pending decisions.
+**Status:** bounded candidate acceptance and ADR 0002 target adoption approved; production cutover remains a separate pending decision.
 
 The [POC contract](../specs/litellm-poc.md) owns shared scope; live GitHub Issues
 own executable work. This record captures the owner's setup selections and the
-evidence still required. [ADR 0002](../adr/0002-litellm-personal-usage.md) remains
-proposed; [ADR 0001](../adr/0001-architecture-boundaries.md) governs the existing
-runtime. See the [rebaseline](../planning/architecture-rebaseline-2026-10-29.md)
+evidence still required. [ADR 0002](../adr/0002-litellm-personal-usage.md) is the
+accepted target architecture; [ADR 0001](../adr/0001-architecture-boundaries.md)
+continues to govern the existing runtime until cutover. See the [rebaseline](../planning/architecture-rebaseline-2026-10-29.md)
 for consolidated tickets and preserved historical evidence.
 
 ## Selected setup, not observed capability
 
-These choices come from the owner's October 29 implementation instruction.
-Availability and behavior on the selected release still require #2/#8 setup and
-#7 integration evidence.
+These choices came from the owner's October 29 implementation instruction. The
+selected release configuration and bounded behavior are recorded by #2/#8 and #7;
+production guarantees and operational policy remain separately governed by #6.
 
 | Area | Selected default | Exact settings/evidence owner |
 |---|---|---|
@@ -58,7 +58,8 @@ limits and the owner reviews any required debugging gap.
 [#8 configuration record](langfuse.md) now selects content capture through one
 native logger with the demonstrated narrow mapping/credential seam; spend-log
 content/error-table persistence remain off. That record owns runtime activation
-status. Shared A5 is still pending #7; configuration is not acceptance. Prior
+status. Shared A5 is now owner-accepted for its bounded contract; configuration
+alone was not acceptance. Prior
 setup/research findings remain dated inputs, not a requirement to implement the
 discarded blanket filtering design.
 
@@ -81,8 +82,8 @@ existing response stream. Consequence: client retries alone are accepted behavio
 not a compatibility blocker. No strict one-user-action / one-request promise,
 custom anti-retry/dedup mechanism or OpenCode modification is selected. Current
 LiteLLM/router retry=0 stays configured; it does not control client retries.
-#7 still verifies deployed A2 and A5. Candidate acceptance/adoption and cutover
-remain pending.
+#7 recorded deployed A2 and A5. Candidate acceptance and ADR 0002 adoption are
+approved; production cutover remains pending.
 
 ## Owner-approved A1 list and detail access semantics: October 30, 2026
 
@@ -96,9 +97,10 @@ a `403` for every list-filter mismatch.
 The native request-detail route remains the explicit authorization boundary:
 `/spend/logs/ui/{request_id}` checks ownership and can return `403` for a foreign
 or unavailable request. Therefore, A1 is accepted for the bounded native access
-contract with the list-versus-detail distinction recorded. This decision does not
-close A2, A5, A6, candidate acceptance as a whole, ADR adoption or production
-cutover.
+contract with the list-versus-detail distinction recorded. This A1 decision did
+not by itself close A2, A5 or A6 and did not authorize production cutover; the
+later overall acceptance and coordinated ADR 0002 adoption records govern those
+decisions.
 
 ## Owner-approved submission-ceiling execution exception: October 30, 2026
 
@@ -113,8 +115,9 @@ The overage is bounded and understood: two diagnostic `C-rate-v2` submissions,
 two valid `C-rate-v3` submissions and one `L-A-v2` Langfuse sink-outage
 submission. No further live submissions are authorized under the original reservation. This
 decision closes the accounting exception only; it does not establish strict
-budget, no-overspend, exactly-once, lossless or freshness guarantees, and it does
-not close A2, A5, A6, candidate acceptance, ADR adoption or production cutover.
+budget, no-overspend, exactly-once, lossless or freshness guarantees, and it did
+not authorize production cutover. The later overall acceptance and coordinated
+ADR 0002 adoption records govern the remaining decisions.
 
 ## Owner-approved A2 LiteLLM-facing error boundary: October 30, 2026
 
@@ -163,7 +166,7 @@ outbox or replay mechanism was selected. Queue overflow, crash/restart and
 rejected exports may lose observations; no exactly-once or lossless telemetry
 guarantee follows. This limitation is recorded and owner-accepted for candidate
 A5; it remains relevant to #6 retention/recovery planning and does not authorize
-ADR adoption or production cutover.
+production cutover.
 
 ## Owner-approved bounded A6 native Usage baseline: October 30, 2026
 
@@ -180,7 +183,7 @@ The candidate must not claim that scenario was tested or infer strict runtime
 independence from it. The observed backend-model filter `403` is retained as a
 native public-alias limitation; no concrete #10 reporting gap was selected, so
 no reporting extension is activated. This bounded A6 decision does not authorize
-ADR adoption or production cutover.
+production cutover.
 
 ## Owner-approved overall bounded candidate acceptance: October 30, 2026
 
@@ -198,10 +201,10 @@ no-overspend, freshness, capacity or durable-telemetry guarantee. The complete
 25-submission ledger and accepted three-submission ceiling exception remain
 authoritative.
 
-This is bounded candidate acceptance only. ADR 0002 remains proposed, ADR 0001
-continues to govern the checked-in runtime, and production cutover is not
-authorized. Adoption requires coordinated ADR, glossary and guidance updates;
-cutover separately requires #6 recovery/readiness evidence and approval.
+This is bounded candidate acceptance with ADR 0002 adopted as the target
+architecture. ADR 0001 continues to govern the checked-in runtime, and production
+cutover is not authorized. Cutover separately requires #6 recovery/readiness
+evidence and approval.
 
 ### Local client preflight reclassification
 
@@ -245,11 +248,11 @@ preserve the change; publication supplies no runtime acceptance evidence.
 
 | Work | Status in this record | Next gate |
 |---|---|---|
-| #1 setup and coordination | Owner defaults recorded; **partial**, not full issue completion. | #2 exact choices, #7 results and limitations, then explicit owner candidate decision. |
-| #2 stack/native configuration | Configuration/startup tranche recorded in [deployment](deployment.md); shared acceptance pending. | #7 verifies actual-client, ownership/usage and controls; #8 implements the revised tracing objective. |
+| #1 setup and coordination | Owner defaults, bounded evidence and target adoption recorded; runtime cutover remains separate. | Preserve the adopted boundaries and coordinate #6 readiness/cutover. |
+| #2 stack/native configuration | Configuration/startup tranche recorded in [deployment](deployment.md); bounded acceptance and target adoption approved. | Preserve pinned settings and limitations; #6 owns production readiness. |
 | #8 native Langfuse | [Configuration tranche](langfuse.md): separate project/native logger plus demonstrated narrow mapping/credential seam; bounded shared A5 follow-up is owner-accepted with explicit native durability limits. | Preserve the accepted limits and complete #6 project access/retention/recovery decisions; no custom outbox is selected. |
-| #7 acceptance | [Bounded follow-up](acceptance.md): A1–A6 include populated detail, restart, valid rate-control, sink-outage and UI evidence. A1, bounded A2, bounded A5 and bounded A6 are accepted for their recorded contracts; the submission overage is an accepted execution exception; overall bounded candidate acceptance is approved. | Preserve limits; proceed separately to ADR adoption and #6 production-readiness/cutover decisions. |
-| #6 production readiness | [Same-pin populated recovery evidence](recovery.md) now covers the authorized `checkpoint-1793273530` request-history subset plus native account/key/policy state; production cutover not authorized. | External CPA/Langfuse recovery, approved retention/custody and off-host backup, upgrade/rollback/PITR, candidate acceptance and separate cutover approval. |
+| #7 acceptance | [Bounded follow-up](acceptance.md): A1–A6 include populated detail, restart, valid rate-control, sink-outage and UI evidence. A1, bounded A2, bounded A5 and bounded A6 are accepted for their recorded contracts; the submission overage is an accepted execution exception; overall bounded candidate acceptance and ADR 0002 target adoption are approved. | Preserve limits; proceed separately to #6 production-readiness/cutover decisions. |
+| #6 production readiness | [Same-pin populated recovery evidence](recovery.md) now covers the authorized `checkpoint-1793273530` request-history subset plus native account/key/policy state; production cutover not authorized. | External CPA/Langfuse recovery, approved retention/custody and off-host backup, upgrade/rollback/PITR, and separate cutover approval. |
 | #3 diagnostics | **Optional, unselected.** | Select only for a concrete operator diagnostic need; never gates personal totals. |
 | #10 reporting extension | **Deferred, unselected.** | Use native UI in A6, identify a gap and obtain explicit feature selection. |
 
@@ -293,10 +296,10 @@ The [shared A1–A6 definitions](../specs/litellm-poc.md#bounded-integration-acc
 remain authoritative. The original setup-scope tranche above performed no candidate
 requests, native UI walkthrough or telemetry acceptance. The later #7 bounded
 follow-up records populated provider, usage and native tracing observations with
-explicit partial classifications. The [#8 activation](langfuse.md) delivered the
+recorded bounded classifications. The [#8 activation](langfuse.md) delivered the
 native configuration used by that run.
 
-| Check | Status | Required evidence still outstanding (#7) |
+| Check | Status | Accepted limitation / next action |
 |---|---|---|
 | A1 Native access | **Accepted bounded LiteLLM-native semantics** | Own request-ID details return rows; cross-owner `/spend/logs/v2` queries return empty 200 results without disclosure, accepted as list-route filtering. Explicit detail denial remains on `/spend/logs/ui/{request_id}`. |
 | A2 Actual client | **Accepted bounded contract; interruption limitation retained** | OpenCode route/tool/image/history and interrupted-stream observations are recorded; candidate `403` is accepted as the representative LiteLLM-visible error. The client ended incomplete after native retries, but no same-stream gateway replay occurred; this remains a client limitation, not a compatibility blocker. CPA-route `metadata` remains an A5 tracing limitation. |
@@ -329,6 +332,6 @@ in repository evidence with their source and limits.
   are not passed. No strict-budget, lossless-accounting, exactly-once telemetry,
   freshness or capacity guarantee follows from a smoke check. Earlier proposed
   freshness/retention values remain proposals; #6 owns production choices.
-- Architecture adoption requires an explicit owner decision and coordinated ADR
-  status, glossary and guidance updates. Production cutover requires separate #6
-  readiness and approval. Preserve old history's group ownership and proof limits.
+- Architecture adoption is owner-approved and recorded through coordinated ADR,
+  glossary and guidance updates. Production cutover requires separate #6 readiness
+  and approval. Preserve old history's group ownership and proof limits.

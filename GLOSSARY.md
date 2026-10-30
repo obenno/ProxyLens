@@ -1,10 +1,10 @@
 # ProxyLens
 
 ProxyLens integrates authorized model-provider access, usage visibility, and
-observability. Current-runtime terms and proposed personal-usage terms are
-separated below; the bounded candidate is accepted, while
-[ADR 0002](docs/adr/0002-litellm-personal-usage.md) remains proposed pending
-coordinated adoption.
+observability. Current-runtime terms and adopted target personal-usage terms are
+separated below. [ADR 0001](docs/adr/0001-architecture-boundaries.md) remains the
+checked-in runtime contract until separately approved cutover; [ADR 0002](docs/adr/0002-litellm-personal-usage.md)
+is the accepted target architecture.
 
 ## Current implementation: identity and access
 
@@ -76,7 +76,7 @@ _Avoid_: Unassigned resource.
 CPA-Manager-Plus Full Mode, the designated consumer of CLIProxyAPI usage events and the authoritative source for durable request history and usage analytics.
 _Avoid_: ProxyLens collector, usage queue consumer.
 
-## Candidate: personal ownership
+## Adopted target: personal ownership
 
 **Platform user**:
 A stable personal identity that owns access credentials and personal usage.
@@ -102,7 +102,7 @@ _Avoid_: Authenticated user, trusted owner.
 Assignment of a request's usage to its responsible owner, with the basis identified.
 _Avoid_: Correlation, proof of human presence.
 
-## Candidate: request accounting
+## Adopted target: request accounting
 
 **Client request**:
 One model invocation submitted by a client to the gateway, distinct from gateway/provider attempts made to execute it. A client retry submitted as a new request is a separate client request; one user action may produce several.
@@ -140,7 +140,7 @@ _Avoid_: Per-request token estimate.
 A period whose usage shares a defined ownership and accounting contract.
 _Avoid_: Budget reset period.
 
-## Candidate: debugging observability
+## Adopted target: debugging observability
 
 **Debugging trace**:
 Request/session observations containing available transmitted prompts/code, AI outputs, visible tool interactions, errors and execution measurements for application diagnosis. It is not a record of local execution or files never transmitted.

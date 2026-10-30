@@ -2,18 +2,18 @@
 
 **October 30, 2026 — populated #6 evidence; no production approval or cutover.**
 Uses the [candidate deployment](deployment.md), [shared contract](../specs/litellm-poc.md)
-and proposed [ADR 0002](../adr/0002-litellm-personal-usage.md). This rehearsal restored
+and adopted target [ADR 0002](../adr/0002-litellm-personal-usage.md). This rehearsal restored
 the settled native request-history subset plus account/key/policy state from
 `checkpoint-1793273530`. The prior October 29 rehearsal restored account/key/policy
 state only and remains historical evidence. The bounded #7 follow-up is recorded in
 [acceptance.md](acceptance.md), with bounded candidate acceptance approved and
-adoption/cutover still separate.
+ADR 0002 target adoption recorded; production cutover remains separate.
 The owner subsequently accepted native client
 retries; the [local preflight's former blocker classification is superseded](decisions.md#local-client-preflight-reclassification).
 A1 is accepted for the bounded LiteLLM-native access semantics; A2, A5 and A6
 are accepted for their recorded bounded contracts and limitations. The deferred
-CPAMP-unavailable runtime check is not claimed as tested. ADR adoption and
-production cutover remain pending. Leave #6 open.
+CPAMP-unavailable runtime check is not claimed as tested. ADR 0002 target adoption
+is recorded; production cutover remains pending. Leave #6 open.
 
 The owner subsequently approved **native Langfuse content-rich tracing**: prompts
 (including source code), model output, gateway-visible tool arguments/results,
@@ -413,14 +413,15 @@ telemetry content/readback,
 attribution, masking and no-replay outage behavior were observed; durable delivery
 across restart remains unproven. The complete private run exceeded the documented
 22-submission ceiling by three; the owner accepted this as a documented execution
-exception with the full ledger preserved. Overall bounded candidate acceptance is
-approved; the deferred CPAMP-unavailable runtime check remains outside the
-bounded evidence. ADR adoption and production cutover remain separate gates.
+exception with the full ledger preserved. Overall bounded candidate acceptance and
+ADR 0002 target adoption are approved; the deferred CPAMP-unavailable runtime
+check remains outside the bounded evidence. Production cutover remains a separate
+gate.
 
 **Production sequence, not authorization to execute:**
 
-1. Preserve the #7 execution ledger and bounded A1–A6 owner decisions, then complete
-   #1's coordinated ADR/glossary/guidance adoption decision. Record accepted native batching,
+1. Preserve the #7 execution ledger and bounded A1–A6 owner decisions. Maintain the
+   coordinated ADR/glossary/guidance adoption record and record accepted native batching,
    volatility, limit propagation, missing fields and delivery limitations. No strict
    no-overspend, lossless accounting or exactly-once claim follows from this restore.
 2. Assign and approve backup/retention/content-access custodians and actual values

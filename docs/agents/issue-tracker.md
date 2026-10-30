@@ -64,8 +64,9 @@ Each implementation issue should include:
   without adding a bespoke UI/access project. A minimal hook requires a demonstrated,
   selected mapping/credential gap, not a preplanned blanket filtering adapter.
 - Existing runtime: ADR 0001 continues to govern Keycloak/group identity, custom
-  authorization and CPAMP-derived proof-gated projections until accepted cutover.
-  Proposed ADR 0002 does not silently supersede it.
+  authorization and CPAMP-derived proof-gated projections until approved cutover.
+  Accepted target ADR 0002 does not silently switch ingress, migrate state or
+  supersede the current runtime before #6 readiness and cutover approval.
 
 ## Labels and sequencing
 

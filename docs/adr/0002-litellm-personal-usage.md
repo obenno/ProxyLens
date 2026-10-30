@@ -1,12 +1,12 @@
 # LiteLLM-owned personal access and accounting
 
 ---
-status: proposed
-date: 2026-10-29
+status: accepted
+date: 2026-10-30
 ---
 
 The clarified product needs personal keys and usage rather than mandatory group
-administration. Propose LiteLLM for native accounts, user-owned virtual keys,
+administration. Adopt LiteLLM for native accounts, user-owned virtual keys,
 admission, limits and client-request accounting, with CLIProxyAPI retained for
 provider OAuth and execution. Prefer native personal Usage and native asynchronous
 Langfuse integration for content-bearing application debugging; limit ProxyLens
@@ -16,11 +16,19 @@ runtime already exercised by the project.
 
 ## Status and adoption
 
-This is the candidate for the [POC contract](../specs/litellm-poc.md), not an
-accepted replacement. [ADR 0001](0001-architecture-boundaries.md) remains accepted
-for the checked-in implementation. Bounded integration acceptance, documented native
-semantics and owner acceptance are required before changing either status. Revising issue
-titles or passing old-stack tests does not establish acceptance.
+The owner approved bounded candidate acceptance on October 30, 2026, and adopted
+this ADR as the target personal-usage architecture. The decision is bounded by the
+recorded A1–A6 evidence and limitations in the [candidate acceptance record](../candidate/acceptance.md):
+it does not claim strict lossless, exactly-once, no-overspend, freshness, capacity
+or durable-telemetry guarantees.
+
+[ADR 0001](0001-architecture-boundaries.md) remains accepted for the checked-in
+runtime until separately approved #6 production cutover. Adoption changes the
+target ownership contract and documentation; it does not migrate runtime state,
+issue keys, switch ingress or retire the existing services. Preserve old
+group-owned history under its original semantics. Production use additionally
+requires #6 recovery, retention/access, key issuance, rollback and explicit
+cutover approval.
 
 ## Consequences
 
@@ -30,7 +38,8 @@ titles or passing old-stack tests does not establish acceptance.
 - Configure native features instead of creating parallel account/key/reporting
   projects or duplicating upstream tests. One shared integration pass validates
   this deployment; custom hooks/adapters receive focused regression tests.
-- LiteLLM retained facts are the proposed personal accounting source. Document
+- LiteLLM retained facts are the adopted personal accounting source for the target
+  architecture. Document
   native durability and limit semantics; strict budgets, lossless accounting or
   custom rebuildability require separately selected scope and evidence.
   Subscription expenditure remains a separate concept.

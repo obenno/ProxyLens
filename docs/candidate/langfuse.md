@@ -2,8 +2,9 @@
 
 **October 30, 2026 — #8 configuration tranche with bounded #7 A5 follow-up.**
 Uses the [content-rich contract](../specs/litellm-poc.md#native-debugging-traces).
-Runtime activation/readback status is recorded below; neither configuration nor
-synthetic callback tests establish shared acceptance or production adoption.
+Runtime activation/readback status is recorded below; bounded A5 acceptance and
+ADR 0002 target adoption are recorded, while production project access, retention,
+recovery and cutover remain pending.
 
 ## Selected native path and demonstrated gap
 
