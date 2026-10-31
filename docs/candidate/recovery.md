@@ -389,13 +389,15 @@ separate volume `proxylens-candidate-restore_restore_db`.
 ## Upgrade, health and separately approved cutover
 
 **Upgrade/rollback preparation:** retain pre-upgrade binary/config/schema/migration
-state plus matching DB and secrets as one set. Rehearse any proposed target version
-on a new isolated clone; compare migration history, native login/key/history and
-selected #7 cases. No cross-version migration was tested here. Treat a changed
-schema as incompatible with the old binary until proven otherwise; rollback is
-old pinned binary + **pre-upgrade snapshot in a new DB**, not binary downgrade
-against migrated state. Keep old source volume/ingress recoverable; post-checkpoint
-requests require explicit handling as a separate accounting interval, not replay.
+state plus matching DB and secrets as one set. The detailed [isolated upgrade and
+rollback rehearsal plan](upgrade-rollback.md) requires an approved target and
+rollback authority before execution. Rehearse any proposed target version on a new
+isolated clone; compare migration history, native login/key/history and selected #7
+cases. No cross-version migration was tested here. Treat a changed schema as
+incompatible with the old binary until proven otherwise; rollback is old pinned
+binary + **pre-upgrade snapshot in a new DB**, not binary downgrade against migrated
+state. Keep old source volume/ingress recoverable; post-checkpoint requests require
+explicit handling as a separate accounting interval, not replay.
 
 **Health is three separate observations:** `/health/readiness` confirmed app/DB
 availability; own history API confirmed readable native history (the populated

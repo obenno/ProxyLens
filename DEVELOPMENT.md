@@ -1,5 +1,28 @@
 # Development Notes
 
+## 2026-10-31 — #6 isolated upgrade/rollback rehearsal plan
+
+### Scope and decision
+
+Added [`docs/candidate/upgrade-rollback.md`](docs/candidate/upgrade-rollback.md), a
+provider-disconnected rehearsal plan for the remaining criterion 3 evidence. It
+requires D5 to select exact LiteLLM/PostgreSQL target references and D6 to approve
+rollback authority/triggers before execution. The plan uses new private projects,
+volumes and databases; rollback restores the immutable pre-upgrade set into a new
+database rather than downgrading a migrated database in place.
+
+The plan separates LiteLLM-only and PostgreSQL changes, requires native identity/
+history/key/authorization checks, defines a synthetic isolated telemetry check,
+preserves later accounting intervals, and lists stop conditions for live-service,
+provider, queue and external-sink access. No rehearsal, target selection, provider
+request, queue read, telemetry replay or live-service change was performed.
+
+### Validation and follow-up
+
+Linked the plan from the readiness D5/D6 rows and recovery preparation section.
+Criterion 3 remains partial until the owner decisions and both isolated upgrade and
+new-database rollback evidence are recorded.
+
 ## 2026-10-31 — #6 operational decision packet
 
 ### Scope and decision
