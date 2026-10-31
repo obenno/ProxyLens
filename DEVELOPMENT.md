@@ -1,5 +1,29 @@
 # Development Notes
 
+## 2026-10-31 — #6 operational decision packet
+
+### Scope and decision
+
+Extended [`docs/candidate/readiness.md`](docs/candidate/readiness.md) with a
+production-owner decision register for criteria 1, 3, 6 and 7. The register records
+custody, retention/deletion, off-host backup and RPO/RTO, external CPA/CPAMP/Langfuse
+recovery boundaries, target-version upgrade/rollback, personal-key issuance,
+history/accounting-epoch treatment, cutover operators/window and explicit cutover
+authorization.
+
+No production values or approvals were invented. All unresolved fields remain
+`PENDING`; the same-pin restore is not treated as off-host, external-store or
+cross-version evidence. The packet preserves the prohibition on provider inference,
+queue reads, telemetry replay, ingress switching and service retirement before
+separate approval.
+
+### Validation and follow-up
+
+Closure is now mechanically mapped: criteria 1, 3 and 6 require the corresponding
+decision rows plus evidence; criterion 7 requires a dated approval before ingress
+change and post-cutover checks afterward. The next human input is the production
+owner's completed D1–D9 fields.
+
 ## 2026-10-30 — #6 production-readiness matrix
 
 ### Scope and decision

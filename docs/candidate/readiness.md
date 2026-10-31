@@ -26,6 +26,58 @@ key issuance and migration decisions, and a separate cutover approval/window.
 | 6. Cutover, keys, history and rollback plan | **Partial — execution decisions required** | The recovery sequence defines new personal keys, old group-history preservation, a new accounting epoch, ingress drain/checkpoint, rollback triggers and old-state retention. Actual key distribution, cutover window, custodians, checkpoint procedure and post-checkpoint treatment are not approved. | Approve key issuance/distribution; define old-history access and epoch boundary; choose cutover window; assign operators; confirm rollback triggers, retention window and post-checkpoint accounting/key revocation. |
 | 7. Approved cutover and post-cutover checks | **Not started — explicit approval gate** | No ingress switch, production request, provider replay, mirror traffic, service retirement or issue closure occurred. | Obtain explicit cutover approval; execute the approved window; repeat essential client/login/Usage/telemetry checks; retain rollback state; retire old services only after successful rollback-window acceptance. |
 
+## Owner decision register — October 31, 2026
+
+No production-owner approval is recorded for the fields below as of October 31,
+2026. `PENDING` means unresolved; it is not an approval or a production default.
+Complete the decision, owner, UTC date and evidence-reference fields before changing
+any matrix status.
+
+| ID | Closes | Decision required | Evidence required before closure | Owner decision | Decision owner | Approved UTC | Evidence / approval reference |
+|---|---|---|---|---|---|---|---|
+| D1 | Criterion 1 | Name custodians for native DB/history, secrets, logs, images, old runtime state, CPA, CPAMP and Langfuse. | Signed custody map with server-side access boundaries and backup/recovery operators. | **PENDING** | **PENDING** | **PENDING** | **PENDING** |
+| D2 | Criterion 1 | Set retention/deletion for native metadata/history, content-rich Langfuse traces, logs, backup copies and private recovery evidence; record secret rotation/expiry. | Approved retention table plus verified effective settings for each selected store. | **PENDING** | **PENDING** | **PENDING** | **PENDING** |
+| D3 | Criterion 1 | Select protected off-host backup storage, encryption/key custody, backup cadence, expiry, retrieval cadence, RPO and RTO. | Successful retrieval/decryption rehearsal from the selected off-host location, with timestamps and sanitized checksums. | **PENDING** | **PENDING** | **PENDING** | **PENDING** |
+| D4 | Criteria 1, 3 | Decide whether CPA, CPAMP and Langfuse external state are production dependencies; assign recovery scope and owners. | External-store inventory, backup/retrieval result or an explicit accepted non-dependency boundary for each service. | **PENDING** | **PENDING** | **PENDING** | **PENDING** |
+| D5 | Criterion 3 | Select the target LiteLLM/PostgreSQL versions and image digests for upgrade rehearsal. | Isolated-clone upgrade evidence: migration history/schema comparison, native login/key/history/Usage checks, selected telemetry check and retained pre-upgrade snapshot. | **PENDING** | **PENDING** | **PENDING** | **PENDING** |
+| D6 | Criteria 3, 6 | Approve rollback authority and triggers; require old binary plus pre-upgrade snapshot in a new DB rather than binary downgrade against migrated state. | Isolated rollback rehearsal with preserved evidence and explicit treatment of work created after the pre-upgrade checkpoint. | **PENDING** | **PENDING** | **PENDING** | **PENDING** |
+| D7 | Criterion 6 | Approve new personal-key issuance, private distribution channel, old group-history access, accounting-epoch boundary and post-checkpoint accounting treatment. | Issuance ledger without secret values, native owner/readback checks, old-history access decision and epoch/checkpoint record. | **PENDING** | **PENDING** | **PENDING** | **PENDING** |
+| D8 | Criteria 6, 7 | Select cutover window and timezone; name ingress, database, CPA, Langfuse, validation and rollback operators; set rollback-window retention and key-revocation authority. | Signed run sheet with checkpoint, drain, switch, validation, rollback and retirement steps. | **PENDING** | **PENDING** | **PENDING** | **PENDING** |
+| D9 | Criterion 7 | Explicitly authorize or reject production cutover after D1–D8 and the required rehearsals close. | Dated approval in the issue/decision record naming the approved window, scope, rollback authority and stop conditions. | **PENDING** | **PENDING** | **PENDING** | **PENDING** |
+
+### Decision-entry form
+
+Use this block for each decision register row. Do not put credentials, personal
+keys, cookies, prompt/source content or private trace payloads in the repository or
+issue comments.
+
+```text
+Decision ID:
+Decision:
+Approved value/scope:
+Decision owner:
+Execution/evidence owner:
+Approval date and timezone (UTC):
+Review or expiry date (UTC):
+Evidence reference:
+Rollback/stop condition, if applicable:
+Notes and accepted limitations:
+```
+
+### Closure mapping
+
+| Matrix criterion | Minimum recorded closure |
+|---|---|
+| 1. Ownership and retention | D1–D4 completed, approved retention/custody values recorded, and protected off-host retrieval evidence retained. |
+| 3. Upgrade/rollback | D5–D6 completed and the selected-version isolated upgrade plus pre-upgrade-snapshot rollback rehearsal passes the required native checks. |
+| 6. Cutover preparation | D7–D8 completed with key/history/epoch treatment, operators, window, rollback triggers and post-checkpoint handling recorded. |
+| 7. Approved cutover | D9 completed before ingress change; post-cutover checks and rollback-window outcome are recorded afterward. |
+
+The existing same-pin populated restore remains evidence for criterion 2. It does
+not satisfy D3, D4, D5, D6 or D9: it used a provider-disconnected callback-disabled
+configuration, performed zero provider calls and queue reads, and did not recover or
+mutate external CPA/Langfuse state.
+
 ## Production blockers and owners
 
 | Blocker | Evidence owner / decision owner | Current state |
