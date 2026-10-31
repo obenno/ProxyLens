@@ -6,6 +6,11 @@ Current criterion-by-criterion status is in the [#6 production-readiness matrix]
 The matrix is the readiness summary; this document remains the detailed recovery
 evidence and procedure record.
 
+**October 31 follow-up:** the owner-approved [isolated upgrade/new-database rollback](upgrade-rollback.md#observed-results-october-31-2026)
+passed for LiteLLM 1.106.6 → pinned 1.108.0-rc.1 → 1.106.6 with PostgreSQL 17.11
+unchanged. That separate record preserves both attempts, the comparator correction
+and scope limits; the October 30 same-pin evidence below remains historical.
+
 Uses the [candidate deployment](deployment.md), [shared contract](../specs/litellm-poc.md)
 and adopted target [ADR 0002](../adr/0002-litellm-personal-usage.md). This rehearsal restored
 the settled native request-history subset plus account/key/policy state from
@@ -393,7 +398,8 @@ state plus matching DB and secrets as one set. The detailed [isolated upgrade an
 rollback rehearsal plan](upgrade-rollback.md) requires an approved target and
 rollback authority before execution. Rehearse any proposed target version on a new
 isolated clone; compare migration history, native login/key/history and selected #7
-cases. No cross-version migration was tested here. Treat a changed schema as
+cases. No cross-version migration was tested in the October 30 restore; the
+October 31 bounded follow-up is linked above. Treat a changed schema as
 incompatible with the old binary until proven otherwise; rollback is old pinned
 binary + **pre-upgrade snapshot in a new DB**, not binary downgrade against migrated
 state. Keep old source volume/ingress recoverable; post-checkpoint requests require

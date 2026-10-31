@@ -1,5 +1,65 @@
 # Development Notes
 
+## 2026-10-31 — D5/D6 isolated upgrade and new-database rollback
+
+### Scope, authority and target
+
+The owner explicitly authorized target selection/verification and isolated execution
+using the retained populated recovery set, with PostgreSQL fixed at 17.11, stop
+authority on documented failures, evidence preservation and no live-service changes,
+inference, queue reads, external telemetry mutations or cutover. Recorded the
+approval separately from outcomes in the readiness register and private manifest.
+
+Selected digest-pinned `v1.108.0-rc.1` (installed Python package `1.108.0`) only for
+the rehearsal: 1.106.6 remained the latest stable release; the RC's notes state
+v1.106.x fix parity. Registry platform manifest, config/image ID, source tag and
+OCI revision agree; both installed schemas match pinned source. Seven migrations
+are added without changing the baseline's 213 files. No image-signature
+verification or production promotion is claimed. Deployment and CI pins stay put.
+
+### Evidence and implementation rules
+
+- Baseline restored 98 tables / 272 rows from the retained set, with exact
+  pre-start fingerprints. Native logins add two UI sessions and startup removes a
+  stale heartbeat; the stopped-app pre-upgrade snapshot has 273 rows.
+- Attempt 1 stopped on whole-dictionary aggregate equality; the sole difference
+  was source-declared `total_ptu_hours: 0.0`. Captured evidence shows existing
+  values unchanged. Its target failure marker and successful rollback are retained.
+- Corrected only the private comparator: require every baseline field/value and
+  exactly the verified addition. Captured-response checks reject changed tokens,
+  missing spend and unknown additions. Attempt 2 uses new projects/volumes and
+  passes upgrade plus fresh-database rollback. No upstream/runtime code patched.
+- Migrations 213 → 220 → 213; target has four new empty tables and three added
+  columns, matching source. All applied migration checksums match installed SQL.
+  Other than migrations and UI-session rows, existing table fingerprints match.
+- A/B login, own history/aggregate/policy, A/A2/B ownership/limits/spend/models and
+  both cross-owner checks pass. A's 3 checkpoint + 7 later records and B's 2 are
+  preserved without replay or deleting later activity. Fresh native login sessions
+  replace expired sessions only in the local test client; source fixtures stay intact.
+- Six existing callback tests pass unmodified in the target image with network
+  `none`, synthetic local capture and no secrets. They import target runtime; one
+  helper still receives the test's baseline version label, recorded as a limit.
+- 44 original container identities/start times/status/restart counts and all 63
+  retained source files unchanged. Nine new containers stopped, four volumes and
+  both private evidence directories retained. Known credential scans of app logs pass.
+
+### Validation and follow-up
+
+Bounded criterion 3 and D5/D6 are now complete for this exact isolated version/state
+pair. Native Usage APIs and HTML were checked; no interactive UI or actual-client/
+provider protocol check was authorized. This does not close off-host retrieval,
+external recovery, retention/custody, production keys/history/epoch, PITR or cutover.
+No stronger accounting, limit, telemetry durability or recovery-time guarantee follows.
+
+Public records: `docs/candidate/upgrade-rollback.md`, `readiness.md`, `recovery.md`,
+`decisions.md`, and sanitized `evidence/2026-10-31-upgrade-rollback.json`. One-off
+scripts, exact commands/configs, raw readback, snapshots, manifests and checksums
+remain in private `issue6-upgrade-rollback-20261031{,-attempt2}` outside Git.
+Original SHA256SUMS omitted dump/fingerprints and had mode 0664 under a 0700 parent;
+its 23 hashes passed, copied artifacts use 0600, restored fingerprints match, and
+the source set is preserved byte-for-byte. Static documentation/JSON/diff checks
+and credential scanning accompany the evidence; no new product test framework.
+
 ## 2026-10-31 — #6 isolated upgrade/rollback rehearsal plan
 
 ### Scope and decision
