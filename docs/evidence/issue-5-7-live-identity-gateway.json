@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "recorded_on": "2026-10-26",
+  "status": "partial",
+  "deployment": "isolated local E2E runtime",
+  "keycloak": {
+    "realm": "proxylens",
+    "flat_groups": 2,
+    "roles_exercised": ["platform-admin", "group-admin", "group-member"],
+    "pkce_browser_flow": true,
+    "rs256_access_and_id_token_validation": true,
+    "group_authority_checks": true
+  },
+  "resources": {
+    "applications_created": 2,
+    "client_keys_created": 2,
+    "audit_records": 8,
+    "cross_group_scope_denied": true
+  },
+  "gateway": {
+    "route_registry_default_deny": true,
+    "denied_before_upstream": true,
+    "revocation_rejected_next_request": true,
+    "provider_requests_sent": 0
+  },
+  "not_proven": [
+    "authorized_provider_request_through_final_composed_stack",
+    "tenant_projection_publication",
+    "full_worker_and_exporter_restart_flow"
+  ],
+  "evidence_location": "private scratch E2E runtime; identifiers, tokens, keys and fixtures intentionally omitted"
+}

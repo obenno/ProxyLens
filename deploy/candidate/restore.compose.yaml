@@ -1,0 +1,79 @@
+# Standalone offline rehearsal, NOT an overlay for the live candidate Compose file.
+# The active #8 callback/config is archived privately; the mounted restore config is
+# a separate callback-disabled copy. Never attach the Langfuse overlay to this file.
+# See docs/candidate/recovery.md. Start postgres first; restore before starting litellm.
+name: proxylens-candidate-restore
+
+services:
+  postgres:
+    image: docker.io/library/postgres:17.11@sha256:0b81cec82228160abfa753aeaad0609b709eb26eeb950f2e404ad2326e1cc370
+    platform: linux/amd64
+    environment:
+      # The target litellm DB must be explicitly created from template0.
+      POSTGRES_DB: postgres
+      POSTGRES_USER: litellm
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets: [postgres_password]
+    volumes: [restore_db:/var/lib/postgresql/data]
+    networks: [offline]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U litellm -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: "no"
+
+  litellm:
+    image: ghcr.io/berriai/litellm:v1.106.6@sha256:c09a77d998058dd78835a45a985eae747d257f2b183db06852fba536f3d1113c
+    platform: linux/amd64
+    entrypoint: [python, /candidate/secret_env.py, /app/docker/prod_entrypoint.sh]
+    command: [--config, /candidate/config.yaml, --host, 0.0.0.0, --port, "4000", --num_workers, "1"]
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      LITELLM_MASTER_KEY_FILE: /run/secrets/master_key
+      LITELLM_SALT_KEY_FILE: /run/secrets/salt_key
+      UI_PASSWORD_FILE: /run/secrets/ui_password
+      UI_USERNAME: candidate-admin
+      # No real provider secret or route in the restored process.
+      CPA_API_KEY: offline-restore-no-provider-access
+      CPA_API_BASE: http://127.0.0.1:9/v1
+      LITELLM_LOG: ERROR
+      LITELLM_TELEMETRY: "False"
+      LITELLM_LOCAL_MODEL_COST_MAP: "True"
+      STORE_MODEL_IN_DB: "False"
+      LITELLM_DISABLE_ACCESS_LOG_PATHS: /onboarding/get_token,/health/readiness,/health/liveliness
+      PROXY_BASE_URL: http://127.0.0.1:${RESTORE_PORT:-14006}
+    secrets: [postgres_password, master_key, salt_key, ui_password]
+    volumes:
+      # These are the offline loader/config copies, not the active callback source.
+      - ${RECOVERY_DIR:?Set new private RECOVERY_DIR}/artifacts/secret_env.py:/candidate/secret_env.py:ro
+      - ${RECOVERY_DIR}/artifacts/config.yaml:/candidate/config.yaml:ro
+    ports: ["127.0.0.1:${RESTORE_PORT:-14006}:4000"]
+    networks: [offline]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD-SHELL, "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:4000/health/readiness', timeout=3)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+    restart: "no"
+
+volumes:
+  restore_db:
+
+networks:
+  offline:
+    internal: true
+
+secrets:
+  postgres_password:
+    file: ${RECOVERY_DIR}/secrets/postgres_password
+  master_key:
+    file: ${RECOVERY_DIR}/secrets/master_key
+  salt_key:
+    file: ${RECOVERY_DIR}/secrets/salt_key
+  ui_password:
+    file: ${RECOVERY_DIR}/secrets/ui_password

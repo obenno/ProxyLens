@@ -1,0 +1,80 @@
+name: proxylens-candidate
+
+services:
+  postgres:
+    image: docker.io/library/postgres:17.11@sha256:0b81cec82228160abfa753aeaad0609b709eb26eeb950f2e404ad2326e1cc370
+    platform: linux/amd64
+    environment:
+      POSTGRES_DB: litellm
+      POSTGRES_USER: litellm
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets: [postgres_password]
+    volumes: [candidate_db:/var/lib/postgresql/data]
+    networks: [database]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U litellm -d litellm"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  litellm:
+    image: ghcr.io/berriai/litellm:v1.106.6@sha256:c09a77d998058dd78835a45a985eae747d257f2b183db06852fba536f3d1113c
+    platform: linux/amd64
+    entrypoint: [python, /candidate/secret_env.py, /app/docker/prod_entrypoint.sh]
+    command: [--config, /candidate/config.yaml, --host, 0.0.0.0, --port, "4000", --num_workers, "1"]
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      LITELLM_MASTER_KEY_FILE: /run/secrets/master_key
+      LITELLM_SALT_KEY_FILE: /run/secrets/salt_key
+      UI_PASSWORD_FILE: /run/secrets/ui_password
+      CPA_API_KEY_FILE: /run/secrets/cpa_api_key
+      CPA_API_BASE: ${CPA_API_BASE:?Set CPA_API_BASE to the authorized CPA inference /v1 URL}
+      UI_USERNAME: candidate-admin
+      LITELLM_LOG: ERROR
+      LITELLM_TELEMETRY: "False"
+      LITELLM_LOCAL_MODEL_COST_MAP: "True"
+      STORE_MODEL_IN_DB: "False"
+      LITELLM_DISABLE_ACCESS_LOG_PATHS: /onboarding/get_token,/health/readiness,/health/liveliness
+      PROXY_BASE_URL: http://127.0.0.1:${CANDIDATE_PORT:-14000}
+      PYTHONPATH: /candidate
+      PROXYLENS_TRACE_DEPLOYMENT: proxylens-candidate
+    secrets: [postgres_password, master_key, salt_key, ui_password, cpa_api_key]
+    volumes:
+      - ./secret_env.py:/candidate/secret_env.py:ro
+      - ./config.yaml:/candidate/config.yaml:ro
+      - ./native_langfuse.py:/candidate/native_langfuse.py:ro
+    ports: ["127.0.0.1:${CANDIDATE_PORT:-14000}:4000"]
+    networks: [database, provider]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD-SHELL, "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:4000/health/readiness', timeout=3)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+    restart: unless-stopped
+
+volumes:
+  candidate_db:
+
+networks:
+  database:
+    internal: true
+  provider:
+    external: true
+    name: ${CPA_NETWORK:?Set CPA_NETWORK to the authorized CPA test network}
+
+secrets:
+  postgres_password:
+    file: ${CANDIDATE_SECRETS_DIR:?Set private CANDIDATE_SECRETS_DIR}/postgres_password
+  master_key:
+    file: ${CANDIDATE_SECRETS_DIR}/master_key
+  salt_key:
+    file: ${CANDIDATE_SECRETS_DIR}/salt_key
+  ui_password:
+    file: ${CANDIDATE_SECRETS_DIR}/ui_password
+  cpa_api_key:
+    file: ${CANDIDATE_SECRETS_DIR}/cpa_api_key

@@ -1,0 +1,134 @@
+{
+  "schema": "proxylens-candidate-acceptance-followup-v1",
+  "date": "2026-10-30",
+  "issue": 7,
+  "scope": "bounded live follow-up after populated recovery",
+  "runtime": {
+    "litellm": "1.106.6",
+    "opencode": "2.2.1",
+    "candidate_restart": true,
+    "candidate_healthy_after_restart": true
+  },
+  "overall_candidate_acceptance": {
+    "status": "approved_bounded_poc_contract",
+    "owner_decision_date": "2026-10-30",
+    "a1_a6_bounded_dispositions_accepted": true,
+    "adr_0002_adoption": "approved_target_architecture",
+    "production_cutover": "not_authorized"
+  },
+  "A1": {
+    "own_request_detail": {
+      "A": {"status": 200, "rows": 1, "owner_match": true},
+      "B": {"status": 200, "rows": 1, "owner_match": true}
+    },
+    "cross_owner_request_detail": {
+      "A_reading_B": {"status": 200, "rows": 0, "disclosure": false},
+      "B_reading_A": {"status": 200, "rows": 0, "disclosure": false}
+    },
+    "model_filter_probe": {
+      "A": {"status": 403, "reason": "key_model_access_denied"},
+      "B": {"status": 403, "reason": "key_model_access_denied"},
+      "interpretation": "The backend model name was not an ordinary-user filter value; this is a UI/API limitation, not detail-isolation evidence."
+    },
+    "classification": "bounded_no_populated_cross_owner_disclosure_empty_200_accepted_native_list_semantics"
+  },
+  "A2": {
+    "upstream_error_case": {
+      "http_status": 403,
+      "provider_dispatch": false,
+      "provenance": "candidate response-id ownership validation",
+      "classification": "bounded_litellm_visible_error_accepted_for_a2",
+      "raw_cpa_provider_provenance_required": false
+    },
+    "interruption_case": {
+      "client_visible_before_cut": true,
+      "client_submissions": 3,
+      "provider_dispatches": 3,
+      "candidate_replayed_same_stream": false,
+      "client_exit_code": 1,
+      "classification": "bounded_native_retry_no_same_stream_replay_owner_accepted",
+      "owner_disposition": "accepted_bounded_a2_contract_with_incomplete_client_outcome",
+      "incomplete_client_outcome_is_blocker": false
+    },
+    "known_route_limitation": "CPA route rejected the selected metadata field with 400; caller metadata handling remains an A5 tracing concern, not a LiteLLM-facing A2 requirement."
+  },
+  "A3": {
+    "restart_readback": {
+      "known_checkpoint_rows_checked": 5,
+      "request_ids_present": true,
+      "owners_equal": true,
+      "selected_details_equal": true,
+      "readback_after_restart": true,
+      "candidate_health": "healthy"
+    },
+    "classification": "bounded_restart_persistence_pass"
+  },
+  "A4": {
+    "valid_rate_case": {
+      "statuses": [200, 429],
+      "client_submissions": 2,
+      "provider_dispatches": 1,
+      "fresh_disposable_key": true,
+      "disposable_key_revoked": true,
+      "classification": "bounded_native_rate_limit_pass"
+    },
+    "prior_invalid_rate_attempts": [
+      "revoked-before-dispatch 401/401 case",
+      "direct-candidate first request rejected by observer ceiling, second request 429"
+    ]
+  },
+  "A5": {
+    "sink_outage_case": {
+      "inference_http_status": 200,
+      "provider_dispatches": 1,
+      "telemetry_forward_events": 1,
+      "telemetry_sink_unavailable_events": 4,
+      "outage_held_seconds": 39,
+      "inference_replay": 0,
+      "classification": "bounded_sink_outage_isolation_pass_owner_accepted",
+      "owner_disposition": "accepted_bounded_native_contract_with_durability_limit"
+    },
+    "remaining_limit": "Durable delivery across process restart and external sink recovery remain unproven; no exactly-once or lossless guarantee follows."
+  },
+  "A6": {
+    "native_ui": {
+      "A": {"requests": 11, "total_tokens": 7384, "usage_visible": true},
+      "B": {"requests": 2, "total_tokens": 669, "usage_visible": true},
+      "date_range_control_opened": true,
+      "model_activity_control_rendered": true,
+      "key_activity_control_rendered": true,
+      "mutating_requests": 0,
+      "read_paths_only": true
+    },
+    "classification": "bounded_native_usage_baseline_owner_accepted",
+    "owner_disposition": "accepted_bounded_baseline_cpamp_unavailable_runtime_deferred",
+    "cpamp_unavailable_runtime_inference_tested": false,
+    "reporting_gap_selected": false
+  },
+  "accounting": {
+    "previously_recorded_client_submissions": 20,
+    "followup_client_submissions": 5,
+    "total_client_submissions": 25,
+    "documented_ceiling": 22,
+    "ceiling_exceeded_by": 3,
+    "owner_disposition": "accepted_documented_runbook_execution_exception",
+    "ledger_preserved": true,
+    "reason": "Two invalid/diagnostic rate-limit follow-up submissions plus two valid rate-control submissions and one sink-outage submission were performed after the prior 20-submission record.",
+    "further_live_submissions": 0
+  },
+  "operations": {
+    "candidate_restart_count": 1,
+    "private_observer_restart_count": 1,
+    "shared_service_restarts": 0,
+    "cpamp_queue_reads": 0,
+    "telemetry_triggered_inference_replay": 0,
+    "existing_A_A2_B_fixture_mutations": 0
+  },
+  "limitations": [
+    "The hard reservation ceiling was exceeded by three; the owner accepted this as a documented execution exception and the full ledger remains preserved.",
+    "Cross-owner /spend/logs/v2 queries returned empty 200 responses accepted as native list-route filtering; explicit request-detail authorization remains on /spend/logs/ui/{request_id}.",
+    "The representative error case remained candidate-side validation; raw provider provenance was not required by the accepted LiteLLM-facing A2 contract.",
+    "Native telemetry delivery durability across restart remains untested.",
+    "CPAMP-unavailable runtime inference remains untested and deferred; no concrete #10 reporting gap was selected."
+  ]
+}

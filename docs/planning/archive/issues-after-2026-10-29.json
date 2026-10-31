@@ -1,0 +1,172 @@
+[
+  {
+    "number": 1,
+    "title": "Native-first personal access: integration scope and candidate acceptance",
+    "body": "## Problem / outcome\n\nDeliver personal subscription-backed access with LiteLLM → CLIProxyAPI, native\npersonal Usage and native Langfuse. Reuse upstream accounts, keys, limits and\nreporting; organize ProxyLens work around configuration and integration gaps.\n\n## Revision and current state\n\nRevised in place on October 29, 2026 with owner approval. Original issue bodies are archived in\n`docs/planning/archive/issues-before-2026-10-29.json`. Existing code implements\nKeycloak/group/custom-gateway contracts; its evidence is preserved, not relabeled.\nADR 0002 remains proposed until the candidate is accepted.\n\n## Scope\n\n- Own the shared scope in `docs/specs/litellm-poc.md` and record choices needed by\n  setup: actual client/model, native edition, ordinary role and enabled policies.\n- Coordinate #2 configuration, #8 Langfuse, #7 one integration acceptance pass,\n  and #6 production readiness/cutover. #5/#9 consolidate into #2; #4 into #7.\n- Keep #3 optional diagnostics and #10 deferred reporting-gap work.\n- Review native behavior and concrete gaps before accepting the candidate. Native\n  features require no custom implementation or repeated upstream test suite.\n\n## Dependencies\n\n#2/#8 configure the candidate, #7 supplies A1–A6 evidence, #6 prepares production\nreadiness. Scope decisions happen first; candidate acceptance precedes separately\napproved cutover. No dependency on closing optional/deferred tickets.\n\n## Acceptance criteria\n\n- [ ] Required client/model, native feature scope and configuration choices are\n  recorded. Additional requirements are explicit, not inferred from old contracts.\n- [ ] #2/#8 deliver the configured candidate and #7 completes the shared A1–A6\n  checks: native access, client protocol, ownership/usage, controls, telemetry and\n  CPAMP-independent native Usage.\n- [ ] Native UI gaps and observed limitations are reviewed. Wrong ownership,\n  privacy leakage or broken required client behavior blocks acceptance; custom\n  work is scoped only for an agreed gap.\n- [ ] Deferred handoff P1–P13 scenarios are recorded as deferred/conditional, not\n  passed. No strict-budget, lossless-accounting or exactly-once-delivery claim is\n  made from a smoke check.\n- [ ] Owner accepts or rejects the candidate with evidence. On acceptance, update\n  ADR statuses, glossary and guidance together; authorize cutover separately in #6.\n\n## Non-goals\n\nReimplementing native LiteLLM features; certifying all upstream internals; advanced\nstatistics, custom accounting store/exporter, mandatory CPAMP or immediate cutover.\n\n## Operational notes\n\nPreserve historical group ownership and old proof limitations. CPA remains the\nprovider/OAuth boundary; CPAMP is the only queue consumer when enabled. Langfuse\nis observability, not authorization/accounting. Follow-up guarantees require their\nown scoped evidence. Update `DEVELOPMENT.md` with decisions and actual results.\n\n## References\n\n`docs/specs/litellm-poc.md`; `docs/planning/architecture-rebaseline-2026-10-29.md`;\n`docs/adr/0002-litellm-personal-usage.md`; `docs/live-acceptance.md`.\n",
+    "state": "OPEN",
+    "stateReason": null,
+    "labels": [
+      {
+        "name": "enhancement",
+        "description": "New feature or request",
+        "color": "a2eeef"
+      }
+    ],
+    "url": "https://github.com/obenno/ProxyLens/issues/1",
+    "updatedAt": "2026-10-29T07:11:34Z",
+    "closedAt": null
+  },
+  {
+    "number": 2,
+    "title": "Configure LiteLLM → CPA: deployment, native accounts, keys, limits, and Usage",
+    "body": "## Problem / outcome\n\nConfigure a reproducible LiteLLM → CPA deployment with native accounts, personal\nkeys, limits, persistent spend/history and native Usage. These are upstream\nfeatures to configure, not new ProxyLens services to implement.\n\n## Revision and current state\n\nApproved October 29, 2026 revision of the Compose foundation; absorbs native\naccount/key configuration from #5/#9. Original contracts are archived in\n`docs/planning/archive/issues-before-2026-10-29.json`. Current `compose.yaml`\ndeploys Keycloak/custom services/CPA/CPAMP, not LiteLLM; preserve its runtime state.\n\n## Scope\n\n- Isolated candidate Compose/config, LiteLLM database, CPA inference route,\n  necessary coordination dependencies, secrets and native UI ingress.\n- Pin the actual image/digest, schema and configuration; record the chosen\n  edition. The research snapshot is not an installed-image guarantee.\n- Configure native onboarding and ordinary-user role, users A/B, personal keys\n  (including a second key for A), allowed models and selected native limits.\n- Enable native persisted usage/Usage UI; set explicit CPA alias pricing where\n  needed. Keep content capture disabled; no new ledger or dashboard backend.\n- Supply native secret/callback configuration seams for #8 and fixture for #7.\n\n## Dependencies\n\n#1 actual client/model, deployment endpoints, selected policies and CPA sharing\ndecision. #8 owns Langfuse integration settings; #7 owns the shared behavioral\nchecks. #6 owns production backup/restore and cutover. No mandatory CPAMP profile.\n\n## Acceptance criteria\n\n- [ ] Documented commands start the pinned candidate with persistent state,\n  healthchecks and private data/management services; existing state is isolated.\n- [ ] Native ordinary-user login, user-owned keys, selected model/limit policies\n  and native Usage are configured in the chosen edition. Record documented native\n  defaults/semantics; any paid dependency needs a visible product decision.\n- [ ] Admin-created personal keys explicitly identify their intended owner; avoid\n  admin-viewer roles for personal access. CPA service/admin and personal keys are\n  distinct, server-side secrets are not committed or exposed to browsers.\n- [ ] CPA alias prices, native logging/privacy options and storage ownership are\n  recorded. Optional coordination services are included only when required.\n- [ ] A startup/native-login smoke check succeeds; provide the reproducible A/B\n  fixture to #7. Do not duplicate its full integration acceptance here.\n- [ ] CPAMP is optional, with no second consumer of an existing CPA queue.\n  Candidate setup/teardown and state-preserving rollback are documented.\n\n## Non-goals\n\nCustom user/key/policy services, custom reporting database or UI, native-feature\nunit suites, provider OAuth replacement, HA or production cutover.\n\n## Operational notes\n\nReuse CPA deployment/secrets patterns. Record exact versions/configuration and\ndependency ownership in candidate deployment docs and `DEVELOPMENT.md`. Preserve\nthe current deployment until #6's approved cutover.\n\n## References\n\n`docs/specs/litellm-poc.md`; `compose.yaml`; `deploy/cliproxyapi/`;\n`docs/deployment.md`; `docs/dependency-pins.md`.\n",
+    "state": "OPEN",
+    "stateReason": null,
+    "labels": [
+      {
+        "name": "enhancement",
+        "description": "New feature or request",
+        "color": "a2eeef"
+      }
+    ],
+    "url": "https://github.com/obenno/ProxyLens/issues/2",
+    "updatedAt": "2026-10-29T07:11:37Z",
+    "closedAt": null
+  },
+  {
+    "number": 3,
+    "title": "Optional CPA/CPAMP diagnostics: correlation and operator history",
+    "body": "## Problem / outcome\n\nOptionally retain CPA-side history/account diagnostics when operators need them.\nPersonal keys, ownership and native Usage must work independently of CPAMP.\n\n## Revision and current state\n\nApproved optional disposition, October 29, 2026. The original mandatory-correlation\ncontract is preserved in `docs/planning/archive/issues-before-2026-10-29.json`.\n`docs/correlation.md`, `docs/cpamp-contract.md` and `docs/live-acceptance.md`\nretain implemented joins and unfinished proof gates; this change does not pass them.\n\n## Scope\n\nActivate only when #1 selects provider-account diagnostics. Reuse CPAMP and the\nexisting read adapter where compatible. Prove observed-ID joins only for any\ndiagnostic enrichment actually displayed; retain explicit missing/ambiguous joins.\n\n## Dependencies\n\n#2 configured candidate, #7 observed CPA identifiers. Not a prerequisite for\npersonal reporting, accounting or candidate acceptance.\n\n## Acceptance criteria\n\n- [ ] A concrete operator need is selected before implementation starts.\n- [ ] The retained CPAMP version, history source and collector owner are recorded;\n  CPAMP alone consumes that CPA queue.\n- [ ] Displayed enriched rows use proven observed-ID joins; shared credentials,\n  timestamps and models are never used to guess personal ownership.\n- [ ] Diagnostic outage/gaps are visible and do not block healthy inference or\n  personal Usage. Management controls and credentials stay operator-only.\n\n## Non-goals\n\nMandatory CPAMP integration, a new collector, full join certification when no\nenrichment is used, or adding CPA/CPAMP and LiteLLM totals as independent usage.\n\n## Operational notes\n\nRemain optional when unselected. Preserve existing history and one-consumer\nownership; backup/retention belongs to the selected operator deployment in #6.\n\n## References\n\n`docs/specs/litellm-poc.md`; `docs/correlation.md`; `docs/cpamp-contract.md`.\n",
+    "state": "OPEN",
+    "stateReason": null,
+    "labels": [
+      {
+        "name": "enhancement",
+        "description": "New feature or request",
+        "color": "a2eeef"
+      }
+    ],
+    "url": "https://github.com/obenno/ProxyLens/issues/3",
+    "updatedAt": "2026-10-29T07:11:41Z",
+    "closedAt": null
+  },
+  {
+    "number": 4,
+    "title": "Consolidated into #7: native usage integration checks",
+    "body": "## Problem / outcome\n\nConsolidate personal usage verification into the single integration acceptance\ntask #7. Native LiteLLM persistence/Usage does not require a new ProxyLens\naccounting adapter, canonical schema, normalization worker or replay store.\n\n## Revision and current state\n\nApproved consolidation into #7, October 29, 2026. Original CPAMP read/export spec and\nmetadata are archived in `docs/planning/archive/issues-before-2026-10-29.json`.\nThe implemented `src/proxylens/cpamp.py` and `docs/cpamp-contract.md` remain\navailable for optional #3; old evidence/limitations remain unchanged.\n\n## Scope\n\nMove the necessary CPA response → native retained record → personal-total sample\ncheck into #7 A3. Future custom field capture/read/rebuild work belongs to #10\nonly if native reporting lacks an agreed requirement.\n\n## Dependencies\n\n#7 owns the sample check; #2 configures native persistence. #10 is conditional.\n\n## Acceptance criteria\n\n- [ ] #7 includes sample ownership/usage reconciliation and persisted-record restart\n  evidence; no separate native accounting test suite remains in this issue.\n- [ ] Original CPAMP contract and its unfinished evidence are preserved.\n- Disposition: close as **not planned / consolidated into #7**, not as successful\n  implementation of the old or replacement runtime acceptance criteria.\n\n## Non-goals\n\nNew accounting infrastructure, native full replay/crash-loss certification, or\nclaiming a native callback guarantees retained/rebuildable data.\n\n## Operational notes\n\nNo runtime/data deletion follows consolidation. #6 owns native database recovery;\nany stronger durability guarantee must be scoped and measured separately.\n",
+    "state": "CLOSED",
+    "stateReason": "not_planned",
+    "labels": [
+      {
+        "name": "enhancement",
+        "description": "New feature or request",
+        "color": "a2eeef"
+      }
+    ],
+    "url": "https://github.com/obenno/ProxyLens/issues/4",
+    "updatedAt": "2026-10-29T07:12:22Z",
+    "closedAt": "2026-10-29T07:12:22Z"
+  },
+  {
+    "number": 5,
+    "title": "Consolidated into #2: native account and role configuration",
+    "body": "## Problem / outcome\n\nUse native LiteLLM accounts and ordinary-user roles. Fold their setup into #2\ninstead of maintaining a standalone identity implementation/test project.\n\n## Revision and current state\n\nApproved consolidation into #2, October 29, 2026. Original Keycloak issue #5 is archived\nin `docs/planning/archive/issues-before-2026-10-29.json`. `deploy/keycloak/`,\n`src/proxylens/identity.py`, `oidc.py`, `keycloak.py` and `docs/identity.md`\nremain current-runtime evidence until approved cutover.\n\n## Scope\n\n#2 configures native onboarding/login and the selected ordinary role; #7 A1\nchecks the deployed login and representative own-only access. Accept native\npassword/account flows without rebuilding or duplicating their upstream tests.\n\n## Dependencies\n\n#2 setup and #7 shared integration acceptance.\n\n## Acceptance criteria\n\n- [ ] Native role/login setup is included in #2 and the small isolation check in #7.\n- [ ] Original Keycloak contract/history is retained for current runtime maintenance.\n- Disposition: close as **not planned / consolidated into #2**, not proof that\n  original or replacement runtime identity criteria passed.\n\n## Non-goals\n\nCustom identity service, Keycloak synchronization, SSO, complete native account\nrecovery test matrices, or automatic retirement of existing Keycloak state.\n\n## Operational notes\n\nPrivileged roles are not a workaround for personal access. Native setup belongs\nto #2; any separate reporting session is conditional #10 work. #6 owns migration.\n",
+    "state": "CLOSED",
+    "stateReason": "not_planned",
+    "labels": [
+      {
+        "name": "enhancement",
+        "description": "New feature or request",
+        "color": "a2eeef"
+      }
+    ],
+    "url": "https://github.com/obenno/ProxyLens/issues/5",
+    "updatedAt": "2026-10-29T07:12:26Z",
+    "closedAt": "2026-10-29T07:12:26Z"
+  },
+  {
+    "number": 6,
+    "title": "Production readiness: backup, restore, and controlled cutover",
+    "body": "## Problem / outcome\n\nMake this deployment recoverable and perform an approved cutover after candidate\nacceptance. Test our state handling and migration, not all LiteLLM internals.\n\n## Revision and current state\n\nApproved October 29, 2026 revision. Original operations spec is archived in\n`docs/planning/archive/issues-before-2026-10-29.json`. `docs/operations.md` and\n`docs/deployment.md` describe the existing custom services, not native guarantees.\n\n## Scope\n\n- Inventory native user/key/budget/history state, CPA OAuth/configuration and\n  selected telemetry/diagnostic stores; document secret and retention ownership.\n- Document and rehearse populated backup/restore and version/schema-compatible\n  upgrade/rollback for the selected deployment.\n- Prepare key issuance, historical-data handling, ingress switch and rollback;\n  execute only after #1 candidate acceptance and separate cutover approval.\n- Reuse #7 integration evidence and record native limitations. Add load benchmarks\n  or accounting fault injection only for an explicit workload/guarantee.\n\n## Dependencies\n\nReadiness preparation begins after #2. #7/#8 supply integration/telemetry results.\n#1 accepts the candidate before production cutover. #3/#10 matter only if selected.\n\n## Acceptance criteria\n\n- [ ] Every selected state/secret has a backup and retention owner; actual retention\n  values are recorded rather than inherited from old services by assumption.\n- [ ] A populated restore recovers users, personal-key ownership, retained history\n  and budget state; verify with a small native login/history/request check.\n- [ ] Upgrade/rollback instructions identify matching binary/schema/state versions,\n  incompatible migrations and how to restore the previous ingress safely.\n- [ ] Health distinguishes inference, native history availability and telemetry;\n  reuse #7's restart/optional-dependency checks rather than repeat a fault matrix.\n- [ ] Native delivery/accounting/limit behavior and accepted limitations are\n  documented. Stronger guarantees need explicit scope and supporting tests.\n- [ ] Cutover plan issues replacement keys where required, preserves old group\n  history or separates the accounting epoch, defines rollback triggers and keeps\n  recoverable old state. Do not infer personal owners from old key creators.\n- [ ] After owner approval, execute cutover and repeat the small essential client,\n  login/usage and telemetry checks; retire superseded services only after success.\n\n## Non-goals\n\nHA, broad upstream crash-loss/overshoot certification, capacity benchmarks without\na target workload, silent state deletion, or production-request replay.\n\n## Operational notes\n\nThe proposed 90/365/90-day retention values are starting options, not upstream\ndefaults. Optional CPAMP remains the sole queue consumer. Keep content capture\ndisabled. Update deployment docs and `DEVELOPMENT.md` with tested restore commands,\naccepted limitations and cutover results.\n\n## References\n\n`docs/specs/litellm-poc.md`; `docs/operations.md`; `docs/deployment.md`.\n",
+    "state": "OPEN",
+    "stateReason": null,
+    "labels": [
+      {
+        "name": "enhancement",
+        "description": "New feature or request",
+        "color": "a2eeef"
+      }
+    ],
+    "url": "https://github.com/obenno/ProxyLens/issues/6",
+    "updatedAt": "2026-10-29T07:11:48Z",
+    "closedAt": null
+  },
+  {
+    "number": 7,
+    "title": "Integration acceptance: actual client, personal usage, controls, and telemetry",
+    "body": "## Problem / outcome\n\nVerify our configured LiteLLM → CPA → native Usage/Langfuse integration with one\nsmall end-to-end fixture. Native features are reused; this checks configuration,\nprovider compatibility and trusted mappings rather than retesting LiteLLM itself.\n\n## Revision and current state\n\nApproved October 29, 2026 revision; absorbs usage verification from #4 and shared\naccount/key/UI checks. Original gateway issue is archived in\n`docs/planning/archive/issues-before-2026-10-29.json`. Existing gateway tests and\n`scripts/live-acceptance.py` supply reusable scenarios, not candidate pass evidence.\n\n## Scope\n\nRun shared plan A1–A6 with users A/B, a second personal key for A, one service-owned\nCPA key, actual client/version and a separate Langfuse test project. Share request\nresults across checks. Prefer a reproducible runbook; write regression tests for\nour custom glue or a concrete defect, not native CRUD internals.\n\n## Dependencies\n\n#2 configured stack, role, keys, pricing and policies; #8 native telemetry mapping\nand redaction. No mandatory CPAMP, custom read adapter or reporting store.\n\n## Acceptance criteria\n\n- [ ] **A1:** A/B log in and see own keys/usage. A representative direct attempt to\n  read B's history/detail as A is denied. Test the actual ordinary role selected.\n- [ ] **A2:** Actual client works with nonstreaming/SSE Responses and tool/result\n  continuation; exercise image/history/ancillary routes only when used. One upstream\n  error and interrupted stream preserve behavior without partial-output replay.\n- [ ] **A3:** A's keys aggregate to A and B stays separate. Compare sample response\n  usage to retained native details/totals, including supplied cache/reasoning;\n  missing measurements/pricing are explicit and subsets aren't double-counted.\n  A completed native record survives restart.\n- [ ] **A4:** One revoked-key and one model restriction denial cause no forbidden\n  CPA request. Exercise a configured budget/rate limit, record native enforcement\n  and propagation semantics, and avoid claiming strict concurrency guarantees.\n- [ ] **A5:** The shared sample reaches Langfuse with trusted owner/session IDs and\n  metadata-only payload, including content-bearing tool/image cases when used.\n  Forged owner/session metadata cannot override mapping. Sink outage leaves\n  inference usable and never replays provider work.\n- [ ] **A6:** Healthy inference and native personal Usage work without CPAMP.\n  Walk through history/native filters, record observed reporting lag and missing\n  panels, and obtain baseline acceptance or a concrete gap decision in #1/#10.\n- [ ] Record exact versions/config, client/route, sanitized results and limitations\n  once for the run. Failures become focused integration fixes and retests.\n\n## Non-goals\n\nExhaustive native endpoint/role/lifecycle testing, custom accounting infrastructure,\nfull crash-loss/replay or performance certification, or claiming deferred handoff\nP1–P13 scenarios passed. Broaden tests for our custom behavior or a real failure.\n\n## Operational notes\n\nUse bounded synthetic traffic, keep secrets/content out of evidence and never\nreplay an ambiguous provider request to repair telemetry. #6 owns production\nrestore/cutover. Preserve `docs/live-acceptance.md` as historical old-path evidence.\n\n## References\n\n`docs/specs/litellm-poc.md` A1–A6 and handoff mapping;\n`docs/live-acceptance.md`; `scripts/live-acceptance.py`.\n",
+    "state": "OPEN",
+    "stateReason": null,
+    "labels": [
+      {
+        "name": "enhancement",
+        "description": "New feature or request",
+        "color": "a2eeef"
+      }
+    ],
+    "url": "https://github.com/obenno/ProxyLens/issues/7",
+    "updatedAt": "2026-10-29T07:11:52Z",
+    "closedAt": null
+  },
+  {
+    "number": 8,
+    "title": "Configure native Langfuse: trusted attribution and metadata-only capture",
+    "body": "## Problem / outcome\n\nConfigure native LiteLLM Langfuse delivery with trusted personal attribution and\nmetadata-only capture. Reuse upstream transport; add code only if configuration\ncannot provide an agreed owner/session or redaction requirement.\n\n## Revision and current state\n\nApproved October 29, 2026 revision. Original custom exporter contract is archived\nin `docs/planning/archive/issues-before-2026-10-29.json`. `docs/exporter.md` and\nexisting exporter tests supply redaction/failure lessons; they are not a required\nreplacement implementation. Old null human-subject semantics differ from key owner.\n\n## Scope\n\n- Choose one supported native integration for the selected LiteLLM/SDK/destination.\n- Configure stable deployment/owner-scoped user and session attribution from\n  trusted server-side key state; untrusted sessions use a labeled request fallback.\n- Disable content capture and keep bounded metadata, original timing, numeric\n  usage and estimated cost. Inspect actual payload, not just configuration flags.\n- Document native delivery behavior. A custom hook is conditional; a durable\n  exporter/outbox requires a separate demonstrated requirement.\n\n## Dependencies\n\n#2 native stack/owner settings and Langfuse test endpoint. Joint verification\noccurs in #7 A5 using the shared fixture, not a duplicate telemetry test suite.\n\n## Acceptance criteria\n\n- [ ] Selected native callback, compatible versions and server-side credentials\n  are configured and reproducible; duplicate exporters are not enabled.\n- [ ] Trusted platform key owner maps to Langfuse user ID; caller `user` or trace/\n  session metadata cannot impersonate an owner. Actor and key-owner meanings stay\n  distinct; provider-account IDs are never substituted for people.\n- [ ] #7 A5 confirms metadata-only actual payloads and sink-outage independence\n  with the shared normal/stream/tool cases, including one forged-metadata case.\n- [ ] Native delivery/loss/retry limitations are documented without a lossless or\n  exactly-once claim. No telemetry failure causes provider replay.\n- [ ] If custom mapping/redaction code is necessary, identify the exact native\n  gap and add focused regression tests for that code; otherwise configuration\n  alone completes this issue.\n\n## Non-goals\n\nReimplementing Langfuse transport, a preplanned outbox, broad crash/ambiguous-ack\ncertification, raw content capture or Langfuse-based personal authorization.\n\n## Operational notes\n\nUse a separate test project, owner-scoped IDs and server-side secrets. Recording\nnative semantics does not establish durable delivery. #6 owns deployed retention\nand credentials/recovery; update `DEVELOPMENT.md` with config and observed gaps.\n\n## References\n\n`docs/specs/litellm-poc.md`; `docs/exporter.md`; handoff section 8.\n",
+    "state": "OPEN",
+    "stateReason": null,
+    "labels": [
+      {
+        "name": "enhancement",
+        "description": "New feature or request",
+        "color": "a2eeef"
+      }
+    ],
+    "url": "https://github.com/obenno/ProxyLens/issues/8",
+    "updatedAt": "2026-10-29T07:11:56Z",
+    "closedAt": null
+  },
+  {
+    "number": 9,
+    "title": "Consolidated into #2: native personal keys and limit configuration",
+    "body": "## Problem / outcome\n\nUse native personal virtual keys, model restrictions and limits. Consolidate\nconfiguration into #2 and representative behavior checks into #7.\n\n## Revision and current state\n\nApproved consolidation into #2, October 29, 2026. Original group/application/custom-key\nspec is archived in `docs/planning/archive/issues-before-2026-10-29.json`.\n`docs/resources.md` and existing resource/policy code retain their old runtime\ncontract; no new native implementation or equivalence claim is needed here.\n\n## Scope\n\n#2 assigns stable personal owners and configures native keys/models/limits;\n#7 checks attribution, revoked/model-denied requests and a configured limit.\nUse documented native semantics. Stronger revocation or strict-budget guarantees\nwould need separate explicit scope rather than a duplicate upstream test project.\n\n## Dependencies\n\n#2 configuration; #7 A3/A4 integration acceptance.\n\n## Acceptance criteria\n\n- [ ] Personal key/limit configuration is in #2 and representative checks in #7.\n- [ ] Original custom resource/key history remains preserved; old group-owned\n  requests are not relabeled as personal based on their creator.\n- Disposition: close as **not planned / consolidated into #2**, not successful\n  completion of the old resource/policy runtime contract.\n\n## Non-goals\n\nCustom key/policy engine, exhaustive native lifecycle testing, group/Keycloak\nintegration or strict-budget/one-time-reveal equivalence by assumption.\n\n## Operational notes\n\nRecord chosen native behavior and limitations. Old hashed-key import is not\nassumed; #6 owns replacement-key issuance and historical-data treatment.\n",
+    "state": "CLOSED",
+    "stateReason": "not_planned",
+    "labels": [
+      {
+        "name": "enhancement",
+        "description": "New feature or request",
+        "color": "a2eeef"
+      }
+    ],
+    "url": "https://github.com/obenno/ProxyLens/issues/9",
+    "updatedAt": "2026-10-29T07:12:29Z",
+    "closedAt": "2026-10-29T07:12:29Z"
+  },
+  {
+    "number": 10,
+    "title": "Deferred: personal reporting extensions for demonstrated native gaps",
+    "body": "## Problem / outcome\n\nAdd personal reporting only after native Usage demonstrates a concrete missing\ncapability the owner wants. Native totals/history/filters are configuration and\nwalkthrough work in #2/#7, not a new dashboard project.\n\n## Revision and current state\n\nApproved deferred disposition, October 29, 2026. Original CPAMP group projection\ncontract is archived in `docs/planning/archive/issues-before-2026-10-29.json`.\n`docs/projection.md` and existing projection code remain current-runtime evidence.\nTheir source/ownership schema is not the proposed personal reporting source.\n\n## Scope\n\nDeferred gap inventory for possible reasoning/cache trends, latency/TTFT\npercentiles, heatmaps, measured RPM/TPM, exports or session views. Native Usage\ncomes first. Before implementing, select one gap and split it into an independently\ntestable task with its required fields and UI/data/session boundary.\n\n## Dependencies\n\n#7 native walkthrough and gap findings; #1 explicit prioritization. No baseline\ndependency on this issue, a new database, a custom read adapter or plugin embedding.\n\n## Acceptance criteria\n\n- [ ] Record the native capability, actual shortcoming and selected user outcome\n  before opening implementation work. If native Usage suffices, defer this issue.\n- [ ] For each selected gap, prefer supported scoped reads and a small extension;\n  justify any new storage/capture and identify retained versus transient fields.\n- [ ] Any custom reporting backend gets its own trusted session, owner-scoped\n  queries/cache, isolation tests and clear unknown/freshness semantics.\n- [ ] Any custom aggregation/capture gets focused tests for its metric definitions,\n  normalization and deduplication/replay promises. These tests are conditional on\n  code we add, not required to use the native dashboard.\n\n## Non-goals\n\nBaseline native UI implementation, full CPAMP parity, a broad UI fork, mandatory\nplugins or SSO, a speculative personal ledger, or replacing group IDs with user IDs.\n\n## Operational notes\n\nIf an extension becomes necessary, pin its interface, document session/edition\nrequirements and include custom state in #6 backup/retention. Advanced panels are\nfollow-up scope until explicitly prioritized. Do not claim callback-only data is\nrebuildable after its source has discarded it.\n\n## References\n\n`docs/specs/litellm-poc.md`; `docs/projection.md`; handoff sections 5–7.\n",
+    "state": "OPEN",
+    "stateReason": null,
+    "labels": [
+      {
+        "name": "enhancement",
+        "description": "New feature or request",
+        "color": "a2eeef"
+      }
+    ],
+    "url": "https://github.com/obenno/ProxyLens/issues/10",
+    "updatedAt": "2026-10-29T07:12:03Z",
+    "closedAt": null
+  }
+]

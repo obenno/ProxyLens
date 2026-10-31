@@ -1,0 +1,163 @@
+{
+  "schema": "proxylens-candidate-upgrade-rollback-v1",
+  "date": "2026-10-31",
+  "issue": 6,
+  "status": "passed_bounded_upgrade_and_rollback",
+  "scope": "provider-disconnected LiteLLM upgrade and fresh-database snapshot rollback; PostgreSQL unchanged",
+  "source_commit": "cf1266472a7985390471e6d4b89c1ce009aafac5",
+  "approval": {
+    "decision_ids": ["D5", "D6"],
+    "owner": "repository owner in current conversation",
+    "recorded_at": "2026-10-31T03:05:45.771942Z",
+    "agent_target_selection_and_execution_authorized": true,
+    "agent_stop_authority": "any documented failure",
+    "production_cutover": "not_authorized"
+  },
+  "target_verification": {
+    "baseline_litellm": "1.106.6",
+    "baseline_amd64_manifest": "sha256:c09a77d998058dd78835a45a985eae747d257f2b183db06852fba536f3d1113c",
+    "target_tag": "v1.108.0-rc.1",
+    "target_prerelease": true,
+    "target_installed_package": "1.108.0",
+    "target_published_at": "2026-10-29T03:33:35Z",
+    "target_index_digest": "sha256:0d412001c3116d3b03a479b02a351061e54b57210db5b7594cf83f13a4822765",
+    "target_amd64_manifest": "sha256:eee5c577573756a46c3a41177cd742e06a05a50feb0acc1520cad4fcf6ad6b8f",
+    "target_image_id": "88c114640354ddc91c02b862e06e491135200d402735353e7227e5410d546d04",
+    "target_source_and_oci_revision": "7a3c6229e1f41146d8dc8f543fd07f664c6a9707",
+    "installed_schemas_match_pinned_source": true,
+    "target_prisma_schema_sha256": "873f78ae1d36e62145d5d67933146e63b80991fd2f000c21bfa32ffa68b17ac0",
+    "postgresql": "17.11",
+    "postgresql_amd64_manifest": "sha256:0b81cec82228160abfa753aeaad0609b709eb26eeb950f2e404ad2326e1cc370",
+    "signature_verification": "not_performed",
+    "selection_reason": "Baseline remains latest stable; the published RC states v1.106.x patch-fix parity and supplies a real forward migration. Selected only for this isolated rehearsal.",
+    "sources": [
+      "https://github.com/BerriAI/litellm/releases/tag/v1.108.0-rc.1",
+      "https://api.github.com/repos/BerriAI/litellm/releases/latest",
+      "https://github.com/BerriAI/litellm/tree/7a3c6229e1f41146d8dc8f543fd07f664c6a9707"
+    ]
+  },
+  "retained_input": {
+    "recovery_set": "issue6-populated-recovery-20261030",
+    "checkpoint": "checkpoint-1793273530",
+    "original_checksum_entries_verified": 23,
+    "original_checksum_coverage_note": "Original SHA256SUMS covers artifacts/secrets/private-source, not dump or fingerprints; new hashes recorded and restored rows verified against retained fingerprints.",
+    "original_permission_exception": "SHA256SUMS is 0664 inside a 0700 directory; retained source unchanged; new copies and evidence use 0700 directories and 0600 files.",
+    "initial_tables": 98,
+    "initial_rows": 272,
+    "spend_log_rows": 12,
+    "checkpoint_rows": {"A": 3, "B": 2},
+    "later_A_rows_preserved": 7
+  },
+  "attempts": [
+    {
+      "id": "issue6-upgrade-rollback-20261031",
+      "started_at": "2026-10-31T03:12:08.406645Z",
+      "finished_at": "2026-10-31T03:14:39.917646Z",
+      "upgrade": "stopped_on_comparator_failure",
+      "stop_reason": "Whole-dictionary aggregate comparison rejected the added total_ptu_hours field after A login/history readback.",
+      "diagnosis": "All existing aggregate values matched. Target DailySpendMetadata adds total_ptu_hours=0.0 in pinned source; comparator was too strict, not observed accounting loss.",
+      "rollback": "passed",
+      "evidence_preserved": true
+    },
+    {
+      "id": "issue6-upgrade-rollback-20261031-attempt2",
+      "started_at": "2026-10-31T03:17:20.204682Z",
+      "finished_at": "2026-10-31T03:19:18.940061Z",
+      "fresh_projects_and_volumes": true,
+      "baseline": "passed",
+      "upgrade": "passed",
+      "rollback": "passed",
+      "comparator": "Requires all baseline fields and values, permits exactly total_ptu_hours=0.0 on target; rejects changed tokens, missing spend and unknown additions."
+    }
+  ],
+  "migration": {
+    "baseline_count": 213,
+    "target_count": 220,
+    "rollback_count": 213,
+    "baseline_and_rollback_latest": "20261009000000_add_credential_display_name",
+    "target_latest": "20261015000000_managed_object_end_user_id",
+    "added": [
+      "20261008010000_add_daily_gateway_failed_requests",
+      "20261008120000_add_daily_request_errors",
+      "20261008120000_user_provider_credentials",
+      "20261009000100_telemetry_reports",
+      "20261013000000_access_group_mcp_tool_permissions",
+      "20261013000000_add_access_group_skill_names",
+      "20261015000000_managed_object_end_user_id"
+    ],
+    "baseline_migration_files_changed_or_removed": 0,
+    "applied_migration_checksums_match_installed_files": true,
+    "new_tables": 4,
+    "target_table_fingerprints": 102,
+    "new_tables_empty": true,
+    "schema_changes": "Four tables plus mcp_tool_permissions/access_skill_names on AccessGroupTable and end_user_id on ManagedObjectTable; expected indexes/constraints.",
+    "baseline_database_schema_sha256": "8a3580cbe04c5a5c2df78eb8b339917438fd10c82aa99c9c925d7465f94ffe66",
+    "target_database_schema_sha256": "9c23097c0fad685376c47671d8ffdc03a611c7ebeb5bc39f99316509dc2bd156",
+    "rollback_schema_matches_baseline": true,
+    "existing_table_data_changes_after_upgrade": ["_prisma_migrations", "LiteLLM_VerificationToken"],
+    "other_existing_table_fingerprints_equal": true
+  },
+  "readback": {
+    "baseline_target_rollback": "passed on second attempt",
+    "A_B_login": 200,
+    "role": "internal_user",
+    "premium_user": false,
+    "session_handling": "Fresh native login per clone; expired source sessions not reused; fixture file not edited.",
+    "history_rows": {"A": 10, "B": 2},
+    "history_ids_owners_status_usage_cost_and_timing_equal": true,
+    "baseline_aggregate_fields_equal": true,
+    "target_aggregate_addition": {"total_ptu_hours": 0.0},
+    "A_A2_B_key_info_and_models": 200,
+    "key_owners_limits_budgets_expiry_spend_preserved": true,
+    "both_cross_owner_aggregate_checks": 403,
+    "both_cross_owner_history_checks": {"status": 200, "rows": 0},
+    "readiness": "healthy",
+    "usage_ui_html": 200,
+    "interactive_ui_walkthrough": "not_repeated",
+    "provider_client_protocol_checks": "not_run_no_inference_authorized"
+  },
+  "rollback": {
+    "method": "exact baseline binary/config/secrets, immutable pre-upgrade dump into a new PostgreSQL database/volume",
+    "table_fingerprints_equal_before_startup": 98,
+    "preupgrade_rows": 273,
+    "row_change_from_retained_input": "Two clone UI-session rows added and one stale heartbeat row removed during baseline startup; 272 to 273. Snapshot taken after stopping clone app.",
+    "restore_warnings_bytes": 0,
+    "postrollback_expected_writes": "Two fresh UI-session rows; no retained request/history mutation.",
+    "in_place_binary_downgrade": false
+  },
+  "telemetry": {
+    "image": "target pinned manifest",
+    "suite": "tests/candidate_native_contract.py, unmodified",
+    "tests_passed": 6,
+    "network": "none",
+    "receiver": "synthetic loopback OTLP capture",
+    "real_credentials_mounted": false,
+    "trusted_attribution_masking_and_content_checks": "passed",
+    "helper_version_argument": "Unmodified test passes baseline label 1.106.6 to proxy preparation; imported runtime is target 1.108.0.",
+    "external_langfuse_readback": "not_run"
+  },
+  "isolation": {
+    "internal_network_no_default_route": true,
+    "callback_disabled_for_restored_databases": true,
+    "real_provider_or_langfuse_credentials_mounted": false,
+    "dummy_cpa_base": "http://127.0.0.1:9/v1",
+    "original_containers_ids_start_times_status_restart_counts_unchanged": 44,
+    "retained_source_files_byte_unchanged": 63,
+    "original_personal_key_owners_and_values_unchanged": true,
+    "known_credentials_in_app_logs": false,
+    "provider_requests": 0,
+    "queue_reads": 0,
+    "inference_replay": 0,
+    "external_telemetry_mutations": 0,
+    "live_service_changes": 0,
+    "production_cutover": false,
+    "rehearsal_containers_stopped_and_retained": 9,
+    "rehearsal_volumes_retained": 4
+  },
+  "limitations": [
+    "Rehearsal-only prerelease target; production deployment and acceptance pins remain 1.106.6.",
+    "No provider inference, actual-client protocol/stream checks, external Langfuse recovery/readback, or interactive Usage browser walkthrough.",
+    "No PITR, off-host recovery, capacity, strict accounting/limit or durable telemetry guarantee.",
+    "D5/D6 rehearsal evidence does not resolve D1-D4, D7-D9, production rollback authority, or cutover approval."
+  ]
+}
